@@ -83,6 +83,7 @@ class Camera {
     return {
       position: this.getWallVectorFromObstacle(obstacle, type),
       type: isVertical ? INTERSECTION_TYPES.VERTICAL : INTERSECTION_TYPES.HORIZONTAL,
+      shouldReverseTexture: type === OBSTACLE_SIDES.LEFT || type === OBSTACLE_SIDES.BOTTOM
     };
   }
 

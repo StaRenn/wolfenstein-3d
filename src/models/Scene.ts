@@ -24,6 +24,7 @@ type Triangle = {
 type Wall = {
   position: Vector;
   type: keyof typeof INTERSECTION_TYPES;
+  shouldReverseTexture: boolean;
 };
 
 class Scene {
@@ -67,17 +68,20 @@ class Scene {
     const intersections = this.camera.renderAndGetIntersections();
 
     for (let i = 0; i < intersections.length; i++) {
-      const isVerticalIntersection = intersections[i].type === INTERSECTION_TYPES.VERTICAL;
-      const intersectionPoint = isVerticalIntersection ? intersections[i].x : intersections[i].y;
+      const intersection = intersections[i];
 
-      const height = (CELL_SIZE / intersections[i].distance) * (180 / FOV_DEGREES) * 500;
+      const isVerticalIntersection = intersection.type === INTERSECTION_TYPES.VERTICAL;
+      const intersectionPoint = isVerticalIntersection ? intersection.x : intersection.y;
+
+      const height = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenHeight) / 1.75;
       const obstacleIdx = Math.floor(intersectionPoint / CELL_SIZE);
 
-      const textureOffsetX =
-        Math.floor((intersectionPoint - obstacleIdx * CELL_SIZE) * TEXTURE_SCALE) +
-        (isVerticalIntersection ? TEXTURE_SIZE : 0);
+      const shadowOffsetX = isVerticalIntersection ? TEXTURE_SIZE : 0;
+      const reversedTextureOffsetX = intersection.shouldReverseTexture ? TEXTURE_SIZE : 0;
+      const textureRenderPointX = (intersectionPoint - obstacleIdx * CELL_SIZE) * TEXTURE_SCALE;
+      const textureOffsetX = Math.floor(Math.abs(reversedTextureOffsetX - textureRenderPointX)) + shadowOffsetX;
 
-      if (intersections[i].distance !== RAY_LENGTH) {
+      if (intersection.distance !== RAY_LENGTH) {
         // texture
         this.ctx.drawImage(
           this.textures,

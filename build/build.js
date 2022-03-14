@@ -9,27 +9,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 const map = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
-const CAMERA_SPEED = 0.75;
+const CAMERA_SPEED = 2;
 const FOV_DEGREES = 75;
 const FOV = (FOV_DEGREES * Math.PI) / 180;
-const CELL_SIZE = 5;
+const CELL_SIZE = 10;
 const TEXTURE_SIZE = 64;
 const TEXTURE_SCALE = TEXTURE_SIZE / CELL_SIZE;
 const CAMERA_START_POSITION = { x: CELL_SIZE * 1.5, y: CELL_SIZE * 1.5 };
-const RAY_LENGTH = 200;
+const RAY_LENGTH = 400;
 const INTERSECTION_TYPES = {
     VERTICAL: 'VERTICAL',
     HORIZONTAL: 'HORIZONTAL',
@@ -119,6 +119,7 @@ class Camera {
         return {
             position: this.getWallVectorFromObstacle(obstacle, type),
             type: isVertical ? INTERSECTION_TYPES.VERTICAL : INTERSECTION_TYPES.HORIZONTAL,
+            shouldReverseTexture: type === OBSTACLE_SIDES.LEFT || type === OBSTACLE_SIDES.BOTTOM
         };
     }
     getVisibleObstacles() {
@@ -296,7 +297,7 @@ class Ray {
             if (intersection) {
                 intersections.push({
                     vertex: intersection,
-                    type: wall.type,
+                    wall,
                 });
             }
         }
@@ -313,7 +314,8 @@ class Ray {
             return {
                 x: closestIntersection.vertex.x,
                 y: closestIntersection.vertex.y,
-                type: closestIntersection.type,
+                type: closestIntersection.wall.type,
+                shouldReverseTexture: closestIntersection.wall.shouldReverseTexture,
                 distance: this.fixFishEye(closestDistance),
             };
         }
@@ -321,6 +323,7 @@ class Ray {
             x: this.cameraPosition.x2,
             y: this.cameraPosition.y2,
             type: INTERSECTION_TYPES.VERTICAL,
+            shouldReverseTexture: false,
             distance: RAY_LENGTH,
         };
     }
@@ -347,13 +350,16 @@ class Scene {
         this.minimap.render();
         const intersections = this.camera.renderAndGetIntersections();
         for (let i = 0; i < intersections.length; i++) {
-            const isVerticalIntersection = intersections[i].type === INTERSECTION_TYPES.VERTICAL;
-            const intersectionPoint = isVerticalIntersection ? intersections[i].x : intersections[i].y;
-            const height = (CELL_SIZE / intersections[i].distance) * (180 / FOV_DEGREES) * 500;
+            const intersection = intersections[i];
+            const isVerticalIntersection = intersection.type === INTERSECTION_TYPES.VERTICAL;
+            const intersectionPoint = isVerticalIntersection ? intersection.x : intersection.y;
+            const height = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenHeight) / 1.75;
             const obstacleIdx = Math.floor(intersectionPoint / CELL_SIZE);
-            const textureOffsetX = Math.floor((intersectionPoint - obstacleIdx * CELL_SIZE) * TEXTURE_SCALE) +
-                (isVerticalIntersection ? TEXTURE_SIZE : 0);
-            if (intersections[i].distance !== RAY_LENGTH) {
+            const shadowOffsetX = isVerticalIntersection ? TEXTURE_SIZE : 0;
+            const reversedTextureOffsetX = intersection.shouldReverseTexture ? TEXTURE_SIZE : 0;
+            const textureRenderPointX = (intersectionPoint - obstacleIdx * CELL_SIZE) * TEXTURE_SCALE;
+            const textureOffsetX = Math.floor(Math.abs(reversedTextureOffsetX - textureRenderPointX)) + shadowOffsetX;
+            if (intersection.distance !== RAY_LENGTH) {
                 this.ctx.drawImage(this.textures, textureOffsetX + 128, 128, 1, TEXTURE_SIZE, i, this.screenHeight / 2 - height / 2, 1, height);
             }
             this.ctx.fillStyle = '#5f5f61';

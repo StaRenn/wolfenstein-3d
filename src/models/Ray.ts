@@ -73,7 +73,7 @@ class Ray {
   }
 
   cast(walls: Wall[]) {
-    let intersections: { vertex: Vertex; type: keyof typeof INTERSECTION_TYPES }[] = [];
+    let intersections: { vertex: Vertex; wall: Wall }[] = [];
 
     for (let wall of walls) {
       const intersection = Ray.getIntersectionVertexWithWall(this.cameraPosition, wall);
@@ -81,7 +81,7 @@ class Ray {
       if (intersection) {
         intersections.push({
           vertex: intersection,
-          type: wall.type,
+          wall,
         });
       }
     }
@@ -103,7 +103,8 @@ class Ray {
       return {
         x: closestIntersection.vertex.x,
         y: closestIntersection.vertex.y,
-        type: closestIntersection.type,
+        type: closestIntersection.wall.type,
+        shouldReverseTexture: closestIntersection.wall.shouldReverseTexture,
         distance: this.fixFishEye(closestDistance),
       };
     }
@@ -112,6 +113,7 @@ class Ray {
       x: this.cameraPosition.x2,
       y: this.cameraPosition.y2,
       type: INTERSECTION_TYPES.VERTICAL, // doesnt really matter
+      shouldReverseTexture: false,
       distance: RAY_LENGTH,
     };
   }
