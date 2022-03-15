@@ -3,7 +3,8 @@ class Camera {
   private rays: Ray[];
   private obstacles: Vector[];
   private position: Vertex;
-  private speed: number;
+  private verticalSpeed: number;
+  private horizontalSpeed: number;
   private angle: number;
 
   constructor(
@@ -13,7 +14,8 @@ class Camera {
     obstacles: Vector[]
   ) {
     this.angle = this.toRadians(60);
-    this.speed = 0;
+    this.verticalSpeed = 0;
+    this.horizontalSpeed = 0;
     this.ctx = ctx;
     this.obstacles = obstacles;
     this.position = position;
@@ -26,16 +28,22 @@ class Camera {
   }
 
   handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'w') {
-      this.speed = CAMERA_SPEED;
-    } else if (event.key === 's') {
-      this.speed = -CAMERA_SPEED;
+    if (event.keyCode === 87 /* w */) {
+      this.verticalSpeed = CAMERA_SPEED;
+    } else if (event.keyCode === 83 /* s */) {
+      this.verticalSpeed = -CAMERA_SPEED;
+    } else if (event.keyCode === 68 /* d */) {
+      this.horizontalSpeed = CAMERA_SPEED;
+    } else if (event.keyCode === 65 /* a */) {
+      this.horizontalSpeed = -CAMERA_SPEED;
     }
   }
 
   handleKeyUp(event: KeyboardEvent) {
-    if (event.key === 'w' || event.key === 's') {
-      this.speed = 0;
+    if (event.keyCode === 87 /* w */ || event.keyCode === 83) /* s */ {
+      this.verticalSpeed = 0;
+    } else if (event.keyCode === 68 /* d */ || event.keyCode === 65 /* a */) {
+      this.horizontalSpeed = 0;
     }
   }
 
@@ -168,14 +176,20 @@ class Camera {
   }
 
   move() {
-    if (this.speed === 0) {
+    if (this.horizontalSpeed === 0 && this.verticalSpeed === 0) {
       return;
     }
 
     const position = { x: this.position.x, y: this.position.y };
 
-    position.x += Math.sin(this.angle) * this.speed;
-    position.y += Math.cos(this.angle) * this.speed;
+    const verticalChangeX = Math.sin(this.angle) * this.verticalSpeed;
+    const verticalChangeY = Math.cos(this.angle) * this.verticalSpeed;
+
+    const horizontalChangeX = Math.sin(this.angle + Math.PI / 2) * this.horizontalSpeed
+    const horizontalChangeY = Math.cos(this.angle + Math.PI / 2) * this.horizontalSpeed
+
+    position.x += Math.min(verticalChangeX + horizontalChangeX, CAMERA_SPEED)
+    position.y += Math.min(verticalChangeY + horizontalChangeY, CAMERA_SPEED)
 
     for (let obstacle of this.obstacles) {
       if (

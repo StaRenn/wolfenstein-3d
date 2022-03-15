@@ -22,7 +22,7 @@ const map = [
     [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
-const CAMERA_SPEED = 2;
+const CAMERA_SPEED = 1;
 const FOV_DEGREES = 75;
 const FOV = (FOV_DEGREES * Math.PI) / 180;
 const CELL_SIZE = 10;
@@ -65,7 +65,8 @@ window.onload = main;
 class Camera {
     constructor(position, raysAmount, ctx, obstacles) {
         this.angle = this.toRadians(60);
-        this.speed = 0;
+        this.verticalSpeed = 0;
+        this.horizontalSpeed = 0;
         this.ctx = ctx;
         this.obstacles = obstacles;
         this.position = position;
@@ -75,16 +76,25 @@ class Camera {
         this.changeRaysAmount(raysAmount);
     }
     handleKeyDown(event) {
-        if (event.key === 'w') {
-            this.speed = CAMERA_SPEED;
+        if (event.keyCode === 87) {
+            this.verticalSpeed = CAMERA_SPEED;
         }
-        else if (event.key === 's') {
-            this.speed = -CAMERA_SPEED;
+        else if (event.keyCode === 83) {
+            this.verticalSpeed = -CAMERA_SPEED;
+        }
+        else if (event.keyCode === 68) {
+            this.horizontalSpeed = CAMERA_SPEED;
+        }
+        else if (event.keyCode === 65) {
+            this.horizontalSpeed = -CAMERA_SPEED;
         }
     }
     handleKeyUp(event) {
-        if (event.key === 'w' || event.key === 's') {
-            this.speed = 0;
+        if (event.keyCode === 87 || event.keyCode === 83) {
+            this.verticalSpeed = 0;
+        }
+        else if (event.keyCode === 68 || event.keyCode === 65) {
+            this.horizontalSpeed = 0;
         }
     }
     toRadians(angle) {
@@ -176,12 +186,16 @@ class Camera {
         return visibleWallsByLength;
     }
     move() {
-        if (this.speed === 0) {
+        if (this.horizontalSpeed === 0 && this.verticalSpeed === 0) {
             return;
         }
         const position = { x: this.position.x, y: this.position.y };
-        position.x += Math.sin(this.angle) * this.speed;
-        position.y += Math.cos(this.angle) * this.speed;
+        const verticalChangeX = Math.sin(this.angle) * this.verticalSpeed;
+        const verticalChangeY = Math.cos(this.angle) * this.verticalSpeed;
+        const horizontalChangeX = Math.sin(this.angle + Math.PI / 2) * this.horizontalSpeed;
+        const horizontalChangeY = Math.cos(this.angle + Math.PI / 2) * this.horizontalSpeed;
+        position.x += Math.min(verticalChangeX + horizontalChangeX, CAMERA_SPEED);
+        position.y += Math.min(verticalChangeY + horizontalChangeY, CAMERA_SPEED);
         for (let obstacle of this.obstacles) {
             if (position.y >= obstacle.y1 &&
                 position.y <= obstacle.y2 &&

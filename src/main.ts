@@ -14,7 +14,7 @@ const map: GameMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ]
 
-const CAMERA_SPEED = 2;
+const CAMERA_SPEED = 1;
 const FOV_DEGREES = 75;
 const FOV = (FOV_DEGREES * Math.PI) / 180;
 const CELL_SIZE = 10;
