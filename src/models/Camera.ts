@@ -1,5 +1,6 @@
 class Camera {
   private readonly ctx: CanvasRenderingContext2D;
+  private readonly map: GameMap;
   private rays: Ray[];
   private obstacles: Vector[];
   private position: Vertex;
@@ -7,18 +8,14 @@ class Camera {
   private horizontalSpeed: number;
   private angle: number;
 
-  constructor(
-    position: Vertex,
-    raysAmount: number,
-    ctx: CanvasRenderingContext2D,
-    obstacles: Vector[]
-  ) {
+  constructor(position: Vertex, raysAmount: number, ctx: CanvasRenderingContext2D, obstacles: Vector[], map: GameMap) {
     this.angle = this.toRadians(60);
     this.verticalSpeed = 0;
     this.horizontalSpeed = 0;
     this.ctx = ctx;
     this.obstacles = obstacles;
     this.position = position;
+    this.map = map;
 
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
@@ -40,13 +37,22 @@ class Camera {
   }
 
   handleKeyUp(event: KeyboardEvent) {
-    if (event.keyCode === 87 /* w */ || event.keyCode === 83) /* s */ {
+    if (event.keyCode === 87 /* w */ || event.keyCode === 83 /* s */) {
       this.verticalSpeed = 0;
     } else if (event.keyCode === 68 /* d */ || event.keyCode === 65 /* a */) {
       this.horizontalSpeed = 0;
     }
   }
 
+  hasNeighbor(offset: number, wall: Vector, isVertical: boolean) {
+    const axisY = this.map[(wall.y1 + (isVertical ? offset : 0)) / CELL_SIZE];
+
+    if (!axisY) {
+      return false;
+    }
+
+    return !!axisY[(wall.x1 + (isVertical ? 0 : offset)) / CELL_SIZE];
+  }
 
   toRadians(angle: number) {
     return (angle * Math.PI) / 180;
@@ -55,18 +61,15 @@ class Camera {
   getAreaSize(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
     return Math.abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
   }
+
   // https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
   getIsVertexInTheTriangle({ x, y }: Vertex, { x1, y1, x2, y2, x3, y3 }: Triangle) {
-    /* Calculate area of triangle ABC */
-    let A = this.getAreaSize(x1, y1, x2, y2, x3, y3);
-    /* Calculate area of triangle PBC */
-    let A1 = this.getAreaSize(x, y, x2, y2, x3, y3);
-    /* Calculate area of triangle PAC */
-    let A2 = this.getAreaSize(x1, y1, x, y, x3, y3);
-    /* Calculate area of triangle PAB */
-    let A3 = this.getAreaSize(x1, y1, x2, y2, x, y);
-    /* Check if sum of A1, A2 and A3 is same as A */
-    return Math.round(A) == Math.round(A1 + A2 + A3);
+    const abcArea = this.getAreaSize(x1, y1, x2, y2, x3, y3);
+    const pbcArea = this.getAreaSize(x, y, x2, y2, x3, y3);
+    const pacArea = this.getAreaSize(x1, y1, x, y, x3, y3);
+    const pabArea = this.getAreaSize(x1, y1, x2, y2, x, y);
+
+    return Math.round(abcArea) == Math.round(pbcArea + pacArea + pabArea);
   }
 
   getVertexByPositionAndAngle(position: Vertex, angle: number) {
@@ -91,7 +94,7 @@ class Camera {
     return {
       position: this.getWallVectorFromObstacle(obstacle, type),
       type: isVertical ? INTERSECTION_TYPES.VERTICAL : INTERSECTION_TYPES.HORIZONTAL,
-      shouldReverseTexture: type === OBSTACLE_SIDES.LEFT || type === OBSTACLE_SIDES.BOTTOM
+      shouldReverseTexture: type === OBSTACLE_SIDES.LEFT || type === OBSTACLE_SIDES.BOTTOM,
     };
   }
 
@@ -100,14 +103,8 @@ class Camera {
     const rightExtremumAngle = this.angle + FOV;
 
     const currentAngleRayEndVertex = this.getVertexByPositionAndAngle(this.position, this.angle);
-    const leftFOVExtremumVertex = this.getVertexByPositionAndAngle(
-      currentAngleRayEndVertex,
-      leftExtremumAngle
-    );
-    const rightFOVExtremumVertex = this.getVertexByPositionAndAngle(
-      currentAngleRayEndVertex,
-      rightExtremumAngle
-    );
+    const leftFOVExtremumVertex = this.getVertexByPositionAndAngle(currentAngleRayEndVertex, leftExtremumAngle);
+    const rightFOVExtremumVertex = this.getVertexByPositionAndAngle(currentAngleRayEndVertex, rightExtremumAngle);
 
     const lengthBoundaries = {
       x1: this.position.x - RAY_LENGTH,
@@ -125,17 +122,18 @@ class Camera {
       y3: rightFOVExtremumVertex.y,
     };
     // For optimization, we must reduce the number of vectors with which intersections are searched
+    // push only those walls that can be visible by player side
     const visibleWalls = this.obstacles.reduce<Wall[]>((acc, obstacle) => {
-      if (this.position.x <= obstacle.x1) {
+      if (this.position.x <= obstacle.x1 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.LEFT], obstacle, false)) {
         acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.LEFT));
       }
-      if (this.position.x >= obstacle.x2) {
+      if (this.position.x >= obstacle.x2 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.RIGHT], obstacle, false)) {
         acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.RIGHT));
       }
-      if (this.position.y <= obstacle.y1) {
+      if (this.position.y <= obstacle.y1 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.TOP], obstacle, true)) {
         acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.TOP));
       }
-      if (this.position.y >= obstacle.y2) {
+      if (this.position.y >= obstacle.y2 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.BOTTOM], obstacle, true)) {
         acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.BOTTOM));
       }
 
@@ -185,11 +183,11 @@ class Camera {
     const verticalChangeX = Math.sin(this.angle) * this.verticalSpeed;
     const verticalChangeY = Math.cos(this.angle) * this.verticalSpeed;
 
-    const horizontalChangeX = Math.sin(this.angle + Math.PI / 2) * this.horizontalSpeed
-    const horizontalChangeY = Math.cos(this.angle + Math.PI / 2) * this.horizontalSpeed
+    const horizontalChangeX = Math.sin(this.angle + Math.PI / 2) * this.horizontalSpeed;
+    const horizontalChangeY = Math.cos(this.angle + Math.PI / 2) * this.horizontalSpeed;
 
-    position.x += Math.min(verticalChangeX + horizontalChangeX, CAMERA_SPEED)
-    position.y += Math.min(verticalChangeY + horizontalChangeY, CAMERA_SPEED)
+    position.x += Math.min(verticalChangeX + horizontalChangeX, CAMERA_SPEED);
+    position.y += Math.min(verticalChangeY + horizontalChangeY, CAMERA_SPEED);
 
     for (let obstacle of this.obstacles) {
       if (

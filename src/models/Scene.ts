@@ -53,7 +53,7 @@ class Scene {
     image.src = 'src/textures/textures.png';
     this.textures = image;
 
-    this.camera = new Camera(CAMERA_START_POSITION, this.screenWidth, this.ctx, this.obstacles);
+    this.camera = new Camera(CAMERA_START_POSITION, this.screenWidth, this.ctx, this.obstacles, this.map);
     this.minimap = new Minimap(this.ctx, this.obstacles);
   }
 
@@ -73,7 +73,7 @@ class Scene {
       const isVerticalIntersection = intersection.type === INTERSECTION_TYPES.VERTICAL;
       const intersectionPoint = isVerticalIntersection ? intersection.x : intersection.y;
 
-      const height = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenHeight) / 1.75;
+      const height =  ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenHeight) / 1.75;
       const obstacleIdx = Math.floor(intersectionPoint / CELL_SIZE);
 
       const shadowOffsetX = isVerticalIntersection ? TEXTURE_SIZE : 0;
