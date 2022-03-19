@@ -1,17 +1,19 @@
 class Minimap {
     private readonly ctx: CanvasRenderingContext2D;
-    private readonly walls: Vector[];
+    private readonly obstacles: Obstacle[];
 
-    constructor(ctx: CanvasRenderingContext2D, obstacles: Vector[]) {
+    constructor(ctx: CanvasRenderingContext2D, obstacles: Obstacle[]) {
         this.ctx = ctx
-        this.walls = obstacles;
+        this.obstacles = obstacles;
     }
 
     render() {
         this.ctx.fillStyle = 'white'
 
-        for(let wall of this.walls) {
-            this.ctx.fillRect(wall.x1, wall.y1, CELL_SIZE, CELL_SIZE)
+        for(let obstacle of this.obstacles) {
+            if(!obstacle.isDoor) {
+                this.ctx.fillRect(obstacle.position.x1, obstacle.position.y1, CELL_SIZE, CELL_SIZE)
+            }
         }
     }
 }

@@ -1,27 +1,83 @@
+type PreparedNeighbor = {
+  isDoor: boolean;
+  isSecret: boolean;
+  isMovable: boolean;
+  number: number;
+};
+
 class Camera {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly map: GameMap;
   private rays: Ray[];
-  private obstacles: Vector[];
+  private obstacles: Obstacle[];
   private position: Vertex;
   private verticalSpeed: number;
   private horizontalSpeed: number;
   private angle: number;
+  private currentlyMovingObstacles: { [index: number]: Obstacle };
+  private visibleWalls: {
+    byLength: Wall[];
+    byRange: Wall[];
+  };
 
-  constructor(position: Vertex, raysAmount: number, ctx: CanvasRenderingContext2D, obstacles: Vector[], map: GameMap) {
+  constructor(
+    position: Vertex,
+    raysAmount: number,
+    ctx: CanvasRenderingContext2D,
+    obstacles: Obstacle[],
+    map: GameMap
+  ) {
     this.angle = this.toRadians(60);
     this.verticalSpeed = 0;
     this.horizontalSpeed = 0;
     this.ctx = ctx;
     this.obstacles = obstacles;
+    this.currentlyMovingObstacles = [];
     this.position = position;
     this.map = map;
 
+    window.addEventListener('keypress', this.handleKeyPress.bind(this));
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
     window.addEventListener('mousemove', this.rotate.bind(this));
 
     this.changeRaysAmount(raysAmount);
+  }
+
+  handleKeyPress(event: KeyboardEvent) {
+    if (event.keyCode === 32 /* space */) {
+      let obstacleInViewIndex = null;
+      let obstacleInView = null;
+
+      for (let i = 0; i < this.obstacles.length; i++) {
+        const obstacle = this.obstacles[i];
+
+        if (!obstacle.isDoor && !obstacle.isSecret) {
+          continue;
+        }
+
+        const intersection = this.getViewAngleIntersection(obstacle.position);
+
+        const distance = Math.sqrt(
+          (this.position.x - obstacle.position.x1) ** 2 + (this.position.y - obstacle.position.y1) ** 2
+        );
+
+        if (intersection && distance <= CELL_SIZE * 2) {
+          obstacleInViewIndex = i;
+          obstacleInView = obstacle;
+        }
+      }
+
+      if (
+        !obstacleInViewIndex ||
+        !obstacleInView ||
+        this.hasEqualPosition(obstacleInView.position, obstacleInView.endPosition)
+      ) {
+        return;
+      }
+
+      this.currentlyMovingObstacles[obstacleInViewIndex] = obstacleInView;
+    }
   }
 
   handleKeyDown(event: KeyboardEvent) {
@@ -44,14 +100,46 @@ class Camera {
     }
   }
 
-  hasNeighbor(offset: number, wall: Vector, isVertical: boolean) {
-    const axisY = this.map[(wall.y1 + (isVertical ? offset : 0)) / CELL_SIZE];
+  hasEqualPosition(firstPosition: Vector, secondPosition: Vector) {
+    return (
+      firstPosition.x1 === secondPosition.x1 &&
+      firstPosition.y1 === secondPosition.y1 &&
+      firstPosition.x2 === secondPosition.x2 &&
+      firstPosition.y2 === secondPosition.y2
+    );
+  }
 
-    if (!axisY) {
-      return false;
-    }
+  getNeighbors(obstacle: Vector) {
+    const neighbors: Record<keyof typeof OBSTACLE_SIDES, null | PreparedNeighbor> = {
+      [OBSTACLE_SIDES.TOP]: null,
+      [OBSTACLE_SIDES.LEFT]: null,
+      [OBSTACLE_SIDES.BOTTOM]: null,
+      [OBSTACLE_SIDES.RIGHT]: null,
+    };
 
-    return !!axisY[(wall.x1 + (isVertical ? 0 : offset)) / CELL_SIZE];
+    Object.keys(neighbors).forEach((side: keyof typeof OBSTACLE_SIDES, i) => {
+      const offset = NEIGHBOR_OFFSET[side];
+
+      const axisY = this.map[(obstacle.y1 + (i % 2 === 0 ? offset : 0)) / CELL_SIZE];
+
+      if (axisY) {
+        const axisXValue = axisY[(obstacle.x1 + (i % 2 === 0 ? 0 : offset)) / CELL_SIZE];
+
+        if (axisXValue) {
+          const isDoor = typeof axisXValue === 'number' && DOOR_IDS.includes(axisXValue);
+          const isSecret = typeof axisXValue === 'string';
+
+          neighbors[side] = {
+            isDoor,
+            isSecret,
+            isMovable: isDoor || isSecret,
+            number: typeof axisXValue === 'number' ? axisXValue : Number(axisXValue.split('_')[0]),
+          };
+        }
+      }
+    });
+
+    return neighbors;
   }
 
   toRadians(angle: number) {
@@ -79,26 +167,57 @@ class Camera {
     };
   }
 
-  getWallVectorFromObstacle(obstacle: Vector, wallPosition: keyof typeof OBSTACLE_SIDES) {
+  getWallVectorFromObstacle(obstacle: Obstacle, wallPosition: keyof typeof OBSTACLE_SIDES) {
+    const obstaclePos = obstacle.position;
+    const isDoor = obstacle.isDoor;
+
     return {
-      x1: obstacle.x1 + (wallPosition === OBSTACLE_SIDES.RIGHT ? CELL_SIZE : 0),
-      y1: obstacle.y1 + (wallPosition === OBSTACLE_SIDES.BOTTOM ? CELL_SIZE : 0),
-      x2: obstacle.x2 - (wallPosition === OBSTACLE_SIDES.LEFT ? CELL_SIZE : 0),
-      y2: obstacle.y2 - (wallPosition === OBSTACLE_SIDES.TOP ? CELL_SIZE : 0),
+      x1: obstaclePos.x1 + (wallPosition === OBSTACLE_SIDES.RIGHT && !isDoor ? CELL_SIZE : 0),
+      y1: obstaclePos.y1 + (wallPosition === OBSTACLE_SIDES.BOTTOM && !isDoor ? CELL_SIZE : 0),
+      x2: obstaclePos.x2 - (wallPosition === OBSTACLE_SIDES.LEFT && !isDoor ? CELL_SIZE : 0),
+      y2: obstaclePos.y2 - (wallPosition === OBSTACLE_SIDES.TOP && !isDoor ? CELL_SIZE : 0),
     };
   }
 
-  getWallFromObstacle(obstacle: Vector, type: keyof typeof OBSTACLE_SIDES) {
+  getWallFromObstacle(
+    obstacle: Obstacle,
+    index: number,
+    type: keyof typeof OBSTACLE_SIDES,
+    neighbor: PreparedNeighbor
+  ) {
     const isVertical = type === OBSTACLE_SIDES.TOP || type === OBSTACLE_SIDES.BOTTOM;
+
+    let textureId = obstacle.textureId;
+
+    if (neighbor?.isDoor) {
+      textureId = isVertical ? 29 : 30;
+    }
 
     return {
       position: this.getWallVectorFromObstacle(obstacle, type),
       type: isVertical ? INTERSECTION_TYPES.VERTICAL : INTERSECTION_TYPES.HORIZONTAL,
-      shouldReverseTexture: type === OBSTACLE_SIDES.LEFT || type === OBSTACLE_SIDES.BOTTOM,
+      shouldReverseTexture: !neighbor?.isDoor && (type === OBSTACLE_SIDES.LEFT || type === OBSTACLE_SIDES.BOTTOM),
+      textureId: textureId,
+      obstacleIdx: index,
+      isMovable: obstacle.isMovable,
     };
   }
 
-  getVisibleObstacles() {
+  getViewAngleIntersection(position: Vector) {
+    const currentAngleRayEndVertex = this.getVertexByPositionAndAngle(this.position, this.angle);
+
+    return Ray.getIntersectionVertexWithWall(
+      {
+        x1: this.position.x,
+        y1: this.position.y,
+        x2: currentAngleRayEndVertex.x,
+        y2: currentAngleRayEndVertex.y,
+      },
+      position
+    );
+  }
+
+  getVisibleWalls() {
     const leftExtremumAngle = this.angle - FOV;
     const rightExtremumAngle = this.angle + FOV;
 
@@ -123,35 +242,48 @@ class Camera {
     };
     // For optimization, we must reduce the number of vectors with which intersections are searched
     // push only those walls that can be visible by player side
-    const visibleWalls = this.obstacles.reduce<Wall[]>((acc, obstacle) => {
-      if (this.position.x <= obstacle.x1 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.LEFT], obstacle, false)) {
-        acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.LEFT));
+    const visibleWalls = this.obstacles.reduce<Wall[]>((acc, obstacle, i) => {
+      const obstaclePos = obstacle.position;
+      const obstacleNeighbors = this.getNeighbors(obstaclePos);
+
+      if (obstacle.isDoor) {
+        const type = obstacle.isVertical ? OBSTACLE_SIDES.TOP : OBSTACLE_SIDES.LEFT;
+
+        acc.push(this.getWallFromObstacle(obstacle, i, type, null));
+
+        return acc;
       }
-      if (this.position.x >= obstacle.x2 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.RIGHT], obstacle, false)) {
-        acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.RIGHT));
+
+      if (this.position.x <= obstaclePos.x1 && (!obstacleNeighbors.LEFT || obstacleNeighbors.LEFT.isMovable)) {
+        acc.push(this.getWallFromObstacle(obstacle, i, OBSTACLE_SIDES.LEFT, obstacleNeighbors.LEFT));
       }
-      if (this.position.y <= obstacle.y1 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.TOP], obstacle, true)) {
-        acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.TOP));
+      if (this.position.x >= obstaclePos.x2 && (!obstacleNeighbors.RIGHT || obstacleNeighbors.RIGHT.isMovable)) {
+        acc.push(this.getWallFromObstacle(obstacle, i, OBSTACLE_SIDES.RIGHT, obstacleNeighbors.RIGHT));
       }
-      if (this.position.y >= obstacle.y2 && !this.hasNeighbor(NEIGHBOR_OFFSET[OBSTACLE_SIDES.BOTTOM], obstacle, true)) {
-        acc.push(this.getWallFromObstacle(obstacle, OBSTACLE_SIDES.BOTTOM));
+      if (this.position.y <= obstaclePos.y1 && (!obstacleNeighbors.TOP || obstacleNeighbors.TOP.isMovable)) {
+        acc.push(this.getWallFromObstacle(obstacle, i, OBSTACLE_SIDES.TOP, obstacleNeighbors.TOP));
+      }
+      if (this.position.y >= obstaclePos.y2 && (!obstacleNeighbors.BOTTOM || obstacleNeighbors.BOTTOM.isMovable)) {
+        acc.push(this.getWallFromObstacle(obstacle, i, OBSTACLE_SIDES.BOTTOM, obstacleNeighbors.BOTTOM));
       }
 
       return acc;
     }, []);
+
+    // get walls that are in the ray length range
+    const visibleWallsByLength = visibleWalls.filter(
+      (wall) =>
+        wall.position.y1 >= lengthBoundaries.y1 &&
+        wall.position.x1 >= lengthBoundaries.x1 &&
+        wall.position.x2 <= lengthBoundaries.x2 &&
+        wall.position.y2 <= lengthBoundaries.y2
+    );
+
     // get walls that are in the FOV range
-    const visibleWallsByRange = visibleWalls.filter((wall) => {
+    const visibleWallsByRange = visibleWallsByLength.filter((wall) => {
       // If user comes straight to the wall, vertexes of the wall will not be in range of vision
       // so we need to check if user looking at the wall rn
-      const isLookingAt = Ray.getIntersectionVertexWithWall(
-        {
-          x1: this.position.x,
-          y1: this.position.y,
-          x2: currentAngleRayEndVertex.x,
-          y2: currentAngleRayEndVertex.y,
-        },
-        wall
-      );
+      const isLookingAt = !!this.getViewAngleIntersection(wall.position);
 
       const { x1, y1, x2, y2 } = wall.position;
 
@@ -161,16 +293,43 @@ class Camera {
         this.getIsVertexInTheTriangle({ x: x2, y: y2 }, rangeBoundaries)
       );
     });
-    // get walls that are in the ray length range
-    const visibleWallsByLength = visibleWallsByRange.filter(
-      (wall) =>
-        wall.position.y1 >= lengthBoundaries.y1 &&
-        wall.position.x1 >= lengthBoundaries.x1 &&
-        wall.position.x2 <= lengthBoundaries.x2 &&
-        wall.position.y2 <= lengthBoundaries.y2
-    );
 
-    return visibleWallsByLength;
+    return {
+      byLength: visibleWallsByLength,
+      byRange: visibleWallsByRange,
+    };
+  }
+
+  getChange(startPosition: number, endPosition: number) {
+    if (startPosition > endPosition) {
+      return -OBSTACLES_MOVE_SPEED;
+    } else if (startPosition < endPosition) {
+      return OBSTACLES_MOVE_SPEED;
+    }
+
+    return 0;
+  }
+
+  moveObstacles() {
+    Object.keys(this.currentlyMovingObstacles).forEach((key) => {
+      const obstacle = this.obstacles[Number(key)];
+
+      this.obstacles[Number(key)].position = {
+        x1: obstacle.position.x1 + this.getChange(obstacle.position.x1, obstacle.endPosition.x1),
+        y1: obstacle.position.y1 + this.getChange(obstacle.position.y1, obstacle.endPosition.y1),
+        x2: obstacle.position.x2 + this.getChange(obstacle.position.x2, obstacle.endPosition.x2),
+        y2: obstacle.position.y2 + this.getChange(obstacle.position.y2, obstacle.endPosition.y2),
+      };
+
+      if (
+        obstacle.position.x1 === obstacle.endPosition.x1 &&
+        obstacle.position.y1 === obstacle.endPosition.y1 &&
+        obstacle.position.x2 === obstacle.endPosition.x2 &&
+        obstacle.position.y2 === obstacle.endPosition.y2
+      ) {
+        delete this.currentlyMovingObstacles[Number(key)];
+      }
+    });
   }
 
   move() {
@@ -186,17 +345,28 @@ class Camera {
     const horizontalChangeX = Math.sin(this.angle + Math.PI / 2) * this.horizontalSpeed;
     const horizontalChangeY = Math.cos(this.angle + Math.PI / 2) * this.horizontalSpeed;
 
-    position.x += Math.min(verticalChangeX + horizontalChangeX, CAMERA_SPEED);
-    position.y += Math.min(verticalChangeY + horizontalChangeY, CAMERA_SPEED);
+    const xSum = verticalChangeX + horizontalChangeX;
+    const ySum = verticalChangeY + horizontalChangeY;
 
-    for (let obstacle of this.obstacles) {
+    position.x += xSum >= 0 ? Math.min(xSum, CAMERA_SPEED) : Math.max(xSum, -CAMERA_SPEED);
+    position.y += ySum >= 0 ? Math.min(ySum, CAMERA_SPEED) : Math.max(ySum, -CAMERA_SPEED);
+
+    for (let wall of this.visibleWalls.byLength) {
       if (
-        position.y >= obstacle.y1 &&
-        position.y <= obstacle.y2 &&
-        position.x >= obstacle.x1 &&
-        position.x <= obstacle.x2
+        this.position.y >= wall.position.y1 &&
+        this.position.y <= wall.position.y2 &&
+        ((position.x >= wall.position.x1 && this.position.x <= wall.position.x1) ||
+          (position.x <= wall.position.x1 && this.position.x >= wall.position.x1))
       ) {
         position.x = this.position.x;
+      }
+
+      if (
+        this.position.x >= wall.position.x1 &&
+        this.position.x <= wall.position.x2 &&
+        ((position.y >= wall.position.y1 && this.position.y <= wall.position.y1) ||
+          (position.y <= wall.position.y1 && this.position.y >= wall.position.y1))
+      ) {
         position.y = this.position.y;
       }
     }
@@ -209,17 +379,18 @@ class Camera {
   }
 
   renderAndGetIntersections() {
-    this.move();
-
     let intersections = [];
 
     this.ctx.strokeStyle = 'orange';
     this.ctx.beginPath();
 
-    const visibleObstacles = this.getVisibleObstacles();
+    this.moveObstacles();
+    this.move();
+
+    this.visibleWalls = this.getVisibleWalls();
 
     for (let ray of this.rays) {
-      const intersection = ray.cast(visibleObstacles);
+      const intersection = ray.cast(this.visibleWalls.byRange);
       intersections.push(intersection);
 
       this.ctx.moveTo(this.position.x, this.position.y);
@@ -244,7 +415,7 @@ class Camera {
   }
 
   rotate(event: MouseEvent) {
-    this.angle += this.toRadians(event.movementX);
+    this.angle += this.toRadians(event.movementX / 2);
 
     const initialAngle = this.angle - FOV / 2;
     const step = FOV / this.rays.length;

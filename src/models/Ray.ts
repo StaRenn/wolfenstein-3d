@@ -26,9 +26,9 @@ class Ray {
     return distance * Math.cos(this.rayAngle - this.cameraAngle);
   }
 
-  static getIntersectionVertexWithWall(vector: Vector, wall: Wall) {
-    const { x1, x2, y1, y2 } = vector;
-    const { x1: x3, y1: y3, x2: x4, y2: y4 } = wall.position;
+  static getIntersectionVertexWithWall(firstVector: Vector, secondVector: Vector) {
+    const { x1, x2, y1, y2 } = firstVector;
+    const { x1: x3, y1: y3, x2: x4, y2: y4 } = secondVector;
 
     // Check if none of the lines are of length 0
     if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
@@ -72,11 +72,16 @@ class Ray {
     };
   }
 
-  cast(walls: Wall[]) {
+  cast(walls: Wall[]): {
+    x: number;
+    y: number;
+    wall: Wall;
+    distance: number;
+  } {
     let intersections: { vertex: Vertex; wall: Wall }[] = [];
 
     for (let wall of walls) {
-      const intersection = Ray.getIntersectionVertexWithWall(this.cameraPosition, wall);
+      const intersection = Ray.getIntersectionVertexWithWall(this.cameraPosition, wall.position);
 
       if (intersection) {
         intersections.push({
@@ -103,8 +108,7 @@ class Ray {
       return {
         x: closestIntersection.vertex.x,
         y: closestIntersection.vertex.y,
-        type: closestIntersection.wall.type,
-        shouldReverseTexture: closestIntersection.wall.shouldReverseTexture,
+        wall: closestIntersection.wall,
         distance: this.fixFishEye(closestDistance),
       };
     }
@@ -112,8 +116,14 @@ class Ray {
     return {
       x: this.cameraPosition.x2,
       y: this.cameraPosition.y2,
-      type: INTERSECTION_TYPES.VERTICAL, // doesnt really matter
-      shouldReverseTexture: false,
+      wall: { // doesnt really matter
+        position: {x1: 0, y1: 0, x2: 0, y2: 0},
+        obstacleIdx: 1,
+        type: INTERSECTION_TYPES.VERTICAL,
+        isMovable: false,
+        shouldReverseTexture: false,
+        textureId: 1,
+      },
       distance: RAY_LENGTH,
     };
   }
