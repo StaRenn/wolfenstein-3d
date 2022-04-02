@@ -185,10 +185,6 @@ class Scene {
             y2: i * CELL_SIZE + (isVertical && isDoor ? CELL_SIZE * 0.5 : CELL_SIZE),
           };
 
-          if (isSecret) {
-            console.log(position);
-          }
-
           obstacles.push({
             position,
             endPosition: isSecret

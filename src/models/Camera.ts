@@ -18,6 +18,7 @@ class Camera {
   private visibleWalls: {
     byLength: Wall[];
     byRange: Wall[];
+    byCameraIntersections: Wall[];
   };
 
   constructor(
@@ -294,9 +295,29 @@ class Camera {
       );
     });
 
+    // we are trying to find here if wall is behind another one
+    // so we dont need to find intersections with wall that we cant see
+    // get lines from camera to both edges of the wall and find if every line intersects with any another wall
+    // unfortunately this is O(N^2) but it works good if we have less amount of walls in range than window width
+    const visibleWallsByCameraVertexIntersections = visibleWallsByRange.filter((visibleWall, i) => {
+      return !visibleWallsByRange.some(wall => {
+        return [
+          { x1: visibleWall.position.x1, y1: visibleWall.position.y1, x2: this.position.x, y2: this.position.y },
+          { x1: visibleWall.position.x2, y1: visibleWall.position.y2, x2: this.position.x, y2: this.position.y },
+        ].every(vector => {
+          if (wall === visibleWall) {
+            return false;
+          }
+
+          return !!Ray.getIntersectionVertexWithWall(vector, wall.position);
+        })
+      })
+    });
+
     return {
       byLength: visibleWallsByLength,
       byRange: visibleWallsByRange,
+      byCameraIntersections: visibleWallsByCameraVertexIntersections,
     };
   }
 
@@ -390,7 +411,7 @@ class Camera {
     this.visibleWalls = this.getVisibleWalls();
 
     for (let ray of this.rays) {
-      const intersection = ray.cast(this.visibleWalls.byRange);
+      const intersection = ray.cast(this.visibleWalls.byCameraIntersections);
       intersections.push(intersection);
 
       this.ctx.moveTo(this.position.x, this.position.y);
