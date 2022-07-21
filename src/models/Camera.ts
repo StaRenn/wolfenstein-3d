@@ -478,7 +478,7 @@ class Camera {
     for (let i = 0; i < intersections.length; i++) {
       const intersection = intersections[i];
 
-      if (intersection.distance === RAY_LENGTH) {
+      if (intersection.distance === RAY_LENGTH || intersection.wall.isSprite) {
         continue;
       }
 

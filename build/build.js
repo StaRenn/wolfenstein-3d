@@ -437,7 +437,7 @@ class Camera {
         this.ctx.beginPath();
         for (let i = 0; i < intersections.length; i++) {
             const intersection = intersections[i];
-            if (intersection.distance === RAY_LENGTH) {
+            if (intersection.distance === RAY_LENGTH || intersection.wall.isSprite) {
                 continue;
             }
             this.ctx.moveTo(this.position.x, this.position.y);
