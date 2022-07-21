@@ -1,3 +1,10 @@
+type Intersection = {
+  x: number;
+  y: number;
+  wall: Wall;
+  distance: number;
+};
+
 class Ray {
   private rayAngle: number;
   private cameraAngle: number;
@@ -58,9 +65,7 @@ class Ray {
   }
 
   getDistance(wall: Vertex) {
-    return Math.sqrt(
-      (wall.x - this.cameraPosition.x1) ** 2 + (wall.y - this.cameraPosition.y1) ** 2
-    );
+    return Math.sqrt((wall.x - this.cameraPosition.x1) ** 2 + (wall.y - this.cameraPosition.y1) ** 2);
   }
 
   move(position: Vertex) {
@@ -72,12 +77,7 @@ class Ray {
     };
   }
 
-  cast(walls: Wall[]): {
-    x: number;
-    y: number;
-    wall: Wall;
-    distance: number;
-  } {
+  cast(walls: Wall[]): Intersection {
     let intersections: { vertex: Vertex; wall: Wall }[] = [];
 
     for (let wall of walls) {
@@ -116,13 +116,16 @@ class Ray {
     return {
       x: this.cameraPosition.x2,
       y: this.cameraPosition.y2,
-      wall: { // doesnt really matter
-        position: {x1: 0, y1: 0, x2: 0, y2: 0},
+      wall: {
+        // doesnt really matter
+        position: { x1: 0, y1: 0, x2: 0, y2: 0 },
         obstacleIdx: 1,
         type: INTERSECTION_TYPES.VERTICAL,
         isMovable: false,
         shouldReverseTexture: false,
+        isVisible: false,
         textureId: 1,
+        isSprite: false,
       },
       distance: RAY_LENGTH,
     };

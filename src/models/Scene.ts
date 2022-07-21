@@ -29,6 +29,7 @@ type Obstacle = {
   isSecret: boolean;
   isVertical: boolean;
   isMovable: boolean;
+  isSprite: boolean;
 };
 
 type Wall = {
@@ -37,6 +38,8 @@ type Wall = {
   shouldReverseTexture: boolean;
   textureId: number;
   isMovable: boolean;
+  isSprite: boolean;
+  isVisible: boolean;
   obstacleIdx: number;
 };
 
@@ -48,13 +51,14 @@ class Scene {
   private readonly minimap: Minimap;
   private readonly camera: Camera;
   private readonly textures: HTMLImageElement[];
+  private readonly sprites: HTMLImageElement[];
 
   private screenWidth: number;
   private screenHeight: number;
 
   constructor(canvas: HTMLCanvasElement, map: GameMap) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this.ctx = canvas.getContext('2d')!;
     this.map = map;
 
     this.screenHeight = this.canvas.height;
@@ -62,69 +66,105 @@ class Scene {
 
     this.obstacles = this.generateObstaclesFromMap(map);
 
+    this.minimap = new Minimap(this.ctx, this.obstacles);
+
     this.textures = [];
+    this.sprites = [];
 
     for (let i = 1; i < 31; i++) {
-      const image = document.createElement('img');
+      const image = new Image();
       image.src = `src/textures/${i}.png`;
       this.textures.push(image);
     }
 
+    for (let i = 1; i < 2; i++) {
+      const image = new Image();
+      image.src = `src/sprites/${i}.png`;
+      this.sprites.push(image);
+    }
+
     this.camera = new Camera(CAMERA_START_POSITION, this.screenWidth, this.ctx, this.obstacles, this.map);
-    this.minimap = new Minimap(this.ctx, this.obstacles);
+    //this.minimap = new Minimap(this.ctx, this.obstacles);
   }
 
   render() {
-    this.ctx.globalCompositeOperation = 'destination-over';
     this.ctx.beginPath();
     this.ctx.clearRect(0, 0, this.screenWidth, this.screenHeight);
     this.ctx.closePath();
 
-    this.minimap.render();
+    // ceiling
+    this.ctx.fillStyle = '#5f5f61';
+    this.ctx.fillRect(0, 0, 1920, Math.ceil(this.screenHeight / 2));
 
-    const intersections = this.camera.renderAndGetIntersections();
+    this.camera.moveObstacles();
+    this.camera.move();
+    const intersections = this.camera.getIntersections();
 
     for (let i = 0; i < intersections.length; i++) {
       const intersection = intersections[i];
       const wall = intersection.wall;
+      const index = intersection.index;
 
       const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
-      const intersectionPoint = isVerticalIntersection ? intersection.x : intersection.y;
 
+      const textureOffsetX = this.getWallTextureOffset(intersection);
       const height = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenHeight) / 1.75;
-      const obstacleIdx = Math.floor(intersectionPoint / CELL_SIZE);
 
-      // calculating offset for moving obstacles like doors
-      const movingTextureOffset = isVerticalIntersection
-        ? obstacleIdx * CELL_SIZE - wall.position.x1
-        : obstacleIdx * CELL_SIZE - wall.position.y1;
-      const movingOffset = movingTextureOffset * TEXTURE_SCALE * (wall.shouldReverseTexture && wall.isMovable ? -1 : 1);
-
-      const reversedTextureOffsetX = wall.shouldReverseTexture ? TEXTURE_SIZE : 0;
-      const textureRenderPointX = (intersectionPoint - obstacleIdx * CELL_SIZE) * TEXTURE_SCALE;
-      const textureOffsetX = Math.floor(
-        Math.abs(reversedTextureOffsetX - (wall.isMovable ? textureRenderPointX % 64 : textureRenderPointX)) +
-          movingOffset
-      );
+      const texture = wall.isSprite
+        ? this.sprites[wall.textureId - 1]
+        : this.textures[wall.textureId - (isVerticalIntersection ? 0 : 1)];
 
       if (intersection.distance !== RAY_LENGTH) {
         // texture
         this.ctx.drawImage(
-          this.textures[wall.textureId - (isVerticalIntersection ? 0 : 1)],
+          texture,
           textureOffsetX, // texture offset x
           0, // texture offset y
           1, // texture width
           TEXTURE_SIZE, // texture height
-          i, // texture x position on screen
+          index, // texture x position on screen
           this.screenHeight / 2 - height / 2, // texture y position on screen
           1, // texture width on screen
           height // texture height on screen
         );
       }
-      // ceiling
-      this.ctx.fillStyle = '#5f5f61';
-      this.ctx.fillRect(i, 0, 1, Math.ceil(this.screenHeight / 2 - height / 2));
     }
+
+    this.camera.renderIntersections(intersections);
+    this.minimap.render();
+  }
+  // we calculate object width in players perspective
+  // calculate length from start of the wall to the intersection |object.x - intersection.x| = n
+  // then we get coefficient: n / wallLength = k
+  // floor(k * TEXTURE_SIZE) = texture offset for given intersection
+  getWallTextureOffset(intersection: Intersection) {
+    const wall = intersection.wall;
+    const position = wall.position;
+    const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
+
+    let isInverse = false;
+
+    if (wall.isSprite) {
+      if (Math.abs(position.x1 - position.x2) > Math.abs(position.y1 - position.y2)) {
+        isInverse = true;
+      }
+    }
+
+    const coordinatesToCompareWith = wall.shouldReverseTexture
+      ? { x: position.x2, y: position.y2 }
+      : { x: position.x1, y: position.y1 };
+
+    const fromWallStartToIntersectionWidth =
+      isVerticalIntersection || isInverse
+        ? coordinatesToCompareWith.x - intersection.x
+        : coordinatesToCompareWith.y - intersection.y;
+
+    const wallLength =
+      isVerticalIntersection || isInverse ? Math.abs(position.x1 - position.x2) : Math.abs(position.y1 - position.y2);
+
+    const textureDistanceFromStartCoefficient = Math.abs(fromWallStartToIntersectionWidth) / wallLength;
+
+    return Math.floor(textureDistanceFromStartCoefficient * TEXTURE_SIZE);
   }
 
   resize(width: number, height: number) {
@@ -175,6 +215,7 @@ class Scene {
 
           const isSecret = !!(obstacleParams && obstacleParams[2] === 'START');
           const isDoor = DOOR_IDS.includes(valueNumber);
+          const isSprite = (obstacleParams && obstacleParams[1] === 'SPRITE') || false;
 
           const isVertical = !!(map[i][j - 1] && map[i][j + 1]);
 
@@ -187,18 +228,20 @@ class Scene {
 
           obstacles.push({
             position,
-            endPosition: isSecret
-              ? secretWallsEndPositions[obstacleParams[1]]
-              : {
-                  x1: isVertical ? position.x1 + CELL_SIZE : position.x1,
-                  y1: !isVertical ? position.y1 - CELL_SIZE : position.y1,
-                  x2: isVertical ? position.x2 + CELL_SIZE : position.x2,
-                  y2: !isVertical ? position.y2 - CELL_SIZE : position.y2,
-                },
+            endPosition:
+              isSecret && obstacleParams
+                ? secretWallsEndPositions[obstacleParams[1]]
+                : {
+                    x1: isVertical ? position.x1 + CELL_SIZE : position.x1,
+                    y1: !isVertical ? position.y1 - CELL_SIZE : position.y1,
+                    x2: isVertical ? position.x2 + CELL_SIZE : position.x2,
+                    y2: !isVertical ? position.y2 - CELL_SIZE : position.y2,
+                  },
             isDoor,
             isSecret,
             isMovable: isSecret || isDoor,
             isVertical,
+            isSprite,
             textureId: valueNumber,
           });
         }

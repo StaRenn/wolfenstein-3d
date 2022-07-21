@@ -15,7 +15,8 @@ class Camera {
   private horizontalSpeed: number;
   private angle: number;
   private currentlyMovingObstacles: { [index: number]: Obstacle };
-  private visibleWalls: {
+  private walls: {
+    sprites: Wall[];
     byLength: Wall[];
     byRange: Wall[];
     byCameraIntersections: Wall[];
@@ -180,12 +181,51 @@ class Camera {
     };
   }
 
+  getSpriteFromObstacle(obstacle: Obstacle, index: number): Wall {
+    const coordinates: Vector = {
+      x1: obstacle.position.x1,
+      y1: obstacle.position.y1,
+      x2: obstacle.position.x2,
+      y2: obstacle.position.y2,
+    };
+
+    const middleVertex = {
+      x: (coordinates.x2 + coordinates.x1) / 2,
+      y: (coordinates.y2 + coordinates.y1) / 2,
+    };
+
+    let diff = -this.angle;
+
+    if (diff < -Math.PI) {
+      diff += 2 * Math.PI;
+    }
+    if (diff > Math.PI) {
+      diff -= 2 * Math.PI;
+    }
+
+    coordinates.x1 = middleVertex.x + (CELL_SIZE / 2) * Math.cos(diff);
+    coordinates.y1 = middleVertex.y + (CELL_SIZE / 2) * Math.sin(diff);
+    coordinates.x2 = middleVertex.x - (CELL_SIZE / 2) * Math.cos(diff);
+    coordinates.y2 = middleVertex.y - (CELL_SIZE / 2) * Math.sin(diff);
+
+    return {
+      position: coordinates,
+      type: INTERSECTION_TYPES.HORIZONTAL,
+      shouldReverseTexture: true,
+      textureId: obstacle.textureId,
+      obstacleIdx: index,
+      isMovable: false,
+      isSprite: true,
+      isVisible: true,
+    };
+  }
+
   getWallFromObstacle(
     obstacle: Obstacle,
     index: number,
     type: keyof typeof OBSTACLE_SIDES,
-    neighbor: PreparedNeighbor
-  ) {
+    neighbor: PreparedNeighbor | null
+  ): Wall {
     const isVertical = type === OBSTACLE_SIDES.TOP || type === OBSTACLE_SIDES.BOTTOM;
 
     let textureId = obstacle.textureId;
@@ -201,6 +241,8 @@ class Camera {
       textureId: textureId,
       obstacleIdx: index,
       isMovable: obstacle.isMovable,
+      isVisible: !obstacle.isSprite,
+      isSprite: false,
     };
   }
 
@@ -218,7 +260,7 @@ class Camera {
     );
   }
 
-  getVisibleWalls() {
+  getWalls() {
     const leftExtremumAngle = this.angle - FOV;
     const rightExtremumAngle = this.angle + FOV;
 
@@ -241,11 +283,18 @@ class Camera {
       x3: rightFOVExtremumVertex.x,
       y3: rightFOVExtremumVertex.y,
     };
+
+    const sprites: Wall[] = [];
+
     // For optimization, we must reduce the number of vectors with which intersections are searched
     // push only those walls that can be visible by player side
-    const visibleWalls = this.obstacles.reduce<Wall[]>((acc, obstacle, i) => {
+    const walls = this.obstacles.reduce<Wall[]>((acc, obstacle, i) => {
       const obstaclePos = obstacle.position;
       const obstacleNeighbors = this.getNeighbors(obstaclePos);
+
+      if (obstacle.isSprite) {
+        sprites.push(this.getSpriteFromObstacle(obstacle, i));
+      }
 
       if (obstacle.isDoor) {
         const type = obstacle.isVertical ? OBSTACLE_SIDES.TOP : OBSTACLE_SIDES.LEFT;
@@ -272,7 +321,7 @@ class Camera {
     }, []);
 
     // get walls that are in the ray length range
-    const visibleWallsByLength = visibleWalls.filter(
+    const wallsByLength = walls.filter(
       (wall) =>
         wall.position.y1 >= lengthBoundaries.y1 &&
         wall.position.x1 >= lengthBoundaries.x1 &&
@@ -281,7 +330,7 @@ class Camera {
     );
 
     // get walls that are in the FOV range
-    const visibleWallsByRange = visibleWallsByLength.filter((wall) => {
+    const wallsByRange = wallsByLength.filter((wall) => {
       // If user comes straight to the wall, vertexes of the wall will not be in range of vision
       // so we need to check if user looking at the wall rn
       const isLookingAt = !!this.getViewAngleIntersection(wall.position);
@@ -298,26 +347,37 @@ class Camera {
     // we are trying to find here if wall is behind another one
     // so we dont need to find intersections with wall that we cant see
     // get lines from camera to both edges of the wall and find if every line intersects with any another wall
-    // unfortunately this is O(N^2) but it works good if we have less amount of walls in range than window width
-    const visibleWallsByCameraVertexIntersections = visibleWallsByRange.filter((visibleWall, i) => {
-      return !visibleWallsByRange.some(wall => {
+    // unfortunately this is O(N^2) but it works good if we have less amount of walls in range than window width (almost impossible)
+
+    // if 2 vectors are blocked but by different walls that wall will count as visible
+    // i tried to fix that, but then i found that 2 vertexes of the wall can be blocked
+    // but some part of the wall can still be visible, and checking for that would cost a lot of resources
+    // so better to leave it as it is
+    const wallsByCameraVertexIntersections = wallsByRange.filter((wallByRange) => {
+      // these type of walls used for render, so we dont want invisible walls to be raycasted
+      if (!wallByRange.isVisible) {
+        return false;
+      }
+
+      return !wallsByRange.some((wall) => {
         return [
-          { x1: visibleWall.position.x1, y1: visibleWall.position.y1, x2: this.position.x, y2: this.position.y },
-          { x1: visibleWall.position.x2, y1: visibleWall.position.y2, x2: this.position.x, y2: this.position.y },
-        ].every(vector => {
-          if (wall === visibleWall) {
+          { x1: wallByRange.position.x1, y1: wallByRange.position.y1, x2: this.position.x, y2: this.position.y },
+          { x1: wallByRange.position.x2, y1: wallByRange.position.y2, x2: this.position.x, y2: this.position.y },
+        ].every((vector) => {
+          if (wall === wallByRange || !wall.isVisible) {
             return false;
           }
 
           return !!Ray.getIntersectionVertexWithWall(vector, wall.position);
-        })
-      })
+        });
+      });
     });
 
     return {
-      byLength: visibleWallsByLength,
-      byRange: visibleWallsByRange,
-      byCameraIntersections: visibleWallsByCameraVertexIntersections,
+      sprites,
+      byLength: wallsByLength,
+      byRange: wallsByRange,
+      byCameraIntersections: wallsByCameraVertexIntersections,
     };
   }
 
@@ -372,7 +432,9 @@ class Camera {
     position.x += xSum >= 0 ? Math.min(xSum, CAMERA_SPEED) : Math.max(xSum, -CAMERA_SPEED);
     position.y += ySum >= 0 ? Math.min(ySum, CAMERA_SPEED) : Math.max(ySum, -CAMERA_SPEED);
 
-    for (let wall of this.visibleWalls.byLength) {
+    for (let wall of this.walls.byLength) {
+      const wallObstacle = this.obstacles[Number(wall.obstacleIdx)];
+
       if (
         this.position.y >= wall.position.y1 &&
         this.position.y <= wall.position.y2 &&
@@ -390,6 +452,16 @@ class Camera {
       ) {
         position.y = this.position.y;
       }
+
+      if (
+        position.x >= wallObstacle.position.x1 &&
+        position.x <= wallObstacle.position.x2 &&
+        position.y >= wallObstacle.position.y1 &&
+        position.y <= wallObstacle.position.y2
+      ) {
+        position.y = this.position.y;
+        position.x = this.position.x;
+      }
     }
 
     for (let i = 0; i < this.rays.length; i++) {
@@ -399,20 +471,16 @@ class Camera {
     this.position = position;
   }
 
-  renderAndGetIntersections() {
-    let intersections = [];
-
+  renderIntersections(intersections: Intersection[]) {
     this.ctx.strokeStyle = 'orange';
     this.ctx.beginPath();
 
-    this.moveObstacles();
-    this.move();
+    for (let i = 0; i < intersections.length; i++) {
+      const intersection = intersections[i];
 
-    this.visibleWalls = this.getVisibleWalls();
-
-    for (let ray of this.rays) {
-      const intersection = ray.cast(this.visibleWalls.byCameraIntersections);
-      intersections.push(intersection);
+      if (intersection.distance === RAY_LENGTH) {
+        continue;
+      }
 
       this.ctx.moveTo(this.position.x, this.position.y);
       this.ctx.lineTo(intersection.x, intersection.y);
@@ -420,8 +488,23 @@ class Camera {
 
     this.ctx.closePath();
     this.ctx.stroke();
+  }
 
-    return intersections;
+  getIntersections() {
+    let firstLayerIntersections = [];
+    let secondLayerIntersections = [];
+
+    this.walls = this.getWalls();
+
+    for (let i = 0; i < this.rays.length; i++) {
+      const firstLayerIntersection = this.rays[i].cast(this.walls.byCameraIntersections);
+      firstLayerIntersections.push({ ...firstLayerIntersection, index: i });
+
+      const secondLayerIntersection = this.rays[i].cast(this.walls.sprites);
+      secondLayerIntersections.push({ ...secondLayerIntersection, index: i });
+    }
+
+    return [...firstLayerIntersections, ...secondLayerIntersections].sort((a, b) => b.distance - a.distance);
   }
 
   changeRaysAmount(raysAmount: number) {
@@ -437,6 +520,8 @@ class Camera {
 
   rotate(event: MouseEvent) {
     this.angle += this.toRadians(event.movementX / 2);
+
+    this.angle = this.angle % (2 * Math.PI);
 
     const initialAngle = this.angle - FOV / 2;
     const step = FOV / this.rays.length;
