@@ -113,7 +113,7 @@ class Scene {
     this.ctx.closePath();
 
     // ceiling
-    this.ctx.fillStyle = '#5f5f61';
+    this.ctx.fillStyle = '#383838';
     this.ctx.fillRect(0, 0, 1920, Math.ceil(this.screenData.screenHeight / 2));
 
     const vectorsByPurposes = this.getObstaclesVectorsByPurposes();
@@ -140,7 +140,7 @@ class Scene {
 
       const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
 
-      const textureOffsetX = this.getWallTextureOffset(intersection);
+      const textureOffsetX = this.getTextureOffset(intersection);
       const textureHeight = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
 
       const texture = wall.isSprite
@@ -152,7 +152,7 @@ class Scene {
       const textureSize = TEXTURE_SIZE
       const textureXPositionOnScreen = index / RESOLUTION_SCALE
       const textureYPositionOnScreen = this.screenData.screenHeight / 2 - textureHeight / 2
-      const textureWidthOnScreen = Math.max(1, 1 / RESOLUTION_SCALE)
+      const textureWidthOnScreen = Math.ceil(1 / RESOLUTION_SCALE)
 
       if (intersection.distance !== RAY_LENGTH) {
         this.ctx.drawImage(
@@ -186,7 +186,7 @@ class Scene {
   // calculate length from start of the wall to the intersection |object.x - intersection.x| = n
   // then we get coefficient: n / wallLength = k
   // floor(k * TEXTURE_SIZE) = texture offset for given intersection
-  getWallTextureOffset(intersection: Intersection) {
+  getTextureOffset(intersection: IndexedIntersection) {
     const wall = intersection.wall;
     const position = wall.position;
     const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
@@ -262,19 +262,12 @@ class Scene {
       y: (coordinates.y2 + coordinates.y1) / 2,
     };
 
-    let diff = -this.camera.angle;
+    let spriteAngle = -this.camera.angle;
 
-    if (diff < -Math.PI) {
-      diff += 2 * Math.PI;
-    }
-    if (diff > Math.PI) {
-      diff -= 2 * Math.PI;
-    }
-
-    coordinates.x1 = middleVertex.x + (CELL_SIZE / 2) * Math.cos(diff);
-    coordinates.y1 = middleVertex.y + (CELL_SIZE / 2) * Math.sin(diff);
-    coordinates.x2 = middleVertex.x - (CELL_SIZE / 2) * Math.cos(diff);
-    coordinates.y2 = middleVertex.y - (CELL_SIZE / 2) * Math.sin(diff);
+    coordinates.x1 = middleVertex.x + (CELL_SIZE / 2) * Math.cos(spriteAngle);
+    coordinates.y1 = middleVertex.y + (CELL_SIZE / 2) * Math.sin(spriteAngle);
+    coordinates.x2 = middleVertex.x - (CELL_SIZE / 2) * Math.cos(spriteAngle);
+    coordinates.y2 = middleVertex.y - (CELL_SIZE / 2) * Math.sin(spriteAngle);
 
     return {
       position: coordinates,
@@ -374,16 +367,14 @@ class Scene {
       y3: rightFOVExtremumVertex.y,
     };
 
-    const sprites: Wall[] = [];
-
     // For optimization, we must reduce the number of vectors with which intersections are searched
     // push only those walls that can be visible by player side
-    const walls = this.obstacles.reduce<Wall[]>((acc, obstacle, i) => {
+    const vectors = this.obstacles.reduce<Wall[]>((acc, obstacle, i) => {
       const obstaclePos = obstacle.position;
       const obstacleNeighbors = this.getNeighbors(obstaclePos);
 
       if (obstacle.isSprite) {
-        sprites.push(this.getSpriteFromObstacle(obstacle, i));
+        acc.push(this.getSpriteFromObstacle(obstacle, i));
       }
 
       if (obstacle.isDoor) {
@@ -411,21 +402,21 @@ class Scene {
     }, []);
 
     // get walls that are in the ray length range
-    const wallsByLength = walls.filter(
-      (wall) =>
-        wall.position.y1 >= lengthBoundaries.y1 &&
-        wall.position.x1 >= lengthBoundaries.x1 &&
-        wall.position.x2 <= lengthBoundaries.x2 &&
-        wall.position.y2 <= lengthBoundaries.y2
+    const vectorsByLength = vectors.filter(
+      (vector) =>
+        vector.position.y1 >= lengthBoundaries.y1 &&
+        vector.position.x1 >= lengthBoundaries.x1 &&
+        vector.position.x2 <= lengthBoundaries.x2 &&
+        vector.position.y2 <= lengthBoundaries.y2
     );
 
     // get walls that are in the FOV range
-    const wallsByRange = wallsByLength.filter((wall) => {
+    const vectorsByRange = vectors.filter((vector) => {
       // If user comes straight to the wall, vertexes of the wall will not be in range of vision
       // so we need to check if user looking at the wall rn
-      const isLookingAt = !!this.camera.getViewAngleIntersection(wall.position);
+      const isLookingAt = !!this.camera.getViewAngleIntersection(vector.position);
 
-      const { x1, y1, x2, y2 } = wall.position;
+      const { x1, y1, x2, y2 } = vector.position;
 
       return (
         isLookingAt ||
@@ -443,29 +434,40 @@ class Scene {
     // i tried to fix that, but then i found that 2 vertexes of the wall can be blocked
     // but some part of the wall can still be visible, and checking for that would cost a lot of resources
     // so better to leave it as it is
-    const wallsByCameraVertexIntersections = wallsByRange.filter((wallByRange) => {
+    const vectorsByCameraVertexIntersections = vectorsByRange.filter((vectorByRange) => {
       // these type of walls used for render, so we dont want invisible walls to be raycasted
-      if (!wallByRange.isVisible) {
+      if (!vectorByRange.isVisible) {
         return false;
       }
 
-      return !wallsByRange.some((wall) => {
+      return !vectorsByRange.some((innerVectorByRange) => {
         return [
-          { x1: wallByRange.position.x1, y1: wallByRange.position.y1, x2: position.x, y2: position.y },
-          { x1: wallByRange.position.x2, y1: wallByRange.position.y2, x2: position.x, y2: position.y },
+          { x1: vectorByRange.position.x1, y1: vectorByRange.position.y1, x2: position.x, y2: position.y },
+          { x1: vectorByRange.position.x2, y1: vectorByRange.position.y2, x2: position.x, y2: position.y },
         ].every((vector) => {
-          if (wall === wallByRange || !wall.isVisible) {
+          if (innerVectorByRange === vectorByRange || !innerVectorByRange.isVisible || innerVectorByRange.isSprite) {
             return false;
           }
 
-          return !!Ray.getIntersectionVertexWithWall(vector, wall.position);
+          return !!Ray.getIntersectionVertexWithWall(vector, innerVectorByRange.position);
         });
       });
     });
 
+    const walls: Wall[] = [];
+    const sprites: Wall[] = []
+
+    vectorsByCameraVertexIntersections.forEach(vector => {
+      if(vector.isSprite) {
+        sprites.push(vector)
+      } else {
+        walls.push(vector)
+      }
+    })
+
     return {
-      walls: wallsByCameraVertexIntersections,
-      collisionObstacles: wallsByLength,
+      collisionObstacles: vectorsByLength,
+      walls,
       sprites,
     };
   }

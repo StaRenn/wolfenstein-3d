@@ -79,36 +79,36 @@ async function main() {
   const continueButton = document.getElementById('continue-button') as HTMLButtonElement;
 
   continueButton.onclick = () => {
-    if(IS_PAUSED) {
-      IS_PAUSED = false
+    if (IS_PAUSED) {
+      IS_PAUSED = false;
 
-      menu.style.display = 'none'
+      menu.style.display = 'none';
     }
-  }
+  };
 
-  resolutionScaleRange.value = String(RESOLUTION_SCALE)
+  resolutionScaleRange.value = String(RESOLUTION_SCALE);
   resolutionScaleRange.onchange = (event: InputEvent) => {
-    if(event.target) {
-      RESOLUTION_SCALE = Number((event.target as HTMLInputElement).value)
+    if (event.target) {
+      RESOLUTION_SCALE = Number((event.target as HTMLInputElement).value);
 
-      handleResize()
+      handleResize();
       scene.render();
     }
-  }
+  };
 
   canvas.onclick = () => {
-    IS_PAUSED = false
+    IS_PAUSED = false;
 
     canvas.requestPointerLock();
   };
 
   window.onkeydown = (event: KeyboardEvent) => {
-    if(event.key === 'Escape') {
-      IS_PAUSED = true
+    if (event.key === 'Escape') {
+      IS_PAUSED = true;
 
-      menu.style.display = 'flex'
+      menu.style.display = 'flex';
     }
-  }
+  };
 
   const scene = new Scene(canvas, map);
 
@@ -127,7 +127,7 @@ async function main() {
   let lastLoop = Date.now();
 
   function frame() {
-    if(!IS_PAUSED) {
+    if (!IS_PAUSED) {
       scene.render();
     }
 

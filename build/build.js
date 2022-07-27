@@ -298,19 +298,19 @@ class Camera {
         }
         return {
             walls: wallsIntersections,
-            sprites: spritesIntersections
+            sprites: spritesIntersections,
         };
     }
     changeRaysAmount(raysAmount) {
         this.rays = [];
         const initialAngle = this.angle - FOV / 2;
         const step = FOV / raysAmount / RESOLUTION_SCALE;
-        for (let i = 0; i < (raysAmount * RESOLUTION_SCALE); i++) {
+        for (let i = 0; i < raysAmount * RESOLUTION_SCALE; i++) {
             this.rays.push(new Ray(this.position, initialAngle + i * step, this.angle));
         }
     }
     rotate(event) {
-        this.angle += this.toRadians(event.movementX / 2);
+        this.angle += this.toRadians(event.movementX / 3);
         this.angle = this.angle % (2 * Math.PI);
         const initialAngle = this.angle - FOV / 2;
         const step = FOV / this.rays.length;
@@ -472,7 +472,7 @@ class Scene {
         this.ctx.beginPath();
         this.ctx.clearRect(0, 0, this.screenData.screenWidth, this.screenData.screenHeight);
         this.ctx.closePath();
-        this.ctx.fillStyle = '#5f5f61';
+        this.ctx.fillStyle = '#383838';
         this.ctx.fillRect(0, 0, 1920, Math.ceil(this.screenData.screenHeight / 2));
         const vectorsByPurposes = this.getObstaclesVectorsByPurposes();
         if (!IS_PAUSED) {
@@ -490,7 +490,7 @@ class Scene {
             const wall = intersection.wall;
             const index = intersection.index;
             const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
-            const textureOffsetX = this.getWallTextureOffset(intersection);
+            const textureOffsetX = this.getTextureOffset(intersection);
             const textureHeight = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
             const texture = wall.isSprite
                 ? this.sprites[wall.textureId - 1]
@@ -500,7 +500,7 @@ class Scene {
             const textureSize = TEXTURE_SIZE;
             const textureXPositionOnScreen = index / RESOLUTION_SCALE;
             const textureYPositionOnScreen = this.screenData.screenHeight / 2 - textureHeight / 2;
-            const textureWidthOnScreen = Math.max(1, 1 / RESOLUTION_SCALE);
+            const textureWidthOnScreen = Math.ceil(1 / RESOLUTION_SCALE);
             if (intersection.distance !== RAY_LENGTH) {
                 this.ctx.drawImage(texture, textureOffsetX, textureOffsetY, textureWidth, textureSize, textureXPositionOnScreen, textureYPositionOnScreen, textureWidthOnScreen, textureHeight);
             }
@@ -514,7 +514,7 @@ class Scene {
         this.screenData.screenWidth = width;
         this.camera.changeRaysAmount(this.canvas.width);
     }
-    getWallTextureOffset(intersection) {
+    getTextureOffset(intersection) {
         const wall = intersection.wall;
         const position = wall.position;
         const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
@@ -571,17 +571,11 @@ class Scene {
             x: (coordinates.x2 + coordinates.x1) / 2,
             y: (coordinates.y2 + coordinates.y1) / 2,
         };
-        let diff = -this.camera.angle;
-        if (diff < -Math.PI) {
-            diff += 2 * Math.PI;
-        }
-        if (diff > Math.PI) {
-            diff -= 2 * Math.PI;
-        }
-        coordinates.x1 = middleVertex.x + (CELL_SIZE / 2) * Math.cos(diff);
-        coordinates.y1 = middleVertex.y + (CELL_SIZE / 2) * Math.sin(diff);
-        coordinates.x2 = middleVertex.x - (CELL_SIZE / 2) * Math.cos(diff);
-        coordinates.y2 = middleVertex.y - (CELL_SIZE / 2) * Math.sin(diff);
+        let spriteAngle = -this.camera.angle;
+        coordinates.x1 = middleVertex.x + (CELL_SIZE / 2) * Math.cos(spriteAngle);
+        coordinates.y1 = middleVertex.y + (CELL_SIZE / 2) * Math.sin(spriteAngle);
+        coordinates.x2 = middleVertex.x - (CELL_SIZE / 2) * Math.cos(spriteAngle);
+        coordinates.y2 = middleVertex.y - (CELL_SIZE / 2) * Math.sin(spriteAngle);
         return {
             position: coordinates,
             type: INTERSECTION_TYPES.HORIZONTAL,
@@ -658,12 +652,11 @@ class Scene {
             x3: rightFOVExtremumVertex.x,
             y3: rightFOVExtremumVertex.y,
         };
-        const sprites = [];
-        const walls = this.obstacles.reduce((acc, obstacle, i) => {
+        const vectors = this.obstacles.reduce((acc, obstacle, i) => {
             const obstaclePos = obstacle.position;
             const obstacleNeighbors = this.getNeighbors(obstaclePos);
             if (obstacle.isSprite) {
-                sprites.push(this.getSpriteFromObstacle(obstacle, i));
+                acc.push(this.getSpriteFromObstacle(obstacle, i));
             }
             if (obstacle.isDoor) {
                 const type = obstacle.isVertical ? OBSTACLE_SIDES.TOP : OBSTACLE_SIDES.LEFT;
@@ -684,36 +677,46 @@ class Scene {
             }
             return acc;
         }, []);
-        const wallsByLength = walls.filter((wall) => wall.position.y1 >= lengthBoundaries.y1 &&
-            wall.position.x1 >= lengthBoundaries.x1 &&
-            wall.position.x2 <= lengthBoundaries.x2 &&
-            wall.position.y2 <= lengthBoundaries.y2);
-        const wallsByRange = wallsByLength.filter((wall) => {
-            const isLookingAt = !!this.camera.getViewAngleIntersection(wall.position);
-            const { x1, y1, x2, y2 } = wall.position;
+        const vectorsByLength = vectors.filter((vector) => vector.position.y1 >= lengthBoundaries.y1 &&
+            vector.position.x1 >= lengthBoundaries.x1 &&
+            vector.position.x2 <= lengthBoundaries.x2 &&
+            vector.position.y2 <= lengthBoundaries.y2);
+        const vectorsByRange = vectors.filter((vector) => {
+            const isLookingAt = !!this.camera.getViewAngleIntersection(vector.position);
+            const { x1, y1, x2, y2 } = vector.position;
             return (isLookingAt ||
                 this.getIsVertexInTheTriangle({ x: x1, y: y1 }, rangeBoundaries) ||
                 this.getIsVertexInTheTriangle({ x: x2, y: y2 }, rangeBoundaries));
         });
-        const wallsByCameraVertexIntersections = wallsByRange.filter((wallByRange) => {
-            if (!wallByRange.isVisible) {
+        const vectorsByCameraVertexIntersections = vectorsByRange.filter((vectorByRange) => {
+            if (!vectorByRange.isVisible) {
                 return false;
             }
-            return !wallsByRange.some((wall) => {
+            return !vectorsByRange.some((innerVectorByRange) => {
                 return [
-                    { x1: wallByRange.position.x1, y1: wallByRange.position.y1, x2: position.x, y2: position.y },
-                    { x1: wallByRange.position.x2, y1: wallByRange.position.y2, x2: position.x, y2: position.y },
+                    { x1: vectorByRange.position.x1, y1: vectorByRange.position.y1, x2: position.x, y2: position.y },
+                    { x1: vectorByRange.position.x2, y1: vectorByRange.position.y2, x2: position.x, y2: position.y },
                 ].every((vector) => {
-                    if (wall === wallByRange || !wall.isVisible) {
+                    if (innerVectorByRange === vectorByRange || !innerVectorByRange.isVisible || innerVectorByRange.isSprite) {
                         return false;
                     }
-                    return !!Ray.getIntersectionVertexWithWall(vector, wall.position);
+                    return !!Ray.getIntersectionVertexWithWall(vector, innerVectorByRange.position);
                 });
             });
         });
+        const walls = [];
+        const sprites = [];
+        vectorsByCameraVertexIntersections.forEach(vector => {
+            if (vector.isSprite) {
+                sprites.push(vector);
+            }
+            else {
+                walls.push(vector);
+            }
+        });
         return {
-            walls: wallsByCameraVertexIntersections,
-            collisionObstacles: wallsByLength,
+            collisionObstacles: vectorsByLength,
+            walls,
             sprites,
         };
     }

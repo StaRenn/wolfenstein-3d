@@ -5,23 +5,19 @@ type PreparedNeighbor = {
   number: number;
 };
 
+type IndexedIntersection = Intersection & { index: number };
+
 class Camera {
   private readonly ctx: CanvasRenderingContext2D;
 
   private rays: Ray[];
   private position: Vertex;
-  private walls: Wall[]
-  private sprites: Wall[]
+  private walls: Wall[];
+  private sprites: Wall[];
 
-  public angle: number
+  public angle: number;
 
-  constructor(
-    position: Vertex,
-    raysAmount: number,
-    ctx: CanvasRenderingContext2D,
-    walls: Wall[],
-    sprites: Wall[],
-  ) {
+  constructor(position: Vertex, raysAmount: number, ctx: CanvasRenderingContext2D, walls: Wall[], sprites: Wall[]) {
     this.angle = this.toRadians(60);
     this.ctx = ctx;
     this.walls = walls;
@@ -38,10 +34,10 @@ class Camera {
       this.rays[i].move(position);
     }
 
-    this.position = position
+    this.position = position;
   }
 
-  updateObstacles(walls:Wall[], sprites: Wall[]) {
+  updateObstacles(walls: Wall[], sprites: Wall[]) {
     this.walls = walls;
     this.sprites = sprites;
   }
@@ -81,8 +77,8 @@ class Camera {
   }
 
   getIntersections() {
-    let wallsIntersections = [];
-    let spritesIntersections = [];
+    let wallsIntersections: IndexedIntersection[] = [];
+    let spritesIntersections: IndexedIntersection[] = [];
 
     for (let i = 0; i < this.rays.length; i++) {
       const wallsIntersection = this.rays[i].cast(this.walls);
@@ -94,8 +90,8 @@ class Camera {
 
     return {
       walls: wallsIntersections,
-      sprites: spritesIntersections
-    }
+      sprites: spritesIntersections,
+    };
   }
 
   changeRaysAmount(raysAmount: number) {
@@ -104,13 +100,13 @@ class Camera {
     const initialAngle = this.angle - FOV / 2;
     const step = FOV / raysAmount / RESOLUTION_SCALE;
 
-    for (let i = 0; i < (raysAmount * RESOLUTION_SCALE); i++) {
+    for (let i = 0; i < raysAmount * RESOLUTION_SCALE; i++) {
       this.rays.push(new Ray(this.position, initialAngle + i * step, this.angle));
     }
   }
 
   rotate(event: MouseEvent) {
-    this.angle += this.toRadians(event.movementX / 2);
+    this.angle += this.toRadians(event.movementX / 3);
 
     this.angle = this.angle % (2 * Math.PI);
 
