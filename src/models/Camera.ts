@@ -1,23 +1,14 @@
-type PreparedNeighbor = {
-  isDoor: boolean;
-  isSecret: boolean;
-  isMovable: boolean;
-  number: number;
-};
-
-type IndexedIntersection = Intersection & { index: number };
-
 class Camera {
   private readonly ctx: CanvasRenderingContext2D;
 
   private rays: Ray[];
   private position: Vertex;
   private walls: Wall[];
-  private sprites: Wall[];
+  private sprites: Sprite[];
 
   public angle: number;
 
-  constructor(position: Vertex, raysAmount: number, ctx: CanvasRenderingContext2D, walls: Wall[], sprites: Wall[]) {
+  constructor(position: Vertex, raysAmount: number, ctx: CanvasRenderingContext2D, walls: Wall[], sprites: Sprite[]) {
     this.angle = this.toRadians(60);
     this.ctx = ctx;
     this.walls = walls;
@@ -37,7 +28,7 @@ class Camera {
     this.position = position;
   }
 
-  updateObstacles(walls: Wall[], sprites: Wall[]) {
+  updateObstacles(walls: Wall[], sprites: Sprite[]) {
     this.walls = walls;
     this.sprites = sprites;
   }
@@ -65,7 +56,7 @@ class Camera {
   getViewAngleIntersection(position: Vector) {
     const currentAngleRayEndVertex = this.getVertexByPositionAndAngle(this.position, this.angle);
 
-    return Ray.getIntersectionVertexWithWall(
+    return Ray.getIntersectionVertexWithPlane(
       {
         x1: this.position.x,
         y1: this.position.y,
@@ -76,16 +67,22 @@ class Camera {
     );
   }
 
-  getIntersections() {
-    let wallsIntersections: IndexedIntersection[] = [];
-    let spritesIntersections: IndexedIntersection[] = [];
+  getIntersections(): {walls: IndexedIntersection<Wall>[], sprites: IndexedIntersection<Sprite>[]} {
+    let wallsIntersections: IndexedIntersection<Wall>[] = [];
+    let spritesIntersections: IndexedIntersection<Sprite>[] = [];
 
     for (let i = 0; i < this.rays.length; i++) {
       const wallsIntersection = this.rays[i].cast(this.walls);
-      wallsIntersections.push({ ...wallsIntersection, index: i });
+
+      if(wallsIntersection) {
+        wallsIntersections.push({ ...wallsIntersection, index: i });
+      }
 
       const spritesIntersection = this.rays[i].cast(this.sprites);
-      spritesIntersections.push({ ...spritesIntersection, index: i });
+
+      if(spritesIntersection) {
+        spritesIntersections.push({ ...spritesIntersection, index: i });
+      }
     }
 
     return {

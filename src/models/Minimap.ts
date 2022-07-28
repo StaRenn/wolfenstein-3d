@@ -7,16 +7,12 @@ class Minimap {
     this.obstacles = obstacles;
   }
 
-  render(position: Vertex, intersections: Intersection[]) {
+  render(position: Vertex, intersections: IndexedIntersection<Wall>[]) {
     this.ctx.strokeStyle = 'orange';
     this.ctx.beginPath();
 
     for (let i = 0; i < intersections.length; i++) {
       const intersection = intersections[i];
-
-      if (intersection.distance === RAY_LENGTH || intersection.wall.isSprite) {
-        continue;
-      }
 
       this.ctx.moveTo(position.x, position.y);
       this.ctx.lineTo(intersection.x, intersection.y);

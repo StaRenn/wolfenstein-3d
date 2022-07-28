@@ -1,10 +1,3 @@
-type Intersection = {
-  x: number;
-  y: number;
-  wall: Wall;
-  distance: number;
-};
-
 class Ray {
   private rayAngle: number;
   private cameraAngle: number;
@@ -33,7 +26,7 @@ class Ray {
     return distance * Math.cos(this.rayAngle - this.cameraAngle);
   }
 
-  static getIntersectionVertexWithWall(firstVector: Vector, secondVector: Vector) {
+  static getIntersectionVertexWithPlane(firstVector: Vector, secondVector: Vector) {
     const { x1, x2, y1, y2 } = firstVector;
     const { x1: x3, y1: y3, x2: x4, y2: y4 } = secondVector;
 
@@ -64,8 +57,8 @@ class Ray {
     return { x, y };
   }
 
-  getDistance(wall: Vertex) {
-    return Math.sqrt((wall.x - this.cameraPosition.x1) ** 2 + (wall.y - this.cameraPosition.y1) ** 2);
+  getDistance(vertex: Vertex) {
+    return Math.sqrt((vertex.x - this.cameraPosition.x1) ** 2 + (vertex.y - this.cameraPosition.y1) ** 2);
   }
 
   move(position: Vertex) {
@@ -77,16 +70,16 @@ class Ray {
     };
   }
 
-  cast(walls: Wall[]): Intersection {
-    let intersections: { vertex: Vertex; wall: Wall }[] = [];
+  cast<T extends Wall | Sprite>(planes: T[]): Intersection<T> | null {
+    let intersections: { vertex: Vertex; plane: T }[] = [];
 
-    for (let wall of walls) {
-      const intersection = Ray.getIntersectionVertexWithWall(this.cameraPosition, wall.position);
+    for (let plane of planes) {
+      const intersection = Ray.getIntersectionVertexWithPlane(this.cameraPosition, plane.position);
 
       if (intersection) {
         intersections.push({
           vertex: intersection,
-          wall,
+          plane,
         });
       }
     }
@@ -108,26 +101,11 @@ class Ray {
       return {
         x: closestIntersection.vertex.x,
         y: closestIntersection.vertex.y,
-        wall: closestIntersection.wall,
+        plane: closestIntersection.plane,
         distance: this.fixFishEye(closestDistance),
       };
     }
 
-    return {
-      x: this.cameraPosition.x2,
-      y: this.cameraPosition.y2,
-      wall: {
-        // doesnt really matter
-        position: { x1: 0, y1: 0, x2: 0, y2: 0 },
-        obstacleIdx: 1,
-        type: INTERSECTION_TYPES.VERTICAL,
-        isMovable: false,
-        shouldReverseTexture: false,
-        isVisible: false,
-        textureId: 1,
-        isSprite: false,
-      },
-      distance: RAY_LENGTH,
-    };
+    return null;
   }
 }

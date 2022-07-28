@@ -1,59 +1,3 @@
-type GameMap = (string | number)[][];
-
-type Vertex = {
-  x: number;
-  y: number;
-};
-
-type Vector = {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-};
-
-type Triangle = {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  x3: number;
-  y3: number;
-};
-
-type Obstacle = {
-  position: Vector;
-  endPosition: Vector;
-  textureId: number;
-  isDoor: boolean;
-  isSecret: boolean;
-  isVertical: boolean;
-  isMovable: boolean;
-  isSprite: boolean;
-};
-
-type Wall = {
-  position: Vector;
-  type: keyof typeof INTERSECTION_TYPES;
-  shouldReverseTexture: boolean;
-  textureId: number;
-  isMovable: boolean;
-  isSprite: boolean;
-  isVisible: boolean;
-  obstacleIdx: number;
-};
-
-type ScreenData = {
-  screenHeight: number;
-  screenWidth: number;
-}
-
-type ObstaclesVectorsByPurposes = {
-  walls: Wall[],
-  sprites: Wall[],
-  collisionObstacles: Wall[]
-}
-
 class Scene {
   private readonly camera: Camera;
   private readonly canvas: HTMLCanvasElement;
@@ -89,13 +33,13 @@ class Scene {
 
     for (let i = 1; i < 31; i++) {
       const image = new Image();
-      image.src = `src/textures/${i}.png`;
+      image.src = `src/assets/textures/${i}.png`;
       this.textures.push(image);
     }
 
     for (let i = 1; i < 2; i++) {
       const image = new Image();
-      image.src = `src/sprites/${i}.png`;
+      image.src = `src/assets/sprites/${i}.png`;
       this.sprites.push(image);
     }
 
@@ -116,14 +60,14 @@ class Scene {
     this.ctx.fillStyle = '#383838';
     this.ctx.fillRect(0, 0, 1920, Math.ceil(this.screenData.screenHeight / 2));
 
-    const vectorsByPurposes = this.getObstaclesVectorsByPurposes();
+    const planes = this.getPlanes();
 
     if(!IS_PAUSED) {
       this.moveObstacles();
     }
 
     this.actor.updateObstacles(this.obstacles)
-    this.actor.updateObstaclesVectorsByPurposes(vectorsByPurposes)
+    this.actor.updateObstaclesVectorsByPurposes(planes)
 
     if(!IS_PAUSED) {
       this.actor.move();
@@ -131,21 +75,22 @@ class Scene {
 
     const intersections = this.camera.getIntersections();
 
-    const sortedAndMergedIntersections = [...intersections.walls, ...intersections.sprites].sort((a, b) => b.distance - a.distance)
+    const sortedAndMergedIntersections =
+      [...intersections.walls, ...intersections.sprites].sort((a, b) => b.distance - a.distance)
 
     for (let i = 0; i < sortedAndMergedIntersections.length; i++) {
       const intersection = sortedAndMergedIntersections[i];
-      const wall = intersection.wall;
+      const plane = intersection.plane;
       const index = intersection.index;
 
-      const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
+      const isVerticalIntersection = plane.type === INTERSECTION_TYPES.VERTICAL;
 
       const textureOffsetX = this.getTextureOffset(intersection);
       const textureHeight = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
 
-      const texture = wall.isSprite
-        ? this.sprites[wall.textureId - 1]
-        : this.textures[wall.textureId - (isVerticalIntersection ? 0 : 1)];
+      const texture = plane.isSprite
+        ? this.sprites[plane.textureId - 1]
+        : this.textures[plane.textureId - (isVerticalIntersection ? 0 : 1)];
 
       const textureOffsetY = 0;
       const textureWidth = 1
@@ -183,35 +128,35 @@ class Scene {
   }
 
   // we calculate object width in players perspective
-  // calculate length from start of the wall to the intersection |object.x - intersection.x| = n
-  // then we get coefficient: n / wallLength = k
+  // calculate length from start of the plane to the intersection |object.x - intersection.x| = n
+  // then we get coefficient: n / planeLength = k
   // floor(k * TEXTURE_SIZE) = texture offset for given intersection
   getTextureOffset(intersection: IndexedIntersection) {
-    const wall = intersection.wall;
-    const position = wall.position;
-    const isVerticalIntersection = wall.type === INTERSECTION_TYPES.VERTICAL;
+    const plane = intersection.plane;
+    const position = plane.position;
+    const isVerticalIntersection = plane.type === INTERSECTION_TYPES.VERTICAL;
 
     let isInverse = false;
 
-    if (wall.isSprite) {
+    if (plane.isSprite) {
       if (Math.abs(position.x1 - position.x2) > Math.abs(position.y1 - position.y2)) {
         isInverse = true;
       }
     }
 
-    const coordinatesToCompareWith = wall.shouldReverseTexture
+    const coordinatesToCompareWith = plane.shouldReverseTexture
       ? { x: position.x2, y: position.y2 }
       : { x: position.x1, y: position.y1 };
 
-    const fromWallStartToIntersectionWidth =
+    const fromPlaneStartToIntersectionWidth =
       isVerticalIntersection || isInverse
         ? coordinatesToCompareWith.x - intersection.x
         : coordinatesToCompareWith.y - intersection.y;
 
-    const wallLength =
+    const planeLength =
       isVerticalIntersection || isInverse ? Math.abs(position.x1 - position.x2) : Math.abs(position.y1 - position.y2);
 
-    const textureDistanceFromStartCoefficient = Math.abs(fromWallStartToIntersectionWidth) / wallLength;
+    const textureDistanceFromStartCoefficient = Math.abs(fromPlaneStartToIntersectionWidth) / planeLength;
 
     return Math.floor(textureDistanceFromStartCoefficient * TEXTURE_SIZE);
   }
@@ -220,7 +165,7 @@ class Scene {
     return Math.abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
   }
 
-  getVertexByPositionAndAngle(position: Vertex, angle: number) {
+  getVertexByPositionAndAngle(position: Vertex, angle: number): Vertex {
     return {
       x: position.x + RAY_LENGTH * Math.sin(angle),
       y: position.y + RAY_LENGTH * Math.cos(angle),
@@ -237,19 +182,19 @@ class Scene {
     return Math.round(abcArea) == Math.round(pbcArea + pacArea + pabArea);
   }
 
-  getWallVectorFromObstacle(obstacle: Obstacle, wallPosition: keyof typeof OBSTACLE_SIDES) {
+  getWallVectorFromObstacle(obstacle: Obstacle, planePosition: keyof typeof OBSTACLE_SIDES): Vector {
     const obstaclePos = obstacle.position;
     const isDoor = obstacle.isDoor;
 
     return {
-      x1: obstaclePos.x1 + (wallPosition === OBSTACLE_SIDES.RIGHT && !isDoor ? CELL_SIZE : 0),
-      y1: obstaclePos.y1 + (wallPosition === OBSTACLE_SIDES.BOTTOM && !isDoor ? CELL_SIZE : 0),
-      x2: obstaclePos.x2 - (wallPosition === OBSTACLE_SIDES.LEFT && !isDoor ? CELL_SIZE : 0),
-      y2: obstaclePos.y2 - (wallPosition === OBSTACLE_SIDES.TOP && !isDoor ? CELL_SIZE : 0),
+      x1: obstaclePos.x1 + (planePosition === OBSTACLE_SIDES.RIGHT && !isDoor ? CELL_SIZE : 0),
+      y1: obstaclePos.y1 + (planePosition === OBSTACLE_SIDES.BOTTOM && !isDoor ? CELL_SIZE : 0),
+      x2: obstaclePos.x2 - (planePosition === OBSTACLE_SIDES.LEFT && !isDoor ? CELL_SIZE : 0),
+      y2: obstaclePos.y2 - (planePosition === OBSTACLE_SIDES.TOP && !isDoor ? CELL_SIZE : 0),
     };
   }
 
-  getSpriteFromObstacle(obstacle: Obstacle, index: number): Wall {
+  getSpriteFromObstacle(obstacle: Obstacle, index: number): Sprite {
     const coordinates: Vector = {
       x1: obstacle.position.x1,
       y1: obstacle.position.y1,
@@ -340,7 +285,7 @@ class Scene {
     return neighbors;
   }
 
-  getObstaclesVectorsByPurposes(): ObstaclesVectorsByPurposes {
+  getPlanes(): ObstaclesVectorsByPurposes {
     const position = this.actor.position
     const angle = this.camera.angle
 
@@ -368,8 +313,8 @@ class Scene {
     };
 
     // For optimization, we must reduce the number of vectors with which intersections are searched
-    // push only those walls that can be visible by player side
-    const vectors = this.obstacles.reduce<Wall[]>((acc, obstacle, i) => {
+    // push only those planes that can be visible by player side
+    const planes = this.obstacles.reduce<Plane[]>((acc, obstacle, i) => {
       const obstaclePos = obstacle.position;
       const obstacleNeighbors = this.getNeighbors(obstaclePos);
 
@@ -401,22 +346,22 @@ class Scene {
       return acc;
     }, []);
 
-    // get walls that are in the ray length range
-    const vectorsByLength = vectors.filter(
-      (vector) =>
-        vector.position.y1 >= lengthBoundaries.y1 &&
-        vector.position.x1 >= lengthBoundaries.x1 &&
-        vector.position.x2 <= lengthBoundaries.x2 &&
-        vector.position.y2 <= lengthBoundaries.y2
+    // get planes that are in the ray length range
+    const planesByLength = planes.filter(
+      (plane) =>
+        plane.position.y1 >= lengthBoundaries.y1 &&
+        plane.position.x1 >= lengthBoundaries.x1 &&
+        plane.position.x2 <= lengthBoundaries.x2 &&
+        plane.position.y2 <= lengthBoundaries.y2
     );
 
     // get walls that are in the FOV range
-    const vectorsByRange = vectors.filter((vector) => {
-      // If user comes straight to the wall, vertexes of the wall will not be in range of vision
-      // so we need to check if user looking at the wall rn
-      const isLookingAt = !!this.camera.getViewAngleIntersection(vector.position);
+    const planesByRange = planes.filter((plane) => {
+      // If user comes straight to the plane, vertexes of the plane will not be in range of vision
+      // so we need to check if user looking at the plane rn
+      const isLookingAt = !!this.camera.getViewAngleIntersection(plane.position);
 
-      const { x1, y1, x2, y2 } = vector.position;
+      const { x1, y1, x2, y2 } = plane.position;
 
       return (
         isLookingAt ||
@@ -425,48 +370,48 @@ class Scene {
       );
     });
 
-    // we are trying to find here if wall is behind another one
-    // so we dont need to find intersections with wall that we cant see
-    // get lines from camera to both edges of the wall and find if every line intersects with any another wall
-    // unfortunately this is O(N^2) but it works good if we have less amount of walls in range than window width (almost impossible)
+    // we are trying to find here if plane is behind another one
+    // so we dont need to find intersections with plane that we cant see
+    // get lines from camera to both edges of the plane and find if every line intersects with any another plane
+    // unfortunately this is O(N^2) but it works good if we have less amount of planes in range than window width (almost impossible)
 
-    // if 2 vectors are blocked but by different walls that wall will count as visible
-    // i tried to fix that, but then i found that 2 vertexes of the wall can be blocked
-    // but some part of the wall can still be visible, and checking for that would cost a lot of resources
+    // if 2 vectors are blocked but by different planes that plane will count as visible
+    // i tried to fix that, but then i found that 2 vertexes of the plane can be blocked
+    // but some part of the plane can still be visible, and checking for that would cost a lot of resources
     // so better to leave it as it is
-    const vectorsByCameraVertexIntersections = vectorsByRange.filter((vectorByRange) => {
-      // these type of walls used for render, so we dont want invisible walls to be raycasted
-      if (!vectorByRange.isVisible) {
+    const planesByCameraVertexIntersections = planesByRange.filter((planeByRange) => {
+      // these type of planes used for render, so we dont want invisible planes to be raycasted
+      if (!planeByRange.isVisible) {
         return false;
       }
 
-      return !vectorsByRange.some((innerVectorByRange) => {
+      return !planesByRange.some((innerPlaneByRange) => {
         return [
-          { x1: vectorByRange.position.x1, y1: vectorByRange.position.y1, x2: position.x, y2: position.y },
-          { x1: vectorByRange.position.x2, y1: vectorByRange.position.y2, x2: position.x, y2: position.y },
-        ].every((vector) => {
-          if (innerVectorByRange === vectorByRange || !innerVectorByRange.isVisible || innerVectorByRange.isSprite) {
+          { x1: planeByRange.position.x1, y1: planeByRange.position.y1, x2: position.x, y2: position.y },
+          { x1: planeByRange.position.x2, y1: planeByRange.position.y2, x2: position.x, y2: position.y },
+        ].every((plane) => {
+          if (innerPlaneByRange === planeByRange || !innerPlaneByRange.isVisible || innerPlaneByRange.isSprite) {
             return false;
           }
 
-          return !!Ray.getIntersectionVertexWithWall(vector, innerVectorByRange.position);
+          return !!Ray.getIntersectionVertexWithPlane(plane, innerPlaneByRange.position);
         });
       });
     });
 
     const walls: Wall[] = [];
-    const sprites: Wall[] = []
+    const sprites: Sprite[] = []
 
-    vectorsByCameraVertexIntersections.forEach(vector => {
-      if(vector.isSprite) {
-        sprites.push(vector)
-      } else {
-        walls.push(vector)
+    planesByCameraVertexIntersections.forEach(plane => {
+      if(isSprite(plane)) {
+        sprites.push(plane)
+      } else if (isWall(plane)) {
+        walls.push(plane)
       }
     })
 
     return {
-      collisionObstacles: vectorsByLength,
+      collisionObstacles: planesByLength,
       walls,
       sprites,
     };
@@ -543,7 +488,7 @@ class Scene {
   generateObstaclesFromMap(map: GameMap): Obstacle[] {
     const obstacles = [];
 
-    let secretWallsEndPositions: { [id: string]: Vector } = {};
+    let secretObstaclesEndPositions: { [id: string]: Vector } = {};
 
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[i].length; j++) {
@@ -553,7 +498,7 @@ class Scene {
           const params = value.split('_');
 
           if (params[2] === 'END') {
-            secretWallsEndPositions[params[1]] = {
+            secretObstaclesEndPositions[params[1]] = {
               x1: j * CELL_SIZE,
               y1: i * CELL_SIZE,
               x2: j * CELL_SIZE + CELL_SIZE,
@@ -593,7 +538,7 @@ class Scene {
             position,
             endPosition:
               isSecret && obstacleParams
-                ? secretWallsEndPositions[obstacleParams[1]]
+                ? secretObstaclesEndPositions[obstacleParams[1]]
                 : {
                     x1: isVertical ? position.x1 + CELL_SIZE : position.x1,
                     y1: !isVertical ? position.y1 - CELL_SIZE : position.y1,

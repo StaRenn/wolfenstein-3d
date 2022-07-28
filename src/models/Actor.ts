@@ -1,4 +1,4 @@
-const WEAPONS = {
+const WEAPONS: Weapons = {
   KNIFE: {
     maxDistance: 10,
     damage: 10,
@@ -21,8 +21,6 @@ const WEAPONS = {
     icon: '',
   },
 };
-
-type Weapon = typeof WEAPONS.KNIFE;
 
 class Actor {
   private readonly ctx: CanvasRenderingContext2D;
@@ -97,9 +95,13 @@ class Actor {
   }
 
   handleKeyUp(event: KeyboardEvent) {
-    if (event.keyCode === 87 /* w */ || event.keyCode === 83 /* s */) {
+    if (event.keyCode === 87 /* w */ && this.verticalSpeed > 0) {
       this.verticalSpeed = 0;
-    } else if (event.keyCode === 68 /* d */ || event.keyCode === 65 /* a */) {
+    } else if (event.keyCode === 83 /* s */ && this.verticalSpeed < 0) {
+      this.verticalSpeed = 0;
+    } else if (event.keyCode === 68 /* d */ && this.horizontalSpeed > 0) {
+      this.horizontalSpeed = 0;
+    } else if (event.keyCode === 65 /* a */ && this.horizontalSpeed < 0) {
       this.horizontalSpeed = 0;
     }
   }
@@ -109,7 +111,7 @@ class Actor {
       return;
     }
 
-    const position = { x: this.position.x, y: this.position.y };
+    const position: Vertex = { x: this.position.x, y: this.position.y };
 
     const verticalChangeX = Math.sin(this.camera.angle) * this.verticalSpeed;
     const verticalChangeY = Math.cos(this.camera.angle) * this.verticalSpeed;
@@ -123,32 +125,32 @@ class Actor {
     position.x += xSum >= 0 ? Math.min(xSum, ACTOR_SPEED) : Math.max(xSum, -ACTOR_SPEED);
     position.y += ySum >= 0 ? Math.min(ySum, ACTOR_SPEED) : Math.max(ySum, -ACTOR_SPEED);
 
-    for (let wall of this.obstaclesVectorsByPurposes.collisionObstacles) {
-      const wallObstacle = this.obstacles[Number(wall.obstacleIdx)];
+    for (let plane of this.obstaclesVectorsByPurposes.collisionObstacles) {
+      const obstacle = this.obstacles[Number(plane.obstacleIdx)];
 
       if (
-        this.position.y >= wall.position.y1 &&
-        this.position.y <= wall.position.y2 &&
-        ((position.x >= wall.position.x1 && this.position.x <= wall.position.x1) ||
-          (position.x <= wall.position.x1 && this.position.x >= wall.position.x1))
+        this.position.y >= plane.position.y1 &&
+        this.position.y <= plane.position.y2 &&
+        ((position.x >= plane.position.x1 && this.position.x <= plane.position.x1) ||
+          (position.x <= plane.position.x1 && this.position.x >= plane.position.x1))
       ) {
         position.x = this.position.x;
       }
 
       if (
-        this.position.x >= wall.position.x1 &&
-        this.position.x <= wall.position.x2 &&
-        ((position.y >= wall.position.y1 && this.position.y <= wall.position.y1) ||
-          (position.y <= wall.position.y1 && this.position.y >= wall.position.y1))
+        this.position.x >= plane.position.x1 &&
+        this.position.x <= plane.position.x2 &&
+        ((position.y >= plane.position.y1 && this.position.y <= plane.position.y1) ||
+          (position.y <= plane.position.y1 && this.position.y >= plane.position.y1))
       ) {
         position.y = this.position.y;
       }
 
       if (
-        position.x >= wallObstacle.position.x1 &&
-        position.x <= wallObstacle.position.x2 &&
-        position.y >= wallObstacle.position.y1 &&
-        position.y <= wallObstacle.position.y2
+        position.x >= obstacle.position.x1 &&
+        position.x <= obstacle.position.x2 &&
+        position.y >= obstacle.position.y1 &&
+        position.y <= obstacle.position.y2
       ) {
         position.y = this.position.y;
         position.x = this.position.x;

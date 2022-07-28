@@ -37,12 +37,12 @@ const map: GameMap = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
 
-// DO NOT SET GREATER THAN 1
+// DO NOT SET MORE THAN 1
 let RESOLUTION_SCALE = 1;
 let IS_PAUSED = false;
 
-const RAY_LENGTH = 5000;
 const CELL_SIZE = 10;
+const RAY_LENGTH = CELL_SIZE * 100;
 const ACTOR_SPEED = 1;
 const ACTOR_START_POSITION = { x: CELL_SIZE * 1.5, y: CELL_SIZE * 1.5 };
 const DOOR_IDS = [27, 28];
