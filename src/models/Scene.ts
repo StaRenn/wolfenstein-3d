@@ -10,19 +10,19 @@ class Scene {
 
   private actor: Actor;
   private currentlyMovingObstacles: { [index: number]: Obstacle };
-  private screenData: ScreenData
+  private screenData: ScreenData;
 
   constructor(canvas: HTMLCanvasElement, map: GameMap) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.map = map;
 
-    this.currentlyMovingObstacles = []
+    this.currentlyMovingObstacles = [];
 
     this.screenData = {
       screenHeight: this.canvas.height,
       screenWidth: this.canvas.width,
-    }
+    };
 
     this.obstacles = this.generateObstaclesFromMap(map);
 
@@ -43,7 +43,12 @@ class Scene {
       this.sprites.push(image);
     }
 
-    this.actor = new Actor(this.ctx, this.obstacles, {walls: [], sprites: [], collisionObstacles: []}, this.screenData)
+    this.actor = new Actor(
+      this.ctx,
+      this.obstacles,
+      { walls: [], sprites: [], collisionObstacles: [] },
+      this.screenData
+    );
     this.camera = this.actor.camera;
 
     window.addEventListener('keypress', this.handleKeyPress.bind(this));
@@ -62,21 +67,22 @@ class Scene {
 
     const planes = this.getPlanes();
 
-    if(!IS_PAUSED) {
+    if (!IS_PAUSED) {
       this.moveObstacles();
     }
 
-    this.actor.updateObstacles(this.obstacles)
-    this.actor.updateObstaclesVectorsByPurposes(planes)
+    this.actor.updateObstacles(this.obstacles);
+    this.actor.updateObstaclesVectorsByPurposes(planes);
 
-    if(!IS_PAUSED) {
+    if (!IS_PAUSED) {
       this.actor.move();
     }
 
     const intersections = this.camera.getIntersections();
 
-    const sortedAndMergedIntersections =
-      [...intersections.walls, ...intersections.sprites].sort((a, b) => b.distance - a.distance)
+    const sortedAndMergedIntersections = [...intersections.walls, ...intersections.sprites].sort(
+      (a, b) => b.distance - a.distance
+    );
 
     for (let i = 0; i < sortedAndMergedIntersections.length; i++) {
       const intersection = sortedAndMergedIntersections[i];
@@ -86,18 +92,19 @@ class Scene {
       const isVerticalIntersection = plane.type === INTERSECTION_TYPES.VERTICAL;
 
       const textureOffsetX = this.getTextureOffset(intersection);
-      const textureHeight = ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
+      const textureHeight =
+        ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
 
       const texture = plane.isSprite
         ? this.sprites[plane.textureId - 1]
         : this.textures[plane.textureId - (isVerticalIntersection ? 0 : 1)];
 
       const textureOffsetY = 0;
-      const textureWidth = 1
-      const textureSize = TEXTURE_SIZE
-      const textureXPositionOnScreen = index / RESOLUTION_SCALE
-      const textureYPositionOnScreen = this.screenData.screenHeight / 2 - textureHeight / 2
-      const textureWidthOnScreen = Math.ceil(1 / RESOLUTION_SCALE)
+      const textureWidth = 1;
+      const textureSize = TEXTURE_SIZE;
+      const textureXPositionOnScreen = index / RESOLUTION_SCALE;
+      const textureYPositionOnScreen = this.screenData.screenHeight / 2 - textureHeight / 2;
+      const textureWidthOnScreen = Math.ceil(1 / RESOLUTION_SCALE);
 
       if (intersection.distance !== RAY_LENGTH) {
         this.ctx.drawImage(
@@ -109,7 +116,7 @@ class Scene {
           textureXPositionOnScreen,
           textureYPositionOnScreen,
           textureWidthOnScreen,
-          textureHeight,
+          textureHeight
         );
       }
     }
@@ -286,8 +293,8 @@ class Scene {
   }
 
   getPlanes(): ObstaclesVectorsByPurposes {
-    const position = this.actor.position
-    const angle = this.camera.angle
+    const position = this.actor.position;
+    const angle = this.camera.angle;
 
     const leftExtremumAngle = angle - FOV;
     const rightExtremumAngle = angle + FOV;
@@ -400,15 +407,15 @@ class Scene {
     });
 
     const walls: Wall[] = [];
-    const sprites: Sprite[] = []
+    const sprites: Sprite[] = [];
 
-    planesByCameraVertexIntersections.forEach(plane => {
-      if(isSprite(plane)) {
-        sprites.push(plane)
+    planesByCameraVertexIntersections.forEach((plane) => {
+      if (isSprite(plane)) {
+        sprites.push(plane);
       } else if (isWall(plane)) {
-        walls.push(plane)
+        walls.push(plane);
       }
-    })
+    });
 
     return {
       collisionObstacles: planesByLength,

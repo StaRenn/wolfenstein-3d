@@ -43,31 +43,31 @@ type Plane = {
   obstacleIdx: number;
 };
 
-type Wall = Omit<Plane, 'isSprite'> & {isSprite: false}
-type Sprite = Omit<Plane, 'isSprite'> & {isSprite: true}
+type Wall = Omit<Plane, 'isSprite'> & { isSprite: false };
+type Sprite = Omit<Plane, 'isSprite'> & { isSprite: true };
 
-type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN'
+type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
 
 type Weapon = {
-  maxDistance: number,
-  damage: number,
-  speed: number,
-  ammoPerAttack: number,
-  icon: string,
+  maxDistance: number;
+  damage: number;
+  speed: number;
+  ammoPerAttack: number;
+  icon: string;
 };
 
-type Weapons = {[key in WeaponType]: Weapon}
+type Weapons = { [key in WeaponType]: Weapon };
 
 type ScreenData = {
   screenHeight: number;
   screenWidth: number;
-}
+};
 
 type ObstaclesVectorsByPurposes = {
-  walls: Wall[],
-  sprites: Sprite[],
-  collisionObstacles: Plane[]
-}
+  walls: Wall[];
+  sprites: Sprite[];
+  collisionObstacles: Plane[];
+};
 
 type PreparedNeighbor = {
   isDoor: boolean;
@@ -86,8 +86,8 @@ type Intersection<T extends Wall | Sprite | Plane = Plane> = {
 type IndexedIntersection<T extends Wall | Sprite | Plane = Plane> = Intersection<T> & { index: number };
 
 const isSprite = (plane: Wall | Sprite | Plane): plane is Sprite => {
-  return plane.isSprite
-}
+  return plane.isSprite;
+};
 const isWall = (plane: Wall | Sprite | Plane): plane is Wall => {
-  return !plane.isSprite
-}
+  return !plane.isSprite;
+};

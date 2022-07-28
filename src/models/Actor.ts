@@ -75,7 +75,7 @@ class Actor {
   updateObstaclesVectorsByPurposes(obstacleVectorsByPurposes: ObstaclesVectorsByPurposes) {
     this.obstaclesVectorsByPurposes = obstacleVectorsByPurposes;
 
-    this.camera.updateObstacles(obstacleVectorsByPurposes.walls, obstacleVectorsByPurposes.sprites)
+    this.camera.updateObstacles(obstacleVectorsByPurposes.walls, obstacleVectorsByPurposes.sprites);
   }
 
   updateObstacles(obstacles: Obstacle[]) {

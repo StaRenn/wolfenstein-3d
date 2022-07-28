@@ -67,20 +67,20 @@ class Camera {
     );
   }
 
-  getIntersections(): {walls: IndexedIntersection<Wall>[], sprites: IndexedIntersection<Sprite>[]} {
+  getIntersections(): { walls: IndexedIntersection<Wall>[]; sprites: IndexedIntersection<Sprite>[] } {
     let wallsIntersections: IndexedIntersection<Wall>[] = [];
     let spritesIntersections: IndexedIntersection<Sprite>[] = [];
 
     for (let i = 0; i < this.rays.length; i++) {
       const wallsIntersection = this.rays[i].cast(this.walls);
 
-      if(wallsIntersection) {
+      if (wallsIntersection) {
         wallsIntersections.push({ ...wallsIntersection, index: i });
       }
 
       const spritesIntersection = this.rays[i].cast(this.sprites);
 
-      if(spritesIntersection) {
+      if (spritesIntersection) {
         spritesIntersections.push({ ...spritesIntersection, index: i });
       }
     }
