@@ -93,7 +93,7 @@ class Scene {
 
       const textureOffsetX = this.getTextureOffset(intersection);
       const textureHeight =
-        ((CELL_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
+        ((TILE_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
 
       const texture = plane.isSprite
         ? this.sprites[plane.textureId - 1]
@@ -104,7 +104,7 @@ class Scene {
       const textureSize = TEXTURE_SIZE;
       const textureXPositionOnScreen = index / RESOLUTION_SCALE;
       const textureYPositionOnScreen = this.screenData.screenHeight / 2 - textureHeight / 2;
-      const textureWidthOnScreen = Math.ceil(1 / RESOLUTION_SCALE);
+      const textureWidthOnScreen = 1 / RESOLUTION_SCALE;
 
       if (intersection.distance !== RAY_LENGTH) {
         this.ctx.drawImage(
@@ -194,10 +194,10 @@ class Scene {
     const isDoor = obstacle.isDoor;
 
     return {
-      x1: obstaclePos.x1 + (planePosition === OBSTACLE_SIDES.RIGHT && !isDoor ? CELL_SIZE : 0),
-      y1: obstaclePos.y1 + (planePosition === OBSTACLE_SIDES.BOTTOM && !isDoor ? CELL_SIZE : 0),
-      x2: obstaclePos.x2 - (planePosition === OBSTACLE_SIDES.LEFT && !isDoor ? CELL_SIZE : 0),
-      y2: obstaclePos.y2 - (planePosition === OBSTACLE_SIDES.TOP && !isDoor ? CELL_SIZE : 0),
+      x1: obstaclePos.x1 + (planePosition === OBSTACLE_SIDES.RIGHT && !isDoor ? TILE_SIZE : 0),
+      y1: obstaclePos.y1 + (planePosition === OBSTACLE_SIDES.BOTTOM && !isDoor ? TILE_SIZE : 0),
+      x2: obstaclePos.x2 - (planePosition === OBSTACLE_SIDES.LEFT && !isDoor ? TILE_SIZE : 0),
+      y2: obstaclePos.y2 - (planePosition === OBSTACLE_SIDES.TOP && !isDoor ? TILE_SIZE : 0),
     };
   }
 
@@ -216,10 +216,10 @@ class Scene {
 
     let spriteAngle = -this.camera.angle;
 
-    coordinates.x1 = middleVertex.x + (CELL_SIZE / 2) * Math.cos(spriteAngle);
-    coordinates.y1 = middleVertex.y + (CELL_SIZE / 2) * Math.sin(spriteAngle);
-    coordinates.x2 = middleVertex.x - (CELL_SIZE / 2) * Math.cos(spriteAngle);
-    coordinates.y2 = middleVertex.y - (CELL_SIZE / 2) * Math.sin(spriteAngle);
+    coordinates.x1 = middleVertex.x + (TILE_SIZE / 2) * Math.cos(spriteAngle);
+    coordinates.y1 = middleVertex.y + (TILE_SIZE / 2) * Math.sin(spriteAngle);
+    coordinates.x2 = middleVertex.x - (TILE_SIZE / 2) * Math.cos(spriteAngle);
+    coordinates.y2 = middleVertex.y - (TILE_SIZE / 2) * Math.sin(spriteAngle);
 
     return {
       position: coordinates,
@@ -270,10 +270,10 @@ class Scene {
     Object.keys(neighbors).forEach((side: keyof typeof OBSTACLE_SIDES, i) => {
       const offset = NEIGHBOR_OFFSET[side];
 
-      const axisY = this.map[(obstacle.y1 + (i % 2 === 0 ? offset : 0)) / CELL_SIZE];
+      const axisY = this.map[(obstacle.y1 + (i % 2 === 0 ? offset : 0)) / TILE_SIZE];
 
       if (axisY) {
-        const axisXValue = axisY[(obstacle.x1 + (i % 2 === 0 ? 0 : offset)) / CELL_SIZE];
+        const axisXValue = axisY[(obstacle.x1 + (i % 2 === 0 ? 0 : offset)) / TILE_SIZE];
 
         if (axisXValue) {
           const isDoor = typeof axisXValue === 'number' && DOOR_IDS.includes(axisXValue);
@@ -474,7 +474,7 @@ class Scene {
           (this.actor.position.x - obstacle.position.x1) ** 2 + (this.actor.position.y - obstacle.position.y1) ** 2
         );
 
-        if (intersection && distance <= CELL_SIZE * 2) {
+        if (intersection && distance <= TILE_SIZE * 2) {
           obstacleInViewIndex = i;
           obstacleInView = obstacle;
         }
@@ -506,10 +506,10 @@ class Scene {
 
           if (params[2] === 'END') {
             secretObstaclesEndPositions[params[1]] = {
-              x1: j * CELL_SIZE,
-              y1: i * CELL_SIZE,
-              x2: j * CELL_SIZE + CELL_SIZE,
-              y2: i * CELL_SIZE + CELL_SIZE,
+              x1: j * TILE_SIZE,
+              y1: i * TILE_SIZE,
+              x2: j * TILE_SIZE + TILE_SIZE,
+              y2: i * TILE_SIZE + TILE_SIZE,
             };
           }
         }
@@ -535,10 +535,10 @@ class Scene {
           const isVertical = !!(map[i][j - 1] && map[i][j + 1]);
 
           const position = {
-            x1: j * CELL_SIZE + (!isVertical && isDoor ? CELL_SIZE * 0.5 : 0),
-            y1: i * CELL_SIZE + (isVertical && isDoor ? CELL_SIZE * 0.5 : 0),
-            x2: j * CELL_SIZE + (!isVertical && isDoor ? CELL_SIZE * 0.5 : CELL_SIZE),
-            y2: i * CELL_SIZE + (isVertical && isDoor ? CELL_SIZE * 0.5 : CELL_SIZE),
+            x1: j * TILE_SIZE + (!isVertical && isDoor ? TILE_SIZE * 0.5 : 0),
+            y1: i * TILE_SIZE + (isVertical && isDoor ? TILE_SIZE * 0.5 : 0),
+            x2: j * TILE_SIZE + (!isVertical && isDoor ? TILE_SIZE * 0.5 : TILE_SIZE),
+            y2: i * TILE_SIZE + (isVertical && isDoor ? TILE_SIZE * 0.5 : TILE_SIZE),
           };
 
           obstacles.push({
@@ -547,10 +547,10 @@ class Scene {
               isSecret && obstacleParams
                 ? secretObstaclesEndPositions[obstacleParams[1]]
                 : {
-                    x1: isVertical ? position.x1 + CELL_SIZE : position.x1,
-                    y1: !isVertical ? position.y1 - CELL_SIZE : position.y1,
-                    x2: isVertical ? position.x2 + CELL_SIZE : position.x2,
-                    y2: !isVertical ? position.y2 - CELL_SIZE : position.y2,
+                    x1: isVertical ? position.x1 + TILE_SIZE : position.x1,
+                    y1: !isVertical ? position.y1 - TILE_SIZE : position.y1,
+                    x2: isVertical ? position.x2 + TILE_SIZE : position.x2,
+                    y2: !isVertical ? position.y2 - TILE_SIZE : position.y2,
                   },
             isDoor,
             isSecret,

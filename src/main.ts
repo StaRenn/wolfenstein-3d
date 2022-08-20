@@ -39,18 +39,21 @@ const map: GameMap = [
 
 // DO NOT SET MORE THAN 1
 let RESOLUTION_SCALE = 1;
+// 1 / RESOLUTION_SCALE must return integer value, because we cant render floating pixels
+let RESOLUTIONS_SCALE_VALUES = [0.25, 0.5, 1]
+
 let IS_PAUSED = false;
 
-const CELL_SIZE = 10;
-const RAY_LENGTH = CELL_SIZE * 100;
+const TILE_SIZE = 10;
+const RAY_LENGTH = TILE_SIZE * 100;
 const ACTOR_SPEED = 1;
-const ACTOR_START_POSITION = { x: CELL_SIZE * 1.5, y: CELL_SIZE * 1.5 };
+const ACTOR_START_POSITION = { x: TILE_SIZE * 1.5, y: TILE_SIZE * 1.5 };
 const DOOR_IDS = [27, 28];
-const FOV_DEGREES = 75;
+const FOV_DEGREES = 90;
 const FOV = (FOV_DEGREES * Math.PI) / 180;
-const OBSTACLES_MOVE_SPEED = CELL_SIZE / (CELL_SIZE * 4);
+const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
 const TEXTURE_SIZE = 64;
-const TEXTURE_SCALE = TEXTURE_SIZE / CELL_SIZE;
+const TEXTURE_SCALE = TEXTURE_SIZE / TILE_SIZE;
 
 const INTERSECTION_TYPES = {
   VERTICAL: 'VERTICAL',
@@ -65,10 +68,10 @@ const OBSTACLE_SIDES = {
 } as const;
 
 const NEIGHBOR_OFFSET = {
-  [OBSTACLE_SIDES.TOP]: -CELL_SIZE,
-  [OBSTACLE_SIDES.BOTTOM]: CELL_SIZE,
-  [OBSTACLE_SIDES.LEFT]: -CELL_SIZE,
-  [OBSTACLE_SIDES.RIGHT]: CELL_SIZE,
+  [OBSTACLE_SIDES.TOP]: -TILE_SIZE,
+  [OBSTACLE_SIDES.BOTTOM]: TILE_SIZE,
+  [OBSTACLE_SIDES.LEFT]: -TILE_SIZE,
+  [OBSTACLE_SIDES.RIGHT]: TILE_SIZE,
 } as const;
 // global
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -86,11 +89,10 @@ async function main() {
     }
   };
 
-  resolutionScaleRange.value = String(RESOLUTION_SCALE);
   resolutionScaleRange.onchange = (event: InputEvent) => {
     if (event.target) {
-      RESOLUTION_SCALE = Number((event.target as HTMLInputElement).value);
-
+      RESOLUTION_SCALE = RESOLUTIONS_SCALE_VALUES[Number((event.target as HTMLInputElement).value)];
+      console.log(RESOLUTION_SCALE)
       handleResize();
       scene.render();
     }

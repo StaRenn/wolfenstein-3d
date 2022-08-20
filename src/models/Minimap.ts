@@ -25,7 +25,7 @@ class Minimap {
 
     for (let obstacle of this.obstacles) {
       if (!obstacle.isDoor && !obstacle.isSprite) {
-        this.ctx.fillRect(obstacle.position.x1, obstacle.position.y1, CELL_SIZE, CELL_SIZE);
+        this.ctx.fillRect(obstacle.position.x1, obstacle.position.y1, TILE_SIZE, TILE_SIZE);
       }
     }
   }
