@@ -40,7 +40,7 @@ const map: GameMap = [
 // DO NOT SET MORE THAN 1
 let RESOLUTION_SCALE = 1;
 // 1 / RESOLUTION_SCALE must return integer value, because we cant render floating pixels
-let RESOLUTIONS_SCALE_VALUES = [0.25, 0.5, 1]
+let RESOLUTIONS_SCALE_VALUES = [0.25, 0.5, 1];
 
 let IS_PAUSED = false;
 
@@ -92,7 +92,7 @@ async function main() {
   resolutionScaleRange.onchange = (event: InputEvent) => {
     if (event.target) {
       RESOLUTION_SCALE = RESOLUTIONS_SCALE_VALUES[Number((event.target as HTMLInputElement).value)];
-      console.log(RESOLUTION_SCALE)
+
       handleResize();
       scene.render();
     }

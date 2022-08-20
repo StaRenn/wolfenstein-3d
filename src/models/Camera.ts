@@ -95,12 +95,12 @@ class Camera {
     this.rays = [];
 
     // you are my hero https://stackoverflow.com/a/55247059/17420897
-    const trueRaysAmount = Math.floor(raysAmount * RESOLUTION_SCALE )
-    const screenHalfLength = Math.tan(FOV / 2)
-    const segmentLength = screenHalfLength / (trueRaysAmount / 2)
+    const trueRaysAmount = Math.floor(raysAmount * RESOLUTION_SCALE);
+    const screenHalfLength = Math.tan(FOV / 2);
+    const segmentLength = screenHalfLength / (trueRaysAmount / 2);
 
     for (let i = 0; i < trueRaysAmount; i++) {
-      this.rays.push(new Ray(this.position,this.angle + Math.atan(segmentLength * i - screenHalfLength), this.angle));
+      this.rays.push(new Ray(this.position, this.angle + Math.atan(segmentLength * i - screenHalfLength), this.angle));
     }
   }
 
@@ -109,8 +109,8 @@ class Camera {
 
     this.angle = this.angle % (2 * Math.PI);
 
-    const screenHalfLength = Math.tan(FOV / 2)
-    const segmentLength = screenHalfLength / ((Math.floor(this.rays.length / 10) * 10) / 2)
+    const screenHalfLength = Math.tan(FOV / 2);
+    const segmentLength = screenHalfLength / ((Math.floor(this.rays.length / 10) * 10) / 2);
 
     for (let i = 0; i < this.rays.length; i++) {
       this.rays[i].changeAngle(this.angle + Math.atan(segmentLength * i - screenHalfLength), this.angle);

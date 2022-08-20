@@ -89,7 +89,6 @@ function main() {
         resolutionScaleRange.onchange = (event) => {
             if (event.target) {
                 RESOLUTION_SCALE = RESOLUTIONS_SCALE_VALUES[Number(event.target.value)];
-                console.log(RESOLUTION_SCALE);
                 handleResize();
                 scene.render();
             }
