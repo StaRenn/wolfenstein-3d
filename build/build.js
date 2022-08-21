@@ -316,6 +316,7 @@ class AnimationController {
         this.ctx = ctx;
         this.frameSet = frameSet;
         this.frameTime = null;
+        this.timeoutTime = null;
         this.frameDuration = frameDuration;
         this.frameSetChangeTimeout = frameSetChangeTimeout;
         this.currentFrameIdx = initialFrameIdx;
