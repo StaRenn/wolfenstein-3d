@@ -8,7 +8,13 @@ class Camera {
 
   public angle: number;
 
-  constructor(position: Vertex, raysAmount: number, ctx: CanvasRenderingContext2D, walls: Wall[], sprites: Sprite[]) {
+  constructor(
+    position: Camera['position'],
+    raysAmount: number,
+    ctx: Camera['ctx'],
+    walls: Camera['walls'],
+    sprites: Camera['sprites']
+  ) {
     this.angle = this.toRadians(60);
     this.ctx = ctx;
     this.walls = walls;
@@ -20,7 +26,7 @@ class Camera {
     this.changeRaysAmount(raysAmount);
   }
 
-  updatePosition(position: Vertex) {
+  updatePosition(position: Camera['position']) {
     for (let i = 0; i < this.rays.length; i++) {
       this.rays[i].move(position);
     }
@@ -28,7 +34,7 @@ class Camera {
     this.position = position;
   }
 
-  updateObstacles(walls: Wall[], sprites: Sprite[]) {
+  updateObstacles(walls: Camera['walls'], sprites: Camera['sprites']) {
     this.walls = walls;
     this.sprites = sprites;
   }

@@ -53,7 +53,7 @@ const RAY_LENGTH = TILE_SIZE * 100;
 const ACTOR_SPEED = 1;
 const ACTOR_START_POSITION = { x: TILE_SIZE * 1.5, y: TILE_SIZE * 1.5 };
 const DOOR_IDS = [27, 28];
-const FOV_DEGREES = 90;
+const FOV_DEGREES = 75;
 const FOV = (FOV_DEGREES * Math.PI) / 180;
 const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
 const TEXTURE_SIZE = 64;
@@ -134,32 +134,44 @@ function main() {
 window.onload = main;
 const WEAPONS = {
     KNIFE: {
+        frameSet: fillWeaponFrameSet('KNIFE'),
         maxDistance: 10,
         damage: 10,
-        speed: 10,
+        frameDuration: 50,
         ammoPerAttack: 0,
         icon: '',
     },
     PISTOL: {
+        frameSet: fillWeaponFrameSet('PISTOL'),
         maxDistance: 70,
         damage: 40,
-        speed: 10,
+        frameDuration: 80,
         ammoPerAttack: 1,
         icon: '',
     },
     MACHINE_GUN: {
+        frameSet: fillWeaponFrameSet('MACHINE_GUN'),
         maxDistance: 70,
         damage: 20,
-        speed: 30,
+        frameDuration: 30,
         ammoPerAttack: 1,
         icon: '',
     },
 };
+function fillWeaponFrameSet(weaponType) {
+    const frameSet = [];
+    for (let i = 0; i < 5; i++) {
+        const image = new Image();
+        image.src = `src/assets/weapons/${weaponType.toLowerCase()}/${weaponType.toLowerCase()}_frame_${i}.png`;
+        frameSet.push(image);
+    }
+    return frameSet;
+}
 class Actor {
     constructor(ctx, obstacles, obstaclesVectorsByPurposes, screenData) {
         this.ammo = 10;
         this.ctx = ctx;
-        this.currentWeapon = 'KNIFE';
+        this.currentWeapon = 'MACHINE_GUN';
         this.currentlyMovingObstacles = [];
         this.health = 100;
         this.horizontalSpeed = 0;
@@ -169,8 +181,25 @@ class Actor {
         this.position = ACTOR_START_POSITION;
         this.screenData = screenData;
         this.verticalSpeed = 0;
-        this.weapons = ['KNIFE', 'PISTOL'];
+        this.weapons = ['KNIFE', 'PISTOL', 'MACHINE_GUN'];
+        this.canShoot = true;
+        this.isShooting = false;
+        this.renderWeapon = this.renderWeapon.bind(this);
         this.camera = new Camera(ACTOR_START_POSITION, this.screenData.screenWidth * RESOLUTION_SCALE, this.ctx, this.obstaclesVectorsByPurposes.walls, this.obstaclesVectorsByPurposes.sprites);
+        this.weaponAnimationController = new AnimationController({
+            ctx: this.ctx,
+            renderFunction: this.renderWeapon,
+            initialFrameIdx: 0,
+            isLoopAnimation: false,
+            frameSet: WEAPONS[this.currentWeapon].frameSet,
+            frameDuration: WEAPONS[this.currentWeapon].frameDuration,
+            frameSetChangeTimeout: 100,
+            onAnimationEnd: () => {
+                this.canShoot = true;
+            },
+        });
+        window.addEventListener('mousedown', () => (this.isShooting = true));
+        window.addEventListener('mouseup', () => (this.isShooting = false));
         window.addEventListener('keydown', this.handleKeyDown.bind(this));
         window.addEventListener('keyup', this.handleKeyUp.bind(this));
     }
@@ -182,6 +211,15 @@ class Actor {
         this.obstacles = obstacles;
     }
     handleKeyDown(event) {
+        if (event.key === '1') {
+            this.changeWeapon('KNIFE');
+        }
+        else if (event.key === '2') {
+            this.changeWeapon('PISTOL');
+        }
+        else if (event.key === '3') {
+            this.changeWeapon('MACHINE_GUN');
+        }
         if (event.keyCode === 87) {
             this.verticalSpeed = ACTOR_SPEED;
         }
@@ -208,6 +246,24 @@ class Actor {
         else if (event.keyCode === 65 && this.horizontalSpeed < 0) {
             this.horizontalSpeed = 0;
         }
+    }
+    renderWeapon(texture) {
+        const weaponSize = this.screenData.screenHeight;
+        const xOffset = this.screenData.screenWidth / 2 - weaponSize / 2;
+        const yOffset = this.screenData.screenHeight - weaponSize;
+        this.ctx.drawImage(texture, 0, 0, TEXTURE_SIZE, TEXTURE_SIZE, xOffset, yOffset, weaponSize, weaponSize);
+    }
+    changeWeapon(weaponType) {
+        if (this.weapons.includes(weaponType)) {
+            this.currentWeapon = weaponType;
+            this.weaponAnimationController.updateFrameSet(WEAPONS[this.currentWeapon].frameSet);
+            this.weaponAnimationController.updateFrameDuration(WEAPONS[this.currentWeapon].frameDuration);
+            this.canShoot = true;
+        }
+    }
+    shoot() {
+        this.weaponAnimationController.playAnimation();
+        this.canShoot = false;
     }
     move() {
         if (this.horizontalSpeed === 0 && this.verticalSpeed === 0) {
@@ -247,7 +303,89 @@ class Actor {
         this.position = position;
         this.camera.updatePosition(this.position);
     }
-    render() { }
+    render() {
+        this.weaponAnimationController.iterate();
+        if (this.isShooting && this.canShoot && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {
+            this.shoot();
+        }
+        this.move();
+    }
+}
+class AnimationController {
+    constructor({ ctx, renderFunction, frameSet, frameDuration, initialFrameIdx, isLoopAnimation, frameSetChangeTimeout = 0, onAnimationEnd = () => { }, onAnimationStart = () => { }, onFrameChange = () => { }, }) {
+        this.ctx = ctx;
+        this.frameSet = frameSet;
+        this.frameTime = null;
+        this.frameDuration = frameDuration;
+        this.frameSetChangeTimeout = frameSetChangeTimeout;
+        this.currentFrameIdx = initialFrameIdx;
+        this.derivedRenderFunction = renderFunction;
+        this.isLoopAnimation = isLoopAnimation;
+        this.onAnimationEnd = onAnimationEnd;
+        this.onAnimationStart = onAnimationStart;
+        this.onFrameChange = onFrameChange;
+        if (isLoopAnimation) {
+            this.frameTime = new Date().getTime();
+        }
+    }
+    updateFrameSet(frameSet) {
+        this.frameSet = frameSet;
+        this.currentFrameIdx = 0;
+        this.frameTime = null;
+        this.timeoutTime = new Date().getTime();
+    }
+    getCurrentFrame() {
+        return this.currentFrameIdx;
+    }
+    updateCurrentFrame(frameIdx) {
+        this.currentFrameIdx = frameIdx;
+        this.frameTime = null;
+        this.onFrameChange(this.currentFrameIdx);
+    }
+    updateFrameDuration(frameDuration) {
+        this.frameDuration = frameDuration;
+    }
+    getIsCurrentlyInTimeout() {
+        const currentTime = new Date().getTime();
+        if (!this.timeoutTime) {
+            return false;
+        }
+        return currentTime < this.timeoutTime + this.frameSetChangeTimeout;
+    }
+    checkIsFrameTimeExpired() {
+        if (this.frameTime) {
+            const currentTime = new Date().getTime();
+            return currentTime >= this.frameTime + this.frameDuration;
+        }
+        return false;
+    }
+    playAnimation() {
+        if (this.currentFrameIdx === this.frameSet.length - 1) {
+            this.frameTime = null;
+            this.currentFrameIdx = 0;
+            this.onAnimationEnd();
+            if (this.isLoopAnimation) {
+                this.frameTime = new Date().getTime();
+            }
+        }
+        else {
+            if (this.currentFrameIdx === 0) {
+                this.onAnimationStart();
+            }
+            this.currentFrameIdx += 1;
+            this.frameTime = new Date().getTime();
+        }
+        this.onFrameChange(this.currentFrameIdx);
+    }
+    iterate() {
+        if (this.timeoutTime && !this.getIsCurrentlyInTimeout()) {
+            this.timeoutTime = null;
+        }
+        if (this.checkIsFrameTimeExpired()) {
+            this.playAnimation();
+        }
+        this.derivedRenderFunction(this.frameSet[this.currentFrameIdx]);
+    }
 }
 class Camera {
     constructor(position, raysAmount, ctx, walls, sprites) {
@@ -474,9 +612,6 @@ class Scene {
         }
         this.actor.updateObstacles(this.obstacles);
         this.actor.updateObstaclesVectorsByPurposes(planes);
-        if (!IS_PAUSED) {
-            this.actor.move();
-        }
         const intersections = this.camera.getIntersections();
         const sortedAndMergedIntersections = [...intersections.walls, ...intersections.sprites].sort((a, b) => b.distance - a.distance);
         for (let i = 0; i < sortedAndMergedIntersections.length; i++) {
@@ -498,6 +633,9 @@ class Scene {
             if (intersection.distance !== RAY_LENGTH) {
                 this.ctx.drawImage(texture, textureOffsetX, textureOffsetY, textureWidth, textureSize, textureXPositionOnScreen, textureYPositionOnScreen, textureWidthOnScreen, textureHeight);
             }
+        }
+        if (!IS_PAUSED) {
+            this.actor.render();
         }
         this.minimap.render(this.actor.position, intersections.walls);
     }

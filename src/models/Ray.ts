@@ -3,7 +3,7 @@ class Ray {
   private cameraAngle: number;
   private cameraPosition: Vector;
 
-  constructor(position: Vertex, angle: number, cameraAngle: number) {
+  constructor(position: Vertex, angle: Ray['rayAngle'], cameraAngle: Ray['cameraAngle']) {
     this.rayAngle = angle;
     this.cameraAngle = cameraAngle;
 
@@ -15,7 +15,7 @@ class Ray {
     };
   }
 
-  changeAngle(angle: number, cameraAngle: number) {
+  changeAngle(angle: Ray['rayAngle'], cameraAngle: Ray['cameraAngle']) {
     this.cameraAngle = cameraAngle;
     this.rayAngle = angle;
 

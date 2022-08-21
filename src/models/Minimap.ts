@@ -2,7 +2,7 @@ class Minimap {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly obstacles: Obstacle[];
 
-  constructor(ctx: CanvasRenderingContext2D, obstacles: Obstacle[]) {
+  constructor(ctx: Minimap['ctx'], obstacles: Minimap['obstacles']) {
     this.ctx = ctx;
     this.obstacles = obstacles;
   }

@@ -49,14 +49,15 @@ type Sprite = Omit<Plane, 'isSprite'> & { isSprite: true };
 type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
 
 type Weapon = {
+  frameSet: HTMLImageElement[];
   maxDistance: number;
   damage: number;
-  speed: number;
+  frameDuration: number;
   ammoPerAttack: number;
   icon: string;
 };
 
-type Weapons = { [key in WeaponType]: Weapon };
+type Weapons = { readonly [key in WeaponType]: Weapon };
 
 type ScreenData = {
   screenHeight: number;

@@ -12,7 +12,7 @@ class Scene {
   private currentlyMovingObstacles: { [index: number]: Obstacle };
   private screenData: ScreenData;
 
-  constructor(canvas: HTMLCanvasElement, map: GameMap) {
+  constructor(canvas: Scene['canvas'], map: Scene['map']) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.map = map;
@@ -74,10 +74,6 @@ class Scene {
     this.actor.updateObstacles(this.obstacles);
     this.actor.updateObstaclesVectorsByPurposes(planes);
 
-    if (!IS_PAUSED) {
-      this.actor.move();
-    }
-
     const intersections = this.camera.getIntersections();
 
     const sortedAndMergedIntersections = [...intersections.walls, ...intersections.sprites].sort(
@@ -121,10 +117,14 @@ class Scene {
       }
     }
 
+    if (!IS_PAUSED) {
+      this.actor.render();
+    }
+
     this.minimap.render(this.actor.position, intersections.walls);
   }
 
-  resize(width: number, height: number) {
+  resize(width: Scene['canvas']['width'], height: Scene['canvas']['height']) {
     this.canvas.width = width;
     this.canvas.height = height;
 
