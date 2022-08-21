@@ -64,8 +64,8 @@ class Actor {
       },
     });
 
-    window.addEventListener('mousedown', () => (this.isShooting = true));
-    window.addEventListener('mouseup', () => (this.isShooting = false));
+    window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
+    window.addEventListener('mouseup', this.handleMouseEvent.bind(this));
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
   }
@@ -99,6 +99,17 @@ class Actor {
       this.horizontalSpeed = ACTOR_SPEED;
     } else if (event.keyCode === 65 /* a */) {
       this.horizontalSpeed = -ACTOR_SPEED;
+    }
+  }
+
+  handleMouseEvent(event: MouseEvent, isShooting: boolean) {
+    // lmb down
+    if (event.buttons === 1) {
+      this.isShooting = true;
+    }
+    // lmb up
+    if (event.buttons === 0) {
+      this.isShooting = false;
     }
   }
 
