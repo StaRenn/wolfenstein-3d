@@ -19,34 +19,6 @@ let IS_PAUSED = false;
 let FOV_DEGREES = 90;
 let FOV = (FOV_DEGREES * Math.PI) / 180;
 
-const TILE_SIZE = 10;
-const RAY_LENGTH = TILE_SIZE * 100;
-const ACTOR_SPEED = 1;
-const ACTOR_START_POSITION = { x: TILE_SIZE * 1.5, y: TILE_SIZE * 1.5 };
-const DOOR_IDS = [27, 28];
-const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
-const TEXTURE_SIZE = 64;
-const TEXTURE_SCALE = TEXTURE_SIZE / TILE_SIZE;
-
-const INTERSECTION_TYPES = {
-  VERTICAL: 'VERTICAL',
-  HORIZONTAL: 'HORIZONTAL',
-} as const;
-
-const OBSTACLE_SIDES = {
-  TOP: 'TOP',
-  BOTTOM: 'BOTTOM',
-  LEFT: 'LEFT',
-  RIGHT: 'RIGHT',
-} as const;
-
-const NEIGHBOR_OFFSET = {
-  [OBSTACLE_SIDES.TOP]: -TILE_SIZE,
-  [OBSTACLE_SIDES.BOTTOM]: TILE_SIZE,
-  [OBSTACLE_SIDES.LEFT]: -TILE_SIZE,
-  [OBSTACLE_SIDES.RIGHT]: TILE_SIZE,
-} as const;
-// global
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
 async function main() {

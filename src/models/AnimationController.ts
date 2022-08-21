@@ -1,6 +1,5 @@
 class AnimationController {
-  private readonly ctx: CanvasRenderingContext2D;
-  private frameSet: HTMLImageElement[];
+  private frameSet: Frame[];
   private frameTime: null | number; // ms
   private currentFrameIdx: number;
   private derivedRenderFunction: (frame: HTMLImageElement) => void;
@@ -8,15 +7,12 @@ class AnimationController {
   private onAnimationStart: () => void;
   private onFrameChange: (frameIdx: number) => void;
   private isLoopAnimation: boolean;
-  private frameDuration: number; // ms
   private frameSetChangeTimeout: number; // ms
   private timeoutTime: null | number; // ms
 
   constructor({
-    ctx,
     renderFunction,
     frameSet,
-    frameDuration,
     initialFrameIdx,
     isLoopAnimation,
     frameSetChangeTimeout = 0,
@@ -24,23 +20,18 @@ class AnimationController {
     onAnimationStart = () => {},
     onFrameChange = () => {},
   }: {
-    ctx: AnimationController['ctx'];
     renderFunction: AnimationController['derivedRenderFunction'];
     onAnimationEnd?: AnimationController['onAnimationEnd'];
     onAnimationStart?: AnimationController['onAnimationStart'];
     onFrameChange?: AnimationController['onFrameChange'];
     frameSet: AnimationController['frameSet'];
-    frameDuration: AnimationController['frameDuration'];
     initialFrameIdx: AnimationController['currentFrameIdx'];
     isLoopAnimation: AnimationController['isLoopAnimation'];
     frameSetChangeTimeout?: AnimationController['frameSetChangeTimeout'];
   }) {
-    this.ctx = ctx;
-
     this.frameSet = frameSet;
     this.frameTime = null;
     this.timeoutTime = null;
-    this.frameDuration = frameDuration;
     this.frameSetChangeTimeout = frameSetChangeTimeout;
     this.currentFrameIdx = initialFrameIdx;
     this.derivedRenderFunction = renderFunction;
@@ -73,10 +64,6 @@ class AnimationController {
     this.onFrameChange(this.currentFrameIdx);
   }
 
-  updateFrameDuration(frameDuration: AnimationController['frameDuration']) {
-    this.frameDuration = frameDuration;
-  }
-
   getIsCurrentlyInTimeout() {
     const currentTime = new Date().getTime();
 
@@ -91,7 +78,7 @@ class AnimationController {
     if (this.frameTime) {
       const currentTime = new Date().getTime();
 
-      return currentTime >= this.frameTime + this.frameDuration;
+      return currentTime >= this.frameTime + this.frameSet[this.currentFrameIdx].duration;
     }
 
     return false;
@@ -127,7 +114,7 @@ class AnimationController {
     if (this.checkIsFrameTimeExpired()) {
       this.playAnimation();
     }
-
-    this.derivedRenderFunction(this.frameSet[this.currentFrameIdx]);
+    console.log(this.frameSet);
+    this.derivedRenderFunction(this.frameSet[this.currentFrameIdx].image);
   }
 }

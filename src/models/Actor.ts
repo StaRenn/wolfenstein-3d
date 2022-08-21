@@ -6,15 +6,19 @@ class Actor {
   private currentlyMovingObstacles: { [index: number]: Obstacle };
   private health: number;
   private horizontalSpeed: number;
-  private lifes: 1;
+  private lives: number;
+  private level: number;
+  private score: number;
   private obstacles: Obstacle[];
   private obstaclesVectorsByPurposes: ObstaclesVectorsByPurposes;
   private screenData: ScreenData;
   private verticalSpeed: number;
   private weapons: (keyof typeof WEAPONS)[];
-  private weaponAnimationController: AnimationController;
   private canShoot: boolean;
   private isShooting: boolean;
+
+  private weaponAnimationController: AnimationController;
+  private hud: Hud;
 
   public position: Vertex;
   public camera: Camera;
@@ -25,13 +29,15 @@ class Actor {
     obstaclesVectorsByPurposes: Actor['obstaclesVectorsByPurposes'],
     screenData: Actor['screenData']
   ) {
-    this.ammo = 10;
+    this.ammo = 50;
+    this.score = 123456;
     this.ctx = ctx;
     this.currentWeapon = 'MACHINE_GUN';
     this.currentlyMovingObstacles = [];
     this.health = 100;
     this.horizontalSpeed = 0;
-    this.lifes = 1;
+    this.lives = 666;
+    this.level = 666;
     this.obstacles = obstacles;
     this.obstaclesVectorsByPurposes = obstaclesVectorsByPurposes;
     this.position = ACTOR_START_POSITION;
@@ -51,13 +57,13 @@ class Actor {
       this.obstaclesVectorsByPurposes.sprites
     );
 
+    this.hud = new Hud(this.ctx, this.screenData);
+
     this.weaponAnimationController = new AnimationController({
-      ctx: this.ctx,
       renderFunction: this.renderWeapon,
       initialFrameIdx: 0,
       isLoopAnimation: false,
       frameSet: WEAPONS[this.currentWeapon].frameSet,
-      frameDuration: WEAPONS[this.currentWeapon].frameDuration,
       frameSetChangeTimeout: 100,
       onAnimationEnd: () => {
         this.canShoot = true;
@@ -126,9 +132,10 @@ class Actor {
   }
 
   renderWeapon(texture: HTMLImageElement) {
-    const weaponSize = this.screenData.screenHeight;
+    const hudHeight = ((this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT) / HUD_PANEL.WIDTH) * HUD_PANEL.HEIGHT;
+    const weaponSize = this.screenData.screenHeight - hudHeight;
     const xOffset = this.screenData.screenWidth / 2 - weaponSize / 2;
-    const yOffset = this.screenData.screenHeight - weaponSize;
+    const yOffset = this.screenData.screenHeight - weaponSize - hudHeight;
 
     this.ctx.drawImage(texture, 0, 0, TEXTURE_SIZE, TEXTURE_SIZE, xOffset, yOffset, weaponSize, weaponSize);
   }
@@ -137,14 +144,16 @@ class Actor {
     if (this.weapons.includes(weaponType)) {
       this.currentWeapon = weaponType;
       this.weaponAnimationController.updateFrameSet(WEAPONS[this.currentWeapon].frameSet);
-      this.weaponAnimationController.updateFrameDuration(WEAPONS[this.currentWeapon].frameDuration);
       this.canShoot = true;
     }
   }
 
   shoot() {
-    this.weaponAnimationController.playAnimation();
-    this.canShoot = false;
+    if (this.ammo > 0 || this.currentWeapon === 'KNIFE') {
+      this.weaponAnimationController.playAnimation();
+      this.ammo -= WEAPONS[this.currentWeapon].ammoPerAttack;
+      this.canShoot = false;
+    }
   }
 
   move() {
@@ -208,6 +217,15 @@ class Actor {
     if (this.isShooting && this.canShoot && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {
       this.shoot();
     }
+
+    this.hud.render({
+      currentWeapon: this.currentWeapon,
+      ammo: this.ammo,
+      lives: this.lives,
+      score: this.score,
+      level: this.level,
+      health: this.health,
+    });
 
     this.move();
   }

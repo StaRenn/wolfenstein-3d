@@ -32,15 +32,11 @@ class Scene {
     this.sprites = [];
 
     for (let i = 1; i < 31; i++) {
-      const image = new Image();
-      image.src = `src/assets/textures/${i}.png`;
-      this.textures.push(image);
+      this.textures.push(getImageWithSource(`src/assets/textures/${i}.png`));
     }
 
     for (let i = 1; i < 2; i++) {
-      const image = new Image();
-      image.src = `src/assets/sprites/${i}.png`;
-      this.sprites.push(image);
+      this.sprites.push(getImageWithSource(`src/assets/sprites/${i}.png`));
     }
 
     this.actor = new Actor(
