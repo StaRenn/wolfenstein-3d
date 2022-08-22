@@ -126,22 +126,25 @@ const WEAPONS = {
         damage: 10,
         frameDuration: 50,
         ammoPerAttack: 0,
+        shootFrameIdx: 2,
         icon: getImageWithSource('src/assets/hud/knife.png'),
     },
     PISTOL: {
-        frameSet: fillWeaponFrameSet('PISTOL', 80),
+        frameSet: fillWeaponFrameSet('PISTOL', 65),
         maxDistance: 70,
         damage: 40,
-        frameDuration: 80,
+        frameDuration: 65,
         ammoPerAttack: 1,
+        shootFrameIdx: 2,
         icon: getImageWithSource('src/assets/hud/pistol.png'),
     },
     MACHINE_GUN: {
-        frameSet: fillWeaponFrameSet('MACHINE_GUN', 30),
+        frameSet: fillWeaponFrameSet('MACHINE_GUN', 25),
         maxDistance: 70,
         damage: 20,
-        frameDuration: 30,
+        frameDuration: 25,
         ammoPerAttack: 1,
+        shootFrameIdx: 2,
         icon: getImageWithSource('src/assets/hud/machine_gun.png'),
     },
 };
@@ -160,6 +163,7 @@ const HUD_PANEL = {
     PORTRAIT_X_OFFSET: 174,
     PORTRAIT_Y_OFFSET: 5,
 };
+const FONT_IMAGE = getImageWithSource('src/assets/hud/font.png');
 const FONT_SYMBOL_WIDTH = 8;
 const FONT_SYMBOL_HEIGHT = 16;
 const WEAPON_ICON_WIDTH = 48;
@@ -168,15 +172,26 @@ const PORTRAIT_WIDTH = 30;
 const PORTRAIT_HEIGHT = 31;
 const ACTOR_PORTRAIT_FRAME_SETS = {
     HEALTHY: fillPortraitFrameSet('HEALTHY'),
+    JUST_A_SCRATCH: fillPortraitFrameSet('JUST_A_SCRATCH'),
+    MINOR_DAMAGE: fillPortraitFrameSet('MINOR_DAMAGE'),
+    MODERATE_DAMAGE: fillPortraitFrameSet('MODERATE_DAMAGE'),
+    SEVERE_DAMAGE: fillPortraitFrameSet('SEVERE_DAMAGE'),
+    SUFFERING: fillPortraitFrameSet('SUFFERING'),
+    NEAR_DEATH: fillPortraitFrameSet('NEAR_DEATH'),
+    DEAD: [
+        {
+            data: getImageWithSource('src/assets/hud/portrait/dead/frame_0.png'),
+            duration: 10000,
+        },
+    ],
 };
-const FONT_IMAGE = getImageWithSource('src/assets/hud/font.png');
 function fillWeaponFrameSet(weaponType, duration) {
     const frameSet = [];
     for (let i = 0; i < 5; i++) {
         frameSet.push(getImageWithSource(`src/assets/weapons/${weaponType.toLowerCase()}/${weaponType.toLowerCase()}_frame_${i}.png`));
     }
     return frameSet.map((frame) => ({
-        image: frame,
+        data: frame,
         duration,
     }));
 }
@@ -187,43 +202,43 @@ function fillPortraitFrameSet(condition) {
     }
     return [
         {
-            image: frameSet[0],
+            data: frameSet[0],
             duration: 2000,
         },
         {
-            image: frameSet[1],
+            data: frameSet[1],
             duration: 750,
         },
         {
-            image: frameSet[2],
+            data: frameSet[2],
             duration: 750,
         },
         {
-            image: frameSet[1],
+            data: frameSet[1],
             duration: 750,
         },
         {
-            image: frameSet[0],
+            data: frameSet[0],
             duration: 1500,
         },
         {
-            image: frameSet[1],
+            data: frameSet[1],
             duration: 1500,
         },
         {
-            image: frameSet[2],
+            data: frameSet[2],
             duration: 200,
         },
         {
-            image: frameSet[1],
+            data: frameSet[1],
             duration: 500,
         },
         {
-            image: frameSet[2],
+            data: frameSet[2],
             duration: 500,
         },
         {
-            image: frameSet[1],
+            data: frameSet[1],
             duration: 500,
         },
     ];
@@ -233,9 +248,6 @@ function getImageWithSource(path) {
     image.src = path;
     return image;
 }
-function getFontOffsetByNumber(value) {
-    return FONT_SYMBOL_WIDTH * Number(value);
-}
 class Actor {
     constructor(ctx, obstacles, obstaclesVectorsByPurposes, screenData) {
         this.ammo = 50;
@@ -243,7 +255,7 @@ class Actor {
         this.ctx = ctx;
         this.currentWeapon = 'MACHINE_GUN';
         this.currentlyMovingObstacles = [];
-        this.health = 100;
+        this.health = 15;
         this.horizontalSpeed = 0;
         this.lives = 666;
         this.level = 666;
@@ -253,25 +265,26 @@ class Actor {
         this.screenData = screenData;
         this.verticalSpeed = 0;
         this.weapons = ['KNIFE', 'PISTOL', 'MACHINE_GUN'];
-        this.canShoot = true;
         this.isShooting = false;
         this.renderWeapon = this.renderWeapon.bind(this);
         this.camera = new Camera(ACTOR_START_POSITION, this.screenData.screenWidth * RESOLUTION_SCALE, this.ctx, this.obstaclesVectorsByPurposes.walls, this.obstaclesVectorsByPurposes.sprites);
         this.hud = new Hud(this.ctx, this.screenData);
+        this.timeout = new Timeout();
+        this.shoot = this.shoot.bind(this);
         this.weaponAnimationController = new AnimationController({
             renderFunction: this.renderWeapon,
             initialFrameIdx: 0,
             isLoopAnimation: false,
             frameSet: WEAPONS[this.currentWeapon].frameSet,
-            frameSetChangeTimeout: 100,
-            onAnimationEnd: () => {
-                this.canShoot = true;
-            },
+            onFrameChange: this.shoot,
         });
         window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
         window.addEventListener('mouseup', this.handleMouseEvent.bind(this));
         window.addEventListener('keydown', this.handleKeyDown.bind(this));
         window.addEventListener('keyup', this.handleKeyUp.bind(this));
+    }
+    get canShoot() {
+        return this.timeout.isExpired && (this.ammo > 0 || WEAPONS[this.currentWeapon].ammoPerAttack === 0);
     }
     updateObstaclesVectorsByPurposes(obstacleVectorsByPurposes) {
         this.obstaclesVectorsByPurposes = obstacleVectorsByPurposes;
@@ -303,7 +316,7 @@ class Actor {
             this.horizontalSpeed = -ACTOR_SPEED;
         }
     }
-    handleMouseEvent(event, isShooting) {
+    handleMouseEvent(event) {
         if (event.buttons === 1) {
             this.isShooting = true;
         }
@@ -336,14 +349,19 @@ class Actor {
         if (this.weapons.includes(weaponType)) {
             this.currentWeapon = weaponType;
             this.weaponAnimationController.updateFrameSet(WEAPONS[this.currentWeapon].frameSet);
-            this.canShoot = true;
+            this.timeout.set(100);
         }
     }
-    shoot() {
-        if (this.ammo > 0 || this.currentWeapon === 'KNIFE') {
+    playShootAnimation() {
+        if (this.canShoot) {
+            const weapon = WEAPONS[this.currentWeapon];
             this.weaponAnimationController.playAnimation();
+            this.timeout.set(weapon.frameDuration * weapon.frameSet.length - 1);
+        }
+    }
+    shoot(frameIdx) {
+        if (frameIdx === WEAPONS[this.currentWeapon].shootFrameIdx) {
             this.ammo -= WEAPONS[this.currentWeapon].ammoPerAttack;
-            this.canShoot = false;
         }
     }
     move() {
@@ -385,9 +403,10 @@ class Actor {
         this.camera.updatePosition(this.position);
     }
     render() {
+        this.timeout.iterate();
         this.weaponAnimationController.iterate();
-        if (this.isShooting && this.canShoot && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {
-            this.shoot();
+        if (this.isShooting && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {
+            this.playShootAnimation();
         }
         this.hud.render({
             currentWeapon: this.currentWeapon,
@@ -401,56 +420,41 @@ class Actor {
     }
 }
 class AnimationController {
-    constructor({ renderFunction, frameSet, initialFrameIdx, isLoopAnimation, frameSetChangeTimeout = 0, onAnimationEnd = () => { }, onAnimationStart = () => { }, onFrameChange = () => { }, }) {
+    constructor({ frameSet, renderFunction, initialFrameIdx, isLoopAnimation, onAnimationEnd = () => { }, onAnimationStart = () => { }, onFrameChange = () => { }, }) {
         this.frameSet = frameSet;
-        this.frameTime = null;
-        this.timeoutTime = null;
-        this.frameSetChangeTimeout = frameSetChangeTimeout;
         this.currentFrameIdx = initialFrameIdx;
         this.derivedRenderFunction = renderFunction;
         this.isLoopAnimation = isLoopAnimation;
         this.onAnimationEnd = onAnimationEnd;
         this.onAnimationStart = onAnimationStart;
         this.onFrameChange = onFrameChange;
+        this.playAnimation = this.playAnimation.bind(this);
+        this.timeout = new Timeout(this.playAnimation);
         if (isLoopAnimation) {
-            this.frameTime = new Date().getTime();
+            this.timeout.set(this.getCurrentFrame().duration);
         }
     }
     updateFrameSet(frameSet) {
         this.frameSet = frameSet;
         this.currentFrameIdx = 0;
-        this.frameTime = null;
-        this.timeoutTime = new Date().getTime();
+        this.timeout.reset();
+        if (this.isLoopAnimation) {
+            this.timeout.set(this.getCurrentFrame().duration);
+        }
     }
     getCurrentFrame() {
-        return this.currentFrameIdx;
-    }
-    updateCurrentFrame(frameIdx) {
-        this.currentFrameIdx = frameIdx;
-        this.frameTime = null;
-        this.onFrameChange(this.currentFrameIdx);
+        return this.frameSet[this.currentFrameIdx];
     }
     getIsCurrentlyInTimeout() {
-        const currentTime = new Date().getTime();
-        if (!this.timeoutTime) {
-            return false;
-        }
-        return currentTime < this.timeoutTime + this.frameSetChangeTimeout;
-    }
-    checkIsFrameTimeExpired() {
-        if (this.frameTime) {
-            const currentTime = new Date().getTime();
-            return currentTime >= this.frameTime + this.frameSet[this.currentFrameIdx].duration;
-        }
-        return false;
+        return !this.timeout.isExpired;
     }
     playAnimation() {
         if (this.currentFrameIdx === this.frameSet.length - 1) {
-            this.frameTime = null;
+            this.timeout.reset();
             this.currentFrameIdx = 0;
             this.onAnimationEnd();
             if (this.isLoopAnimation) {
-                this.frameTime = new Date().getTime();
+                this.timeout.set(this.getCurrentFrame().duration);
             }
         }
         else {
@@ -458,19 +462,13 @@ class AnimationController {
                 this.onAnimationStart();
             }
             this.currentFrameIdx += 1;
-            this.frameTime = new Date().getTime();
+            this.timeout.set(this.getCurrentFrame().duration);
         }
         this.onFrameChange(this.currentFrameIdx);
     }
     iterate() {
-        if (this.timeoutTime && !this.getIsCurrentlyInTimeout()) {
-            this.timeoutTime = null;
-        }
-        if (this.checkIsFrameTimeExpired()) {
-            this.playAnimation();
-        }
-        console.log(this.frameSet);
-        this.derivedRenderFunction(this.frameSet[this.currentFrameIdx].image);
+        this.timeout.iterate();
+        this.derivedRenderFunction(this.frameSet[this.currentFrameIdx].data);
     }
 }
 class Camera {
@@ -558,13 +556,40 @@ class Hud {
     constructor(ctx, screenData) {
         this.ctx = ctx;
         this.screenData = screenData;
+        this.currentFrameSet = ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
         this.renderPortrait = this.renderPortrait.bind(this);
         this.portraitAnimation = new AnimationController({
             renderFunction: this.renderPortrait,
-            frameSet: ACTOR_PORTRAIT_FRAME_SETS.HEALTHY,
+            frameSet: this.currentFrameSet,
             initialFrameIdx: 0,
             isLoopAnimation: true,
         });
+    }
+    getHealthFrameSet(health) {
+        if (health > 85) {
+            return ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
+        }
+        else if (health > 75) {
+            return ACTOR_PORTRAIT_FRAME_SETS.JUST_A_SCRATCH;
+        }
+        else if (health > 50) {
+            return ACTOR_PORTRAIT_FRAME_SETS.MINOR_DAMAGE;
+        }
+        else if (health > 35) {
+            return ACTOR_PORTRAIT_FRAME_SETS.MODERATE_DAMAGE;
+        }
+        else if (health > 20) {
+            return ACTOR_PORTRAIT_FRAME_SETS.SEVERE_DAMAGE;
+        }
+        else if (health > 5) {
+            return ACTOR_PORTRAIT_FRAME_SETS.SUFFERING;
+        }
+        else if (health > 0) {
+            return ACTOR_PORTRAIT_FRAME_SETS.NEAR_DEATH;
+        }
+        else {
+            return ACTOR_PORTRAIT_FRAME_SETS.DEAD;
+        }
     }
     renderPortrait(image) {
         const textureXPositionOnScreen = this.offsetX + Math.round(HUD_PANEL.PORTRAIT_X_OFFSET * this.scale);
@@ -584,6 +609,11 @@ class Hud {
         }
     }
     render({ ammo, lives, score, health, currentWeapon, level, }) {
+        const updatedHealthFrameSet = this.getHealthFrameSet(health);
+        if (updatedHealthFrameSet !== this.currentFrameSet) {
+            this.currentFrameSet = updatedHealthFrameSet;
+            this.portraitAnimation.updateFrameSet(this.currentFrameSet);
+        }
         this.scale = (this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT) / HUD_PANEL.WIDTH;
         this.width = Math.round(this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT);
         this.height = Math.round(HUD_PANEL.HEIGHT * this.scale);
@@ -1088,6 +1118,30 @@ class Scene {
             }
         }
         return obstacles;
+    }
+}
+class Timeout {
+    constructor(onTimeoutExpire = () => { }) {
+        this.timeoutTime = null;
+        this.onTimeoutExpire = onTimeoutExpire;
+    }
+    get isExpired() {
+        return !this.timeoutTime;
+    }
+    reset() {
+        this.timeoutTime = null;
+    }
+    set(timeoutDuration) {
+        this.timeoutTime = new Date().getTime() + timeoutDuration;
+    }
+    iterate() {
+        if (this.timeoutTime) {
+            const currentTime = new Date().getTime();
+            if (currentTime > this.timeoutTime) {
+                this.timeoutTime = null;
+                this.onTimeoutExpire();
+            }
+        }
     }
 }
 const isSprite = (plane) => {

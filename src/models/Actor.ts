@@ -14,11 +14,11 @@ class Actor {
   private screenData: ScreenData;
   private verticalSpeed: number;
   private weapons: (keyof typeof WEAPONS)[];
-  private canShoot: boolean;
   private isShooting: boolean;
 
   private weaponAnimationController: AnimationController;
   private hud: Hud;
+  private timeout: Timeout;
 
   public position: Vertex;
   public camera: Camera;
@@ -34,7 +34,7 @@ class Actor {
     this.ctx = ctx;
     this.currentWeapon = 'MACHINE_GUN';
     this.currentlyMovingObstacles = [];
-    this.health = 100;
+    this.health = 15;
     this.horizontalSpeed = 0;
     this.lives = 666;
     this.level = 666;
@@ -44,7 +44,6 @@ class Actor {
     this.screenData = screenData;
     this.verticalSpeed = 0;
     this.weapons = ['KNIFE', 'PISTOL', 'MACHINE_GUN'];
-    this.canShoot = true;
     this.isShooting = false;
 
     this.renderWeapon = this.renderWeapon.bind(this);
@@ -59,21 +58,26 @@ class Actor {
 
     this.hud = new Hud(this.ctx, this.screenData);
 
+    this.timeout = new Timeout();
+
+    this.shoot = this.shoot.bind(this);
+
     this.weaponAnimationController = new AnimationController({
       renderFunction: this.renderWeapon,
       initialFrameIdx: 0,
       isLoopAnimation: false,
       frameSet: WEAPONS[this.currentWeapon].frameSet,
-      frameSetChangeTimeout: 100,
-      onAnimationEnd: () => {
-        this.canShoot = true;
-      },
+      onFrameChange: this.shoot,
     });
 
     window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
     window.addEventListener('mouseup', this.handleMouseEvent.bind(this));
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
+  }
+
+  get canShoot() {
+    return this.timeout.isExpired && (this.ammo > 0 || WEAPONS[this.currentWeapon].ammoPerAttack === 0);
   }
 
   updateObstaclesVectorsByPurposes(obstacleVectorsByPurposes: Actor['obstaclesVectorsByPurposes']) {
@@ -108,7 +112,7 @@ class Actor {
     }
   }
 
-  handleMouseEvent(event: MouseEvent, isShooting: boolean) {
+  handleMouseEvent(event: MouseEvent) {
     // lmb down
     if (event.buttons === 1) {
       this.isShooting = true;
@@ -144,15 +148,27 @@ class Actor {
     if (this.weapons.includes(weaponType)) {
       this.currentWeapon = weaponType;
       this.weaponAnimationController.updateFrameSet(WEAPONS[this.currentWeapon].frameSet);
-      this.canShoot = true;
+
+      // weapon change timeout to prevent spamming 1-2-1-2-1-2 for fast shooting
+      this.timeout.set(100);
     }
   }
 
-  shoot() {
-    if (this.ammo > 0 || this.currentWeapon === 'KNIFE') {
+  playShootAnimation() {
+    if (this.canShoot) {
+      const weapon = WEAPONS[this.currentWeapon];
+
       this.weaponAnimationController.playAnimation();
+      this.timeout.set(weapon.frameDuration * weapon.frameSet.length - 1);
+    }
+  }
+
+  shoot(frameIdx: number) {
+    // sync shooting with animation
+    if (frameIdx === WEAPONS[this.currentWeapon].shootFrameIdx) {
       this.ammo -= WEAPONS[this.currentWeapon].ammoPerAttack;
-      this.canShoot = false;
+
+      // rest
     }
   }
 
@@ -212,10 +228,11 @@ class Actor {
   }
 
   render() {
+    this.timeout.iterate();
     this.weaponAnimationController.iterate();
 
-    if (this.isShooting && this.canShoot && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {
-      this.shoot();
+    if (this.isShooting && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {
+      this.playShootAnimation();
     }
 
     this.hud.render({

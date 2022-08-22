@@ -49,11 +49,12 @@ type Sprite = Omit<Plane, 'isSprite'> & { isSprite: true };
 type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
 
 type Weapon = {
-  frameSet: Frame[];
+  frameSet: Frame<HTMLImageElement>[];
   maxDistance: number;
   damage: number;
   frameDuration: number;
   ammoPerAttack: number;
+  shootFrameIdx: number;
   icon: HTMLImageElement;
 };
 
@@ -86,10 +87,22 @@ type Intersection<T extends Wall | Sprite | Plane = Plane> = {
 
 type IndexedIntersection<T extends Wall | Sprite | Plane = Plane> = Intersection<T> & { index: number };
 
-type Frame = {
-  image: HTMLImageElement;
+type Frame<Data> = {
+  data: Data;
   duration: number;
 };
+
+type HealthFrameSetName =
+  | 'SEVERE_DAMAGE'
+  | 'JUST_A_SCRATCH'
+  | 'NEAR_DEATH'
+  | 'MODERATE_DAMAGE'
+  | 'HEALTHY'
+  | 'DEAD'
+  | 'SUFFERING'
+  | 'MINOR_DAMAGE';
+
+type HealthFrameSets = { [key in HealthFrameSetName]: Frame<HTMLImageElement>[] };
 
 const isSprite = (plane: Wall | Sprite | Plane): plane is Sprite => {
   return plane.isSprite;

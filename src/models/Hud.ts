@@ -1,6 +1,7 @@
 class Hud {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly screenData: ScreenData;
+  private currentFrameSet: HealthFrameSets[HealthFrameSetName];
   private portraitAnimation: AnimationController;
   private scale: number;
   private width: number;
@@ -11,15 +12,36 @@ class Hud {
   constructor(ctx: Hud['ctx'], screenData: Hud['screenData']) {
     this.ctx = ctx;
     this.screenData = screenData;
+    this.currentFrameSet = ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
 
     this.renderPortrait = this.renderPortrait.bind(this);
 
     this.portraitAnimation = new AnimationController({
       renderFunction: this.renderPortrait,
-      frameSet: ACTOR_PORTRAIT_FRAME_SETS.HEALTHY,
+      frameSet: this.currentFrameSet,
       initialFrameIdx: 0,
       isLoopAnimation: true,
     });
+  }
+
+  getHealthFrameSet(health: number): HealthFrameSets[HealthFrameSetName] {
+    if (health > 85) {
+      return ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
+    } else if (health > 75) {
+      return ACTOR_PORTRAIT_FRAME_SETS.JUST_A_SCRATCH;
+    } else if (health > 50) {
+      return ACTOR_PORTRAIT_FRAME_SETS.MINOR_DAMAGE;
+    } else if (health > 35) {
+      return ACTOR_PORTRAIT_FRAME_SETS.MODERATE_DAMAGE;
+    } else if (health > 20) {
+      return ACTOR_PORTRAIT_FRAME_SETS.SEVERE_DAMAGE;
+    } else if (health > 5) {
+      return ACTOR_PORTRAIT_FRAME_SETS.SUFFERING;
+    } else if (health > 0) {
+      return ACTOR_PORTRAIT_FRAME_SETS.NEAR_DEATH;
+    } else {
+      return ACTOR_PORTRAIT_FRAME_SETS.DEAD;
+    }
   }
 
   renderPortrait(image: HTMLImageElement) {
@@ -82,6 +104,13 @@ class Hud {
     currentWeapon: Actor['currentWeapon'];
     level: Actor['level'];
   }) {
+    const updatedHealthFrameSet = this.getHealthFrameSet(health);
+
+    if (updatedHealthFrameSet !== this.currentFrameSet) {
+      this.currentFrameSet = updatedHealthFrameSet;
+      this.portraitAnimation.updateFrameSet(this.currentFrameSet);
+    }
+
     this.scale = (this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT) / HUD_PANEL.WIDTH;
 
     this.width = Math.round(this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT);
