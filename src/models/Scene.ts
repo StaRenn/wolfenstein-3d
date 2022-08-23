@@ -26,12 +26,12 @@ class Scene {
 
     this.obstacles = this.generateObstaclesFromMap(map);
 
-    this.minimap = new Minimap(this.ctx, this.obstacles);
+    this.minimap = new Minimap(this.ctx, this.obstacles, this.map.length, this.map[0].length);
 
     this.textures = [];
     this.sprites = [];
 
-    for (let i = 1; i < 31; i++) {
+    for (let i = 1; i < 35; i++) {
       this.textures.push(getImageWithSource(`src/assets/textures/${i}.png`));
     }
 
@@ -81,7 +81,7 @@ class Scene {
       const plane = intersection.plane;
       const index = intersection.index;
 
-      const isVerticalIntersection = plane.type === INTERSECTION_TYPES.VERTICAL;
+      const isHorizontalIntersection = plane.type === INTERSECTION_TYPES.HORIZONTAL;
 
       const textureOffsetX = this.getTextureOffset(intersection);
       const textureHeight =
@@ -89,7 +89,7 @@ class Scene {
 
       const texture = plane.isSprite
         ? this.sprites[plane.textureId - 1]
-        : this.textures[plane.textureId - (isVerticalIntersection ? 0 : 1)];
+        : this.textures[plane.textureId - (isHorizontalIntersection ? 0 : 1)];
 
       const textureOffsetY = 0;
       const textureWidth = 1;
@@ -240,7 +240,7 @@ class Scene {
     let textureId = obstacle.textureId;
 
     if (neighbor?.isDoor) {
-      textureId = isVertical ? 29 : 30;
+      textureId = isVertical ? 30 : 29;
     }
 
     return {
