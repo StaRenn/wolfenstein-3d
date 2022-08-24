@@ -27,20 +27,21 @@ class Actor {
     ctx: Actor['ctx'],
     obstacles: Actor['obstacles'],
     obstaclesVectorsByPurposes: Actor['obstaclesVectorsByPurposes'],
-    screenData: Actor['screenData']
+    screenData: Actor['screenData'],
+    initialPosition: Actor['position']
   ) {
     this.ammo = 50;
     this.score = 123456;
     this.ctx = ctx;
     this.currentWeapon = 'MACHINE_GUN';
     this.currentlyMovingObstacles = [];
-    this.health = 15;
+    this.health = 100;
     this.horizontalSpeed = 0;
     this.lives = 666;
     this.level = 666;
     this.obstacles = obstacles;
     this.obstaclesVectorsByPurposes = obstaclesVectorsByPurposes;
-    this.position = ACTOR_START_POSITION;
+    this.position = initialPosition;
     this.screenData = screenData;
     this.verticalSpeed = 0;
     this.weapons = ['KNIFE', 'PISTOL', 'MACHINE_GUN'];
@@ -49,7 +50,7 @@ class Actor {
     this.renderWeapon = this.renderWeapon.bind(this);
 
     this.camera = new Camera(
-      ACTOR_START_POSITION,
+      this.position,
       this.screenData.screenWidth * RESOLUTION_SCALE,
       this.ctx,
       this.obstaclesVectorsByPurposes.walls,

@@ -84,10 +84,14 @@ class Camera {
         wallsIntersections.push({ ...wallsIntersection, index: i });
       }
 
-      const spritesIntersection = this.rays[i].cast(this.sprites);
+      const spritesIntersectionsWithCurrentRay = this.sprites
+        .map((sprite) => this.rays[i].cast([sprite]))
+        .filter((intersection): intersection is Intersection<Sprite> => intersection !== null);
 
-      if (spritesIntersection) {
-        spritesIntersections.push({ ...spritesIntersection, index: i });
+      if (spritesIntersectionsWithCurrentRay.length > 0) {
+        spritesIntersectionsWithCurrentRay.forEach((intersection) => {
+          spritesIntersections.push({ ...intersection, index: i });
+        });
       }
     }
 

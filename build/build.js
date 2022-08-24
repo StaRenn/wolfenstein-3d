@@ -269,15 +269,15 @@ const map = [
     17,
     0,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
-    0,
-    0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     15,
@@ -532,18 +532,18 @@ const map = [
     0,
     17,
     0,
+    'START_POS',
     0,
     0,
+    27,
+    0,
+    '24_SPRITE_HOLLOW',
     0,
     27,
     0,
     0,
     0,
-    27,
-    0,
-    0,
-    0,
-    0,
+    '26_SPRITE_HOLLOW',
     17,
     0,
     0,
@@ -648,7 +648,7 @@ const map = [
     0,
     0,
     1,
-    0,
+    '1_ID5313_END',
     0,
     1,
     0,
@@ -780,7 +780,7 @@ const map = [
     0,
     1,
     1,
-    0,
+    '1_ID5313_START',
     1,
     1,
     1,
@@ -867,11 +867,11 @@ const map = [
     0,
     27,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     27,
     0,
-    0,
+    '23_SPRITE_HOLLOW',
     0,
     0,
     17,
@@ -910,14 +910,14 @@ const map = [
     0,
     31,
     0,
-    0,
-    0,
-    0,
-    1,
+    33,
     0,
     0,
     1,
     0,
+    0,
+    1,
+    '1_ID4918_END',
     3,
     1,
     0,
@@ -927,7 +927,7 @@ const map = [
     0,
     0,
     17,
-    0,
+    '26_SPRITE_HOLLOW',
     0,
     0,
     0,
@@ -980,9 +980,9 @@ const map = [
     0,
     0,
     1,
+    '1_ID5017_END',
     0,
-    0,
-    0,
+    '1_ID5017_START',
     0,
     0,
     1,
@@ -1049,7 +1049,7 @@ const map = [
     1,
     1,
     1,
-    0,
+    '1_ID4918_START',
     3,
     1,
     11,
@@ -1131,7 +1131,7 @@ const map = [
     0,
     17,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     15,
     0,
@@ -1169,6 +1169,7 @@ const map = [
     0,
     0,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
@@ -1176,8 +1177,7 @@ const map = [
     0,
     0,
     0,
-    0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     27,
@@ -1187,7 +1187,7 @@ const map = [
     0,
     0,
     0,
-    0,
+    33,
     0,
     31,
     0,
@@ -1354,7 +1354,7 @@ const map = [
     0,
     0,
     0,
-    0,
+    '27_SPRITE_HOLLOW',
     15,
     0,
     0,
@@ -1363,7 +1363,7 @@ const map = [
   [
     3,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     1,
     1,
@@ -1395,7 +1395,7 @@ const map = [
     0,
     15,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     15,
     0,
@@ -1499,11 +1499,11 @@ const map = [
     0,
     0,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     5,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     5,
     0,
@@ -1566,7 +1566,7 @@ const map = [
     1,
     0,
     0,
-    0,
+    '1_SPRITE',
     1,
     0,
     0,
@@ -1659,7 +1659,7 @@ const map = [
     0,
     17,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     17,
     0,
@@ -1759,7 +1759,7 @@ const map = [
   [
     7,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     7,
     1,
@@ -1813,10 +1813,10 @@ const map = [
     17,
     17,
     15,
-    0,
+    '17_SPRITE',
     17,
     15,
-    0,
+    '18_SPRITE',
     17,
     15,
     17,
@@ -1896,13 +1896,13 @@ const map = [
     1,
     1,
     0,
+    '9_SPRITE',
     0,
     0,
     0,
     0,
     0,
-    0,
-    0,
+    '9_SPRITE',
     0,
     5,
     0,
@@ -1916,6 +1916,7 @@ const map = [
     0,
     0,
     3,
+    '9_SPRITE',
     0,
     0,
     0,
@@ -1929,8 +1930,7 @@ const map = [
     0,
     0,
     0,
-    0,
-    0,
+    '9_SPRITE',
     3,
     0,
     0,
@@ -1963,11 +1963,11 @@ const map = [
     1,
     0,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
-    0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     3,
@@ -2011,10 +2011,10 @@ const map = [
     15,
     0,
     0,
+    '11_SPRITE',
     0,
     0,
-    0,
-    0,
+    '11_SPRITE',
     0,
     0,
     15,
@@ -2116,17 +2116,17 @@ const map = [
     3,
     0,
     0,
+    '25_SPRITE_HOLLOW',
     0,
     0,
     0,
     0,
+    '25_SPRITE_HOLLOW',
     0,
     0,
     0,
     0,
-    0,
-    0,
-    0,
+    '25_SPRITE_HOLLOW',
     0,
     0,
     0,
@@ -2227,11 +2227,11 @@ const map = [
     3,
     0,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
-    0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     1,
@@ -2292,13 +2292,13 @@ const map = [
     1,
     3,
     0,
+    '9_SPRITE',
     0,
     0,
     0,
     0,
     0,
-    0,
-    0,
+    '9_SPRITE',
     0,
     5,
     0,
@@ -2312,6 +2312,7 @@ const map = [
     0,
     0,
     1,
+    '9_SPRITE',
     0,
     0,
     0,
@@ -2325,8 +2326,7 @@ const map = [
     0,
     0,
     0,
-    0,
-    0,
+    '9_SPRITE',
     3,
     0,
     0,
@@ -2346,14 +2346,14 @@ const map = [
     0,
     0,
     0,
-    0,
+    '16_SPRITE',
     17,
     0,
   ],
   [
     5,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     5,
     1,
@@ -2383,11 +2383,11 @@ const map = [
     1,
     5,
     3,
+    '9_SPRITE',
     0,
     0,
     0,
-    0,
-    0,
+    '9_SPRITE',
     1,
     5,
     1,
@@ -2409,10 +2409,10 @@ const map = [
     0,
     0,
     0,
-    0,
-    0,
-    0,
-    0,
+    '22_SPRITE_HOLLOW',
+    '16_SPRITE',
+    '16_SPRITE',
+    '16_SPRITE',
     15,
     0,
   ],
@@ -2555,11 +2555,11 @@ const map = [
     0,
     0,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     5,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     5,
     0,
@@ -2583,7 +2583,7 @@ const map = [
     0,
     19,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     19,
     0,
@@ -2617,7 +2617,7 @@ const map = [
   [
     1,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     3,
     0,
@@ -2757,7 +2757,7 @@ const map = [
     0,
     5,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     5,
     0,
@@ -2841,16 +2841,16 @@ const map = [
     0,
     0,
     23,
+    '19_ID2230_END',
+    0,
+    '19_ID2230_START',
     0,
     0,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    '12_SPRITE',
     23,
     0,
     0,
@@ -2881,7 +2881,7 @@ const map = [
   [
     1,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     3,
     1,
@@ -2948,7 +2948,7 @@ const map = [
     3,
     0,
     0,
-    0,
+    '16_SPRITE',
     1,
     1,
     0,
@@ -3018,13 +3018,13 @@ const map = [
     1,
     5,
     0,
+    '3_SPRITE',
     0,
     0,
     0,
     0,
     0,
-    0,
-    0,
+    '3_SPRITE',
     0,
     5,
     1,
@@ -3111,7 +3111,7 @@ const map = [
     0,
     21,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     21,
     0,
@@ -3149,11 +3149,11 @@ const map = [
     0,
     0,
     3,
+    '19_SPRITE',
     0,
     0,
     0,
-    0,
-    0,
+    '2_SPRITE',
     0,
     0,
     0,
@@ -3162,7 +3162,7 @@ const map = [
     0,
     0,
     0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
@@ -3282,13 +3282,13 @@ const map = [
     0,
     5,
     0,
+    '3_SPRITE',
     0,
     0,
     0,
     0,
     0,
-    0,
-    0,
+    '3_SPRITE',
     0,
     5,
     1,
@@ -3350,9 +3350,9 @@ const map = [
     0,
     0,
     0,
+    '7_SPRITE',
     0,
-    0,
-    0,
+    '7_SPRITE',
     0,
     0,
     0,
@@ -3417,7 +3417,7 @@ const map = [
     11,
     1,
     3,
-    0,
+    '7_ID1310_START',
     3,
     1,
     11,
@@ -3549,7 +3549,7 @@ const map = [
     0,
     0,
     0,
-    0,
+    '7_ID1310_END',
     1,
     0,
     0,
@@ -3558,12 +3558,12 @@ const map = [
     0,
     1,
     0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
     0,
-    0,
-    0,
+    '24_SPRITE_HOLLOW',
     0,
     0,
     0,
@@ -3573,7 +3573,7 @@ const map = [
     0,
     0,
     0,
-    0,
+    '25_SPRITE_HOLLOW',
     0,
     0,
     0,
@@ -3702,13 +3702,13 @@ const map = [
     19,
     0,
     0,
+    '2_SPRITE',
     0,
     0,
+    '2_SPRITE',
     0,
     0,
-    0,
-    0,
-    0,
+    '2_SPRITE',
     0,
     0,
     19,
@@ -3766,6 +3766,7 @@ const map = [
     0,
     0,
     23,
+    '10_SPRITE',
     0,
     0,
     0,
@@ -3775,8 +3776,7 @@ const map = [
     0,
     0,
     0,
-    0,
-    0,
+    '10_SPRITE',
     23,
     0,
     0,
@@ -4332,9 +4332,8 @@ const map = [
   ],
 ];
 const TILE_SIZE = 10;
-const RAY_LENGTH = TILE_SIZE * 100;
+const RAY_LENGTH = TILE_SIZE * 35;
 const ACTOR_SPEED = 1;
-const ACTOR_START_POSITION = { x: TILE_SIZE * 29.5, y: TILE_SIZE * 6.5 };
 const DOOR_IDS = [27, 28, 33, 34];
 const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
 const TEXTURE_SIZE = 64;
@@ -4488,26 +4487,26 @@ function getImageWithSource(path) {
   return image;
 }
 class Actor {
-  constructor(ctx, obstacles, obstaclesVectorsByPurposes, screenData) {
+  constructor(ctx, obstacles, obstaclesVectorsByPurposes, screenData, initialPosition) {
     this.ammo = 50;
     this.score = 123456;
     this.ctx = ctx;
     this.currentWeapon = 'MACHINE_GUN';
     this.currentlyMovingObstacles = [];
-    this.health = 15;
+    this.health = 100;
     this.horizontalSpeed = 0;
     this.lives = 666;
     this.level = 666;
     this.obstacles = obstacles;
     this.obstaclesVectorsByPurposes = obstaclesVectorsByPurposes;
-    this.position = ACTOR_START_POSITION;
+    this.position = initialPosition;
     this.screenData = screenData;
     this.verticalSpeed = 0;
     this.weapons = ['KNIFE', 'PISTOL', 'MACHINE_GUN'];
     this.isShooting = false;
     this.renderWeapon = this.renderWeapon.bind(this);
     this.camera = new Camera(
-      ACTOR_START_POSITION,
+      this.position,
       this.screenData.screenWidth * RESOLUTION_SCALE,
       this.ctx,
       this.obstaclesVectorsByPurposes.walls,
@@ -4778,9 +4777,13 @@ class Camera {
       if (wallsIntersection) {
         wallsIntersections.push(Object.assign(Object.assign({}, wallsIntersection), { index: i }));
       }
-      const spritesIntersection = this.rays[i].cast(this.sprites);
-      if (spritesIntersection) {
-        spritesIntersections.push(Object.assign(Object.assign({}, spritesIntersection), { index: i }));
+      const spritesIntersectionsWithCurrentRay = this.sprites
+        .map((sprite) => this.rays[i].cast([sprite]))
+        .filter((intersection) => intersection !== null);
+      if (spritesIntersectionsWithCurrentRay.length > 0) {
+        spritesIntersectionsWithCurrentRay.forEach((intersection) => {
+          spritesIntersections.push(Object.assign(Object.assign({}, intersection), { index: i }));
+        });
       }
     }
     return {
@@ -5035,21 +5038,26 @@ class Scene {
       screenHeight: this.canvas.height,
       screenWidth: this.canvas.width,
     };
-    this.obstacles = this.generateObstaclesFromMap(map);
+    const { obstacles, startPosition } = this.parseMap(map);
+    this.obstacles = obstacles;
     this.minimap = new Minimap(this.ctx, this.obstacles, this.map.length, this.map[0].length);
     this.textures = [];
     this.sprites = [];
     for (let i = 1; i < 35; i++) {
       this.textures.push(getImageWithSource(`src/assets/textures/${i}.png`));
     }
-    for (let i = 1; i < 2; i++) {
-      this.sprites.push(getImageWithSource(`src/assets/sprites/${i}.png`));
+    for (let i = 1; i <= 21; i++) {
+      this.sprites.push(getImageWithSource(`src/assets/sprites/static/${i}.png`));
+    }
+    for (let i = 22; i <= 33; i++) {
+      this.sprites.push(getImageWithSource(`src/assets/sprites/hollow/${i}.png`));
     }
     this.actor = new Actor(
       this.ctx,
       this.obstacles,
       { walls: [], sprites: [], collisionObstacles: [] },
-      this.screenData
+      this.screenData,
+      startPosition
     );
     this.camera = this.actor.camera;
     window.addEventListener('keypress', this.handleKeyPress.bind(this));
@@ -5064,6 +5072,11 @@ class Scene {
     const planes = this.getPlanes();
     if (!IS_PAUSED) {
       this.moveObstacles();
+      this.obstacles.forEach((obstacle) => {
+        if (obstacle.closeTimeout) {
+          obstacle.closeTimeout.iterate();
+        }
+      });
     }
     this.actor.updateObstacles(this.obstacles);
     this.actor.updateObstaclesVectorsByPurposes(planes);
@@ -5187,6 +5200,7 @@ class Scene {
       isMovable: false,
       isSprite: true,
       isVisible: true,
+      hasCollision: obstacle.hasCollision,
     };
   }
   getWallFromObstacle(obstacle, index, type, neighbor) {
@@ -5206,6 +5220,7 @@ class Scene {
       isMovable: obstacle.isMovable,
       isVisible: !obstacle.isSprite,
       isSprite: false,
+      hasCollision: obstacle.hasCollision,
     };
   }
   getNeighbors(obstacle) {
@@ -5323,7 +5338,7 @@ class Scene {
       }
     });
     return {
-      collisionObstacles: planesByLength,
+      collisionObstacles: planesByLength.filter((plane) => plane.hasCollision),
       walls,
       sprites,
     };
@@ -5339,18 +5354,27 @@ class Scene {
   moveObstacles() {
     Object.keys(this.currentlyMovingObstacles).forEach((key) => {
       const obstacle = this.obstacles[Number(key)];
+      const finalPosition = obstacle.isInStartPosition ? obstacle.endPosition : obstacle.initialPosition;
       this.obstacles[Number(key)].position = {
-        x1: obstacle.position.x1 + this.getPositionChange(obstacle.position.x1, obstacle.endPosition.x1),
-        y1: obstacle.position.y1 + this.getPositionChange(obstacle.position.y1, obstacle.endPosition.y1),
-        x2: obstacle.position.x2 + this.getPositionChange(obstacle.position.x2, obstacle.endPosition.x2),
-        y2: obstacle.position.y2 + this.getPositionChange(obstacle.position.y2, obstacle.endPosition.y2),
+        x1: obstacle.position.x1 + this.getPositionChange(obstacle.position.x1, finalPosition.x1),
+        y1: obstacle.position.y1 + this.getPositionChange(obstacle.position.y1, finalPosition.y1),
+        x2: obstacle.position.x2 + this.getPositionChange(obstacle.position.x2, finalPosition.x2),
+        y2: obstacle.position.y2 + this.getPositionChange(obstacle.position.y2, finalPosition.y2),
       };
       if (
-        obstacle.position.x1 === obstacle.endPosition.x1 &&
-        obstacle.position.y1 === obstacle.endPosition.y1 &&
-        obstacle.position.x2 === obstacle.endPosition.x2 &&
-        obstacle.position.y2 === obstacle.endPosition.y2
+        obstacle.position.x1 === finalPosition.x1 &&
+        obstacle.position.y1 === finalPosition.y1 &&
+        obstacle.position.x2 === finalPosition.x2 &&
+        obstacle.position.y2 === finalPosition.y2
       ) {
+        obstacle.isInStartPosition = !obstacle.isInStartPosition;
+        if (obstacle.isDoor && !obstacle.isInStartPosition) {
+          obstacle.closeTimeout = new Timeout(() => {
+            this.currentlyMovingObstacles[Number(key)] = obstacle;
+            obstacle.closeTimeout = null;
+          });
+          obstacle.closeTimeout.set(2000);
+        }
         delete this.currentlyMovingObstacles[Number(key)];
       }
     });
@@ -5383,8 +5407,9 @@ class Scene {
       this.currentlyMovingObstacles[obstacleInViewIndex] = obstacleInView;
     }
   }
-  generateObstaclesFromMap(map) {
+  parseMap(map) {
     const obstacles = [];
+    let startPosition = { x: 0, y: 0 };
     let secretObstaclesEndPositions = {};
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[i].length; j++) {
@@ -5404,8 +5429,12 @@ class Scene {
     }
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[i].length; j++) {
-        const value = map[i][j];
+        let value = map[i][j];
         if (value) {
+          if (value === 'START_POS') {
+            startPosition = { x: j * TILE_SIZE - TILE_SIZE / 2, y: i * TILE_SIZE - TILE_SIZE / 2 };
+            continue;
+          }
           const obstacleParams = typeof value === 'number' ? null : value.split('_');
           const valueNumber = obstacleParams ? Number(obstacleParams[0]) : value;
           if (obstacleParams && obstacleParams[2] === 'END') {
@@ -5414,6 +5443,8 @@ class Scene {
           const isSecret = !!(obstacleParams && obstacleParams[2] === 'START');
           const isDoor = DOOR_IDS.includes(valueNumber);
           const isSprite = (obstacleParams && obstacleParams[1] === 'SPRITE') || false;
+          const isCollecting = typeof value === 'string' && value.includes('COLLECTING');
+          const hasCollision = !isCollecting && (typeof value !== 'string' || !value.includes('HOLLOW'));
           const isVertical = !!(map[i][j - 1] && map[i][j + 1]);
           const position = {
             x1: j * TILE_SIZE + (!isVertical && isDoor ? TILE_SIZE * 0.5 : 0),
@@ -5422,6 +5453,7 @@ class Scene {
             y2: i * TILE_SIZE + (isVertical && isDoor ? TILE_SIZE * 0.5 : TILE_SIZE),
           };
           obstacles.push({
+            initialPosition: position,
             position,
             endPosition:
               isSecret && obstacleParams
@@ -5434,15 +5466,19 @@ class Scene {
                   },
             isDoor,
             isSecret,
+            isInStartPosition: true,
             isMovable: isSecret || isDoor,
             isVertical,
             isSprite,
+            hasCollision,
+            isCollecting,
             textureId: valueNumber,
+            closeTimeout: null,
           });
         }
       }
     }
-    return obstacles;
+    return { obstacles, startPosition };
   }
 }
 class Timeout {

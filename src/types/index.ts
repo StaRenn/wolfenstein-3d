@@ -22,14 +22,19 @@ type Triangle = {
 };
 
 type Obstacle = {
+  initialPosition: Vector;
   position: Vector;
   endPosition: Vector;
   textureId: number;
   isDoor: boolean;
+  isInStartPosition: boolean;
   isSecret: boolean;
   isVertical: boolean;
   isMovable: boolean;
   isSprite: boolean;
+  isCollecting: boolean;
+  hasCollision: boolean;
+  closeTimeout: null | Timeout;
 };
 
 type Plane = {
@@ -40,6 +45,7 @@ type Plane = {
   isMovable: boolean;
   isSprite: boolean;
   isVisible: boolean;
+  hasCollision: boolean;
   obstacleIdx: number;
 };
 

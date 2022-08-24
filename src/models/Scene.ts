@@ -24,7 +24,9 @@ class Scene {
       screenWidth: this.canvas.width,
     };
 
-    this.obstacles = this.generateObstaclesFromMap(map);
+    const { obstacles, startPosition } = this.parseMap(map);
+
+    this.obstacles = obstacles;
 
     this.minimap = new Minimap(this.ctx, this.obstacles, this.map.length, this.map[0].length);
 
@@ -35,15 +37,20 @@ class Scene {
       this.textures.push(getImageWithSource(`src/assets/textures/${i}.png`));
     }
 
-    for (let i = 1; i < 2; i++) {
-      this.sprites.push(getImageWithSource(`src/assets/sprites/${i}.png`));
+    for (let i = 1; i <= 21; i++) {
+      this.sprites.push(getImageWithSource(`src/assets/sprites/static/${i}.png`));
+    }
+
+    for (let i = 22; i <= 33; i++) {
+      this.sprites.push(getImageWithSource(`src/assets/sprites/hollow/${i}.png`));
     }
 
     this.actor = new Actor(
       this.ctx,
       this.obstacles,
       { walls: [], sprites: [], collisionObstacles: [] },
-      this.screenData
+      this.screenData,
+      startPosition
     );
     this.camera = this.actor.camera;
 
@@ -65,6 +72,12 @@ class Scene {
 
     if (!IS_PAUSED) {
       this.moveObstacles();
+
+      this.obstacles.forEach((obstacle) => {
+        if (obstacle.closeTimeout) {
+          obstacle.closeTimeout.iterate();
+        }
+      });
     }
 
     this.actor.updateObstacles(this.obstacles);
@@ -226,6 +239,7 @@ class Scene {
       isMovable: false,
       isSprite: true,
       isVisible: true,
+      hasCollision: obstacle.hasCollision,
     };
   }
 
@@ -252,6 +266,7 @@ class Scene {
       isMovable: obstacle.isMovable,
       isVisible: !obstacle.isSprite,
       isSprite: false,
+      hasCollision: obstacle.hasCollision,
     };
   }
 
@@ -287,6 +302,8 @@ class Scene {
 
     return neighbors;
   }
+
+  // todo needs to be rewritten to DDA https://en.wikipedia.org/wiki/Digital_differential_analyzer_(graphics_algorithm)
 
   getPlanes(): ObstaclesVectorsByPurposes {
     const position = this.actor.position;
@@ -414,7 +431,7 @@ class Scene {
     });
 
     return {
-      collisionObstacles: planesByLength,
+      collisionObstacles: planesByLength.filter((plane) => plane.hasCollision),
       walls,
       sprites,
     };
@@ -434,19 +451,32 @@ class Scene {
     Object.keys(this.currentlyMovingObstacles).forEach((key) => {
       const obstacle = this.obstacles[Number(key)];
 
+      const finalPosition = obstacle.isInStartPosition ? obstacle.endPosition : obstacle.initialPosition;
+
       this.obstacles[Number(key)].position = {
-        x1: obstacle.position.x1 + this.getPositionChange(obstacle.position.x1, obstacle.endPosition.x1),
-        y1: obstacle.position.y1 + this.getPositionChange(obstacle.position.y1, obstacle.endPosition.y1),
-        x2: obstacle.position.x2 + this.getPositionChange(obstacle.position.x2, obstacle.endPosition.x2),
-        y2: obstacle.position.y2 + this.getPositionChange(obstacle.position.y2, obstacle.endPosition.y2),
+        x1: obstacle.position.x1 + this.getPositionChange(obstacle.position.x1, finalPosition.x1),
+        y1: obstacle.position.y1 + this.getPositionChange(obstacle.position.y1, finalPosition.y1),
+        x2: obstacle.position.x2 + this.getPositionChange(obstacle.position.x2, finalPosition.x2),
+        y2: obstacle.position.y2 + this.getPositionChange(obstacle.position.y2, finalPosition.y2),
       };
 
       if (
-        obstacle.position.x1 === obstacle.endPosition.x1 &&
-        obstacle.position.y1 === obstacle.endPosition.y1 &&
-        obstacle.position.x2 === obstacle.endPosition.x2 &&
-        obstacle.position.y2 === obstacle.endPosition.y2
+        obstacle.position.x1 === finalPosition.x1 &&
+        obstacle.position.y1 === finalPosition.y1 &&
+        obstacle.position.x2 === finalPosition.x2 &&
+        obstacle.position.y2 === finalPosition.y2
       ) {
+        obstacle.isInStartPosition = !obstacle.isInStartPosition;
+
+        if (obstacle.isDoor && !obstacle.isInStartPosition) {
+          obstacle.closeTimeout = new Timeout(() => {
+            this.currentlyMovingObstacles[Number(key)] = obstacle;
+            obstacle.closeTimeout = null;
+          });
+
+          obstacle.closeTimeout.set(2000);
+        }
+
         delete this.currentlyMovingObstacles[Number(key)];
       }
     });
@@ -488,9 +518,10 @@ class Scene {
     }
   }
 
-  generateObstaclesFromMap(map: GameMap): Obstacle[] {
-    const obstacles = [];
+  parseMap(map: GameMap): { obstacles: Obstacle[]; startPosition: Vertex } {
+    const obstacles: Obstacle[] = [];
 
+    let startPosition: Vertex = { x: 0, y: 0 };
     let secretObstaclesEndPositions: { [id: string]: Vector } = {};
 
     for (let i = 0; i < map.length; i++) {
@@ -514,9 +545,15 @@ class Scene {
 
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[i].length; j++) {
-        const value = map[i][j];
+        let value = map[i][j];
 
         if (value) {
+          if (value === 'START_POS') {
+            startPosition = { x: j * TILE_SIZE - TILE_SIZE / 2, y: i * TILE_SIZE - TILE_SIZE / 2 };
+
+            continue;
+          }
+
           const obstacleParams = typeof value === 'number' ? null : value.split('_');
           const valueNumber = obstacleParams ? Number(obstacleParams[0]) : (value as number);
 
@@ -527,6 +564,8 @@ class Scene {
           const isSecret = !!(obstacleParams && obstacleParams[2] === 'START');
           const isDoor = DOOR_IDS.includes(valueNumber);
           const isSprite = (obstacleParams && obstacleParams[1] === 'SPRITE') || false;
+          const isCollecting = typeof value === 'string' && value.includes('COLLECTING');
+          const hasCollision = !isCollecting && (typeof value !== 'string' || !value.includes('HOLLOW'));
 
           const isVertical = !!(map[i][j - 1] && map[i][j + 1]);
 
@@ -538,6 +577,7 @@ class Scene {
           };
 
           obstacles.push({
+            initialPosition: position,
             position,
             endPosition:
               isSecret && obstacleParams
@@ -550,15 +590,19 @@ class Scene {
                   },
             isDoor,
             isSecret,
+            isInStartPosition: true,
             isMovable: isSecret || isDoor,
             isVertical,
             isSprite,
+            hasCollision,
+            isCollecting,
             textureId: valueNumber,
+            closeTimeout: null,
           });
         }
       }
     }
 
-    return obstacles;
+    return { obstacles, startPosition };
   }
 }
