@@ -1,5 +1,5 @@
 // DO NOT SET MORE THAN 1
-let RESOLUTION_SCALE = 1;
+let RESOLUTION_SCALE = 0.5;
 // 1 / RESOLUTION_SCALE must return integer value, because we cant render floating pixels
 let RESOLUTIONS_SCALE_VALUES = [0.1, 0.25, 0.5, 1];
 
@@ -18,6 +18,7 @@ async function main() {
 
   fovRange.value = String(FOV_DEGREES);
   fovRangeValue.innerText = String(FOV_DEGREES);
+  resolutionScaleRange.value = "2";
 
   continueButton.onclick = () => {
     if (IS_PAUSED) {
