@@ -130,7 +130,7 @@ class Scene {
       this.actor.render();
     }
 
-    this.minimap.render(this.actor.position, intersections.walls);
+    //this.minimap.render(this.actor.position, intersections.walls);
   }
 
   resize(width: Scene['canvas']['width'], height: Scene['canvas']['height']) {
