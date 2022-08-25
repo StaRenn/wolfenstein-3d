@@ -5026,7 +5026,6 @@ class Scene {
         if (!IS_PAUSED) {
             this.actor.render();
         }
-        this.minimap.render(this.actor.position, intersections.walls);
     }
     resize(width, height) {
         this.canvas.width = width;
