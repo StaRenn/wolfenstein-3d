@@ -32,9 +32,11 @@ type Obstacle = {
   isVertical: boolean;
   isMovable: boolean;
   isSprite: boolean;
-  isCollecting: boolean;
+  isItem: boolean;
+  doesExist: boolean;
   hasCollision: boolean;
   closeTimeout: null | Timeout;
+  purpose: null | ItemPurpose<ActorStats>;
 };
 
 type Plane = {
@@ -45,12 +47,20 @@ type Plane = {
   isMovable: boolean;
   isSprite: boolean;
   isVisible: boolean;
+  isItem: boolean;
   hasCollision: boolean;
   obstacleIdx: number;
+  purpose: null | ItemPurpose<ActorStats>;
 };
 
-type Wall = Omit<Plane, 'isSprite'> & { isSprite: false };
+type Wall = Omit<Plane, 'isSprite' | 'isItem' | 'purpose'> & { isSprite: false; isItem: false; purpose: null };
 type Sprite = Omit<Plane, 'isSprite'> & { isSprite: true };
+type Item = Omit<Plane, 'isSprite' | 'hasCollision' | 'purpose' | 'isItem'> & {
+  isSprite: true;
+  hasCollision: false;
+  purpose: ItemPurpose<ActorStats>;
+  isItem: true;
+};
 
 type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
 
@@ -74,6 +84,7 @@ type ScreenData = {
 type ObstaclesVectorsByPurposes = {
   walls: Wall[];
   sprites: Sprite[];
+  items: Item[];
   collisionObstacles: Plane[];
 };
 
@@ -82,6 +93,14 @@ type PreparedNeighbor = {
   isSecret: boolean;
   isMovable: boolean;
   number: number;
+};
+
+type ActorStats = 'ammo' | 'health' | 'score' | 'lives' | 'weapons' | 'keys';
+
+// todo keys
+type ItemPurpose<T extends ActorStats> = {
+  affects: T;
+  value: T extends 'ammo' | 'health' | 'score' | 'lives' ? number : WeaponType;
 };
 
 type Intersection<T extends Wall | Sprite | Plane = Plane> = {
@@ -93,10 +112,12 @@ type Intersection<T extends Wall | Sprite | Plane = Plane> = {
 
 type IndexedIntersection<T extends Wall | Sprite | Plane = Plane> = Intersection<T> & { index: number };
 
-type Frame<Data> = {
-  data: Data;
+type Frame<T> = {
+  data: T;
   duration: number;
 };
+
+type PostEffectFrame = Frame<{ color: string }>
 
 type HealthFrameSetName =
   | 'SEVERE_DAMAGE'
@@ -110,9 +131,28 @@ type HealthFrameSetName =
 
 type HealthFrameSets = { [key in HealthFrameSetName]: Frame<HTMLImageElement>[] };
 
-const isSprite = (plane: Wall | Sprite | Plane): plane is Sprite => {
+const isSprite = (plane: Wall | Sprite | Plane | Item): plane is Sprite => {
   return plane.isSprite;
 };
-const isWall = (plane: Wall | Sprite | Plane): plane is Wall => {
+
+const isWall = (plane: Wall | Sprite | Plane | Item): plane is Wall => {
   return !plane.isSprite;
 };
+
+const isItem = (plane: Wall | Sprite | Plane | Item): plane is Item => {
+  return plane.isItem;
+};
+
+const isItemObstacle = (obstacle: Obstacle): obstacle is Omit<Obstacle, 'isSprite' | 'hasCollision' | 'purpose' | 'isItem'> & {
+  isSprite: true;
+  hasCollision: false;
+  purpose: ItemPurpose<ActorStats>;
+  isItem: true;
+} => {
+  return obstacle.isItem
+}
+
+// todo rename
+const isDesiredPurpose = <T extends ActorStats>(purpose: ItemPurpose<ActorStats>, type: T): purpose is ItemPurpose<T> => {
+  return purpose.affects === type
+}

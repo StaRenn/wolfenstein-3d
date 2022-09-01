@@ -1,4 +1,4 @@
-class AnimationController<FrameType extends Frame<any> = Frame<HTMLImageElement>> {
+class AnimationController<FrameType extends Frame<any>> {
   private frameSet: FrameType[];
   private currentFrameIdx: number;
   private isLoopAnimation: boolean;
@@ -18,13 +18,13 @@ class AnimationController<FrameType extends Frame<any> = Frame<HTMLImageElement>
     onAnimationStart = () => {},
     onFrameChange = () => {},
   }: {
-    frameSet: FrameType[];
-    renderFunction: AnimationController['derivedRenderFunction'];
-    initialFrameIdx: AnimationController['currentFrameIdx'];
-    isLoopAnimation: AnimationController['isLoopAnimation'];
-    onAnimationEnd?: AnimationController['onAnimationEnd'];
-    onAnimationStart?: AnimationController['onAnimationStart'];
-    onFrameChange?: AnimationController['onFrameChange'];
+    frameSet: AnimationController<FrameType>['frameSet'];
+    renderFunction: AnimationController<FrameType>['derivedRenderFunction'];
+    initialFrameIdx: AnimationController<FrameType>['currentFrameIdx'];
+    isLoopAnimation: AnimationController<FrameType>['isLoopAnimation'];
+    onAnimationEnd?: AnimationController<FrameType>['onAnimationEnd'];
+    onAnimationStart?: AnimationController<FrameType>['onAnimationStart'];
+    onFrameChange?: AnimationController<FrameType>['onFrameChange'];
   }) {
     this.frameSet = frameSet;
     this.currentFrameIdx = initialFrameIdx;

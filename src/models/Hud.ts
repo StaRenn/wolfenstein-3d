@@ -2,7 +2,7 @@ class Hud {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly screenData: ScreenData;
   private currentFrameSet: HealthFrameSets[HealthFrameSetName];
-  private portraitAnimation: AnimationController;
+  private portraitAnimation: AnimationController<Frame<HTMLImageElement>>;
   private scale: number;
   private width: number;
   private height: number;

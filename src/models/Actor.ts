@@ -16,7 +16,8 @@ class Actor {
   private weapons: (keyof typeof WEAPONS)[];
   private isShooting: boolean;
 
-  private weaponAnimationController: AnimationController;
+  private weaponAnimationController: AnimationController<Frame<HTMLImageElement>>;
+  private postEffectAnimationController: AnimationController<PostEffectFrame>;
   private hud: Hud;
   private timeout: Timeout;
 
@@ -31,20 +32,20 @@ class Actor {
     initialPosition: Actor['position']
   ) {
     this.ammo = 50;
-    this.score = 123456;
+    this.score = 0;
     this.ctx = ctx;
-    this.currentWeapon = 'MACHINE_GUN';
+    this.currentWeapon = 'PISTOL';
     this.currentlyMovingObstacles = [];
     this.health = 100;
     this.horizontalSpeed = 0;
-    this.lives = 666;
-    this.level = 666;
+    this.lives = 3;
+    this.level = 1;
     this.obstacles = obstacles;
     this.obstaclesVectorsByPurposes = obstaclesVectorsByPurposes;
     this.position = initialPosition;
     this.screenData = screenData;
     this.verticalSpeed = 0;
-    this.weapons = ['KNIFE', 'PISTOL', 'MACHINE_GUN'];
+    this.weapons = ['KNIFE', 'PISTOL'];
     this.isShooting = false;
 
     this.renderWeapon = this.renderWeapon.bind(this);
@@ -62,6 +63,8 @@ class Actor {
     this.timeout = new Timeout();
 
     this.shoot = this.shoot.bind(this);
+    this.renderWeapon = this.renderWeapon.bind(this);
+    this.renderPostEffect = this.renderPostEffect.bind(this);
 
     this.weaponAnimationController = new AnimationController({
       renderFunction: this.renderWeapon,
@@ -69,6 +72,13 @@ class Actor {
       isLoopAnimation: false,
       frameSet: WEAPONS[this.currentWeapon].frameSet,
       onFrameChange: this.shoot,
+    });
+
+    this.postEffectAnimationController = new AnimationController({
+      renderFunction: this.renderPostEffect,
+      initialFrameIdx: 0,
+      isLoopAnimation: false,
+      frameSet: generatePostEffectFrameSet([255,255,0]),
     });
 
     window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
@@ -145,6 +155,11 @@ class Actor {
     this.ctx.drawImage(texture, 0, 0, TEXTURE_SIZE, TEXTURE_SIZE, xOffset, yOffset, weaponSize, weaponSize);
   }
 
+  renderPostEffect(data: PostEffectFrame['data']) {
+    this.ctx.fillStyle = data.color
+    this.ctx.fillRect(0, 0, this.screenData.screenWidth, this.screenData.screenHeight);
+  }
+
   changeWeapon(weaponType: WeaponType) {
     if (this.weapons.includes(weaponType)) {
       this.currentWeapon = weaponType;
@@ -192,37 +207,138 @@ class Actor {
     position.x += xSum >= 0 ? Math.min(xSum, ACTOR_SPEED) : Math.max(xSum, -ACTOR_SPEED);
     position.y += ySum >= 0 ? Math.min(ySum, ACTOR_SPEED) : Math.max(ySum, -ACTOR_SPEED);
 
-    for (let plane of this.obstaclesVectorsByPurposes.collisionObstacles) {
-      const obstacle = this.obstacles[Number(plane.obstacleIdx)];
+    const checkCollision = <T extends Plane>(planes: T[], shouldFixCollision: boolean) => {
+      for (let plane of planes) {
+        const obstacle = this.obstacles[Number(plane.obstacleIdx)];
 
-      if (
-        this.position.y >= plane.position.y1 &&
-        this.position.y <= plane.position.y2 &&
-        ((position.x >= plane.position.x1 && this.position.x <= plane.position.x1) ||
-          (position.x <= plane.position.x1 && this.position.x >= plane.position.x1))
-      ) {
-        position.x = this.position.x;
-      }
+        if (!obstacle.doesExist) {
+          continue
+        }
 
-      if (
-        this.position.x >= plane.position.x1 &&
-        this.position.x <= plane.position.x2 &&
-        ((position.y >= plane.position.y1 && this.position.y <= plane.position.y1) ||
-          (position.y <= plane.position.y1 && this.position.y >= plane.position.y1))
-      ) {
-        position.y = this.position.y;
-      }
+        let doesCollide = false;
 
-      if (
-        position.x >= obstacle.position.x1 &&
-        position.x <= obstacle.position.x2 &&
-        position.y >= obstacle.position.y1 &&
-        position.y <= obstacle.position.y2
-      ) {
-        position.y = this.position.y;
-        position.x = this.position.x;
+        // const obstacleCenter = {
+        //   x: (obstacle.position.x1 + obstacle.position.x2) / 2,
+        //   y: (obstacle.position.y1 + obstacle.position.y2) / 2
+        // }
+        //
+        // const multiplier =
+        //   ((plane.position.x1 + plane.position.x2) / 2 < obstacleCenter.x ||
+        //   (plane.position.y1 + plane.position.y2) / 2 < obstacleCenter.y) ? -1 : 1
+        //
+        // const getOffset = (firstCoordinates: keyof Vector, secondCoordinates: keyof Vector) => {
+        //   return (Math.abs(plane.position[firstCoordinates] - plane.position[secondCoordinates]) > 0 ? TILE_SIZE / 2.25 * multiplier : 0)
+        // }
+        //
+        // const getWidthOffset = (coordinate: keyof Vector) => {
+        //   if(plane.type === 'VERTICAL' && coordinate !== 'x1' && coordinate !== 'x2') {
+        //     console.log(plane)
+        //     return 0
+        //   }
+        //
+        //   if(plane.type === 'HORIZONTAL' && coordinate !== 'y1' && coordinate !== 'y2') {
+        //     return 0
+        //   }
+        //
+        //   return ['x1', 'y1'].includes(coordinate) ? TILE_SIZE / 2.25 * -1 : TILE_SIZE / 2.25
+        // }
+        //
+        // const planePosition = {
+        //   x1: plane.position.x1 + getOffset("y1", "y2") + getWidthOffset('x1'),
+        //   y1: plane.position.y1 + getOffset("x1", "x2") + getWidthOffset('y1'),
+        //   x2: plane.position.x2 - getOffset("y2", "y1") + getWidthOffset("x2"),
+        //   y2: plane.position.y2 - getOffset("x2", "x1") + getWidthOffset("y2")
+        // }
+
+        if (
+          this.position.y >= plane.position.y1 &&
+          this.position.y <= plane.position.y2 &&
+          ((position.x >= plane.position.x1 && this.position.x <= plane.position.x1) ||
+            (position.x <= plane.position.x1 && this.position.x >= plane.position.x1))
+        ) {
+          if(shouldFixCollision) {
+            position.x = this.position.x;
+          }
+
+          doesCollide = true
+        }
+
+        if (
+          this.position.x >= plane.position.x1 &&
+          this.position.x <= plane.position.x2 &&
+          ((position.y >= plane.position.y1 && this.position.y <= plane.position.y1) ||
+            (position.y <= plane.position.y1 && this.position.y >= plane.position.y1))
+        ) {
+          if(shouldFixCollision) {
+            position.y = this.position.y;
+          }
+
+          doesCollide = true
+        }
+
+        if (
+          position.x >= obstacle.position.x1 &&
+          position.x <= obstacle.position.x2 &&
+          position.y >= obstacle.position.y1 &&
+          position.y <= obstacle.position.y2
+        ) {
+          if(shouldFixCollision) {
+            position.y = this.position.y;
+            position.x = this.position.x;
+          }
+
+          doesCollide = true
+        }
+
+        if (doesCollide && isItemObstacle(obstacle)) {
+          const purpose = obstacle.purpose
+
+          if (isDesiredPurpose(purpose, 'ammo')) {
+            if (this.ammo === 100) {
+              continue
+            }
+
+            this.ammo += purpose.value;
+
+            if (this.ammo > 100) {
+              this.ammo = 100
+            }
+          }
+
+          if (isDesiredPurpose(purpose, 'health')) {
+            if (this.health === 100) {
+              continue
+            }
+
+            this.health += purpose.value;
+
+            if (this.health > 100) {
+              this.health = 100
+            }
+          }
+
+          if (isDesiredPurpose(purpose, 'score')) {
+            this.score += purpose.value;
+          }
+
+          if (isDesiredPurpose(purpose, 'weapons')) {
+            this.weapons.push(purpose.value);
+          }
+
+          if (isDesiredPurpose(purpose, 'lives')) {
+            this.lives += purpose.value;
+          }
+
+          this.postEffectAnimationController.updateFrameSet(generatePostEffectFrameSet([255, 255, 0]))
+          this.postEffectAnimationController.playAnimation()
+
+          this.obstacles[Number(plane.obstacleIdx)].doesExist = false
+        }
       }
     }
+
+    checkCollision(this.obstaclesVectorsByPurposes.collisionObstacles, true)
+    checkCollision(this.obstaclesVectorsByPurposes.items, false)
 
     this.position = position;
     this.camera.updatePosition(this.position);
@@ -244,6 +360,8 @@ class Actor {
       level: this.level,
       health: this.health,
     });
+
+    this.postEffectAnimationController.iterate()
 
     this.move();
   }

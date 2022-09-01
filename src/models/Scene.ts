@@ -45,10 +45,14 @@ class Scene {
       this.sprites.push(getImageWithSource(`src/assets/sprites/hollow/${i}.png`));
     }
 
+    for (let i = 34; i <= 42; i++) {
+      this.sprites.push(getImageWithSource(`src/assets/sprites/items/${i}.png`));
+    }
+
     this.actor = new Actor(
       this.ctx,
       this.obstacles,
-      { walls: [], sprites: [], collisionObstacles: [] },
+      { walls: [], sprites: [], items: [], collisionObstacles: [] },
       this.screenData,
       startPosition
     );
@@ -130,7 +134,7 @@ class Scene {
       this.actor.render();
     }
 
-    //this.minimap.render(this.actor.position, intersections.walls);
+    this.minimap.render(this.actor.position, intersections.walls);
   }
 
   resize(width: Scene['canvas']['width'], height: Scene['canvas']['height']) {
@@ -239,7 +243,9 @@ class Scene {
       isMovable: false,
       isSprite: true,
       isVisible: true,
+      isItem: obstacle.isItem,
       hasCollision: obstacle.hasCollision,
+      purpose: obstacle.purpose
     };
   }
 
@@ -266,7 +272,9 @@ class Scene {
       isMovable: obstacle.isMovable,
       isVisible: !obstacle.isSprite,
       isSprite: false,
+      isItem: false,
       hasCollision: obstacle.hasCollision,
+      purpose: null,
     };
   }
 
@@ -335,6 +343,10 @@ class Scene {
     // For optimization, we must reduce the number of vectors with which intersections are searched
     // push only those planes that can be visible by player side
     const planes = this.obstacles.reduce<Plane[]>((acc, obstacle, i) => {
+      if(!obstacle.doesExist) {
+        return acc
+      }
+
       const obstaclePos = obstacle.position;
       const obstacleNeighbors = this.getNeighbors(obstaclePos);
 
@@ -421,8 +433,13 @@ class Scene {
 
     const walls: Wall[] = [];
     const sprites: Sprite[] = [];
+    const items: Item[] = []
 
     planesByCameraVertexIntersections.forEach((plane) => {
+      if(isItem(plane)){
+        items.push(plane)
+      }
+
       if (isSprite(plane)) {
         sprites.push(plane);
       } else if (isWall(plane)) {
@@ -434,6 +451,7 @@ class Scene {
       collisionObstacles: planesByLength.filter((plane) => plane.hasCollision),
       walls,
       sprites,
+      items,
     };
   }
 
@@ -490,7 +508,7 @@ class Scene {
       for (let i = 0; i < this.obstacles.length; i++) {
         const obstacle = this.obstacles[i];
 
-        if (!obstacle.isDoor && !obstacle.isSecret) {
+        if (!obstacle.isMovable) {
           continue;
         }
 
@@ -554,18 +572,25 @@ class Scene {
             continue;
           }
 
-          const obstacleParams = typeof value === 'number' ? null : value.split('_');
-          const valueNumber = obstacleParams ? Number(obstacleParams[0]) : (value as number);
+          const obstacleParams = typeof value === 'number' ? [] : value.split('_');
+          const textureId = typeof value !== 'number' ? Number(obstacleParams[0]) : value;
 
-          if (obstacleParams && obstacleParams[2] === 'END') {
+          if (obstacleParams && obstacleParams.includes('END')) {
             continue;
           }
 
-          const isSecret = !!(obstacleParams && obstacleParams[2] === 'START');
-          const isDoor = DOOR_IDS.includes(valueNumber);
-          const isSprite = (obstacleParams && obstacleParams[1] === 'SPRITE') || false;
-          const isCollecting = typeof value === 'string' && value.includes('COLLECTING');
-          const hasCollision = !isCollecting && (typeof value !== 'string' || !value.includes('HOLLOW'));
+          const isItem = obstacleParams.includes('ITEM');
+          const isSprite = obstacleParams.includes('SPRITE') || false;
+          const isSecret = !isSprite && obstacleParams.includes('START')
+          const isDoor = !isSprite && DOOR_IDS.includes(textureId);
+          const isMovable = !isSprite && (isDoor || isSecret);
+          const hasCollision = !obstacleParams.includes('HOLLOW');
+
+          let purpose = null;
+
+          if(isItem) {
+            purpose = ITEMS_PURPOSES[textureId]
+          }
 
           const isVertical = !!(map[i][j - 1] && map[i][j + 1]);
 
@@ -591,13 +616,15 @@ class Scene {
             isDoor,
             isSecret,
             isInStartPosition: true,
-            isMovable: isSecret || isDoor,
+            isMovable,
             isVertical,
             isSprite,
+            doesExist: true,
             hasCollision,
-            isCollecting,
-            textureId: valueNumber,
+            isItem,
+            textureId,
             closeTimeout: null,
+            purpose,
           });
         }
       }
