@@ -3,22 +3,12 @@ class Camera {
 
   private rays: Ray[];
   private position: Vertex;
-  private walls: Wall[];
-  private sprites: Sprite[];
 
   public angle: number;
 
-  constructor(
-    position: Camera['position'],
-    raysAmount: number,
-    ctx: Camera['ctx'],
-    walls: Camera['walls'],
-    sprites: Camera['sprites']
-  ) {
-    this.angle = this.toRadians(60);
+  constructor(position: Camera['position'], raysAmount: number, ctx: Camera['ctx']) {
+    this.angle = this.toRadians(180);
     this.ctx = ctx;
-    this.walls = walls;
-    this.sprites = sprites;
     this.position = position;
 
     canvas.addEventListener('mousemove', this.rotate.bind(this));
@@ -32,11 +22,6 @@ class Camera {
     }
 
     this.position = position;
-  }
-
-  updateObstacles(walls: Camera['walls'], sprites: Camera['sprites']) {
-    this.walls = walls;
-    this.sprites = sprites;
   }
 
   toRadians(angle: number) {
@@ -73,32 +58,91 @@ class Camera {
     );
   }
 
-  getIntersections(): { walls: IndexedIntersection<Wall>[]; sprites: IndexedIntersection<Sprite>[] } {
-    let wallsIntersections: IndexedIntersection<Wall>[] = [];
-    let spritesIntersections: IndexedIntersection<Sprite>[] = [];
+  // rounding for chunk rendering, Math.round(distance * multiplier) / multiplier, same distance on multiple rays means
+  // that we can render these rays in 1 iteration that saves a lot of resources
+  // less = more performance, more artifacts
+  getRelativeChunkMultiplier = (distance: number) => {
+    let relativeChunkMultiplier;
 
-    for (let i = 0; i < this.rays.length; i++) {
-      const wallsIntersection = this.rays[i].cast(this.walls);
-
-      if (wallsIntersection) {
-        wallsIntersections.push({ ...wallsIntersection, index: i });
-      }
-
-      const spritesIntersectionsWithCurrentRay = this.sprites
-        .map((sprite) => this.rays[i].cast([sprite]))
-        .filter((intersection): intersection is Intersection<Sprite> => intersection !== null);
-
-      if (spritesIntersectionsWithCurrentRay.length > 0) {
-        spritesIntersectionsWithCurrentRay.forEach((intersection) => {
-          spritesIntersections.push({ ...intersection, index: i });
-        });
-      }
+    if (distance < TILE_SIZE / 2) {
+      relativeChunkMultiplier = 32;
+    } else if (distance < TILE_SIZE * 3) {
+      relativeChunkMultiplier = 16;
+    } else if (distance < TILE_SIZE * 6) {
+      relativeChunkMultiplier = 8;
+    } else {
+      relativeChunkMultiplier = 1;
     }
 
-    return {
-      walls: wallsIntersections,
-      sprites: spritesIntersections,
-    };
+    return relativeChunkMultiplier;
+  };
+
+  getIntersections(gameMap: (Obstacle | null)[][], nonGridPlanes: Plane[]): IndexedIntersection[] {
+    const intersections: IndexedIntersection[] = [];
+
+    for (let i = 0; i < this.rays.length; i++) {
+      const nonGridCastResult = this.rays[i].cast(nonGridPlanes);
+
+      if (nonGridCastResult) {
+        const relativeChunkMultiplier = this.getRelativeChunkMultiplier(nonGridCastResult.distance);
+
+        intersections.push({
+          ...nonGridCastResult,
+          distance: Math.round(nonGridCastResult.distance * relativeChunkMultiplier) / relativeChunkMultiplier,
+          index: i,
+        });
+      }
+
+      this.rays[i].castDDA(gameMap).forEach(({ obstacle, intersectionVertex, distance }) => {
+        const obstaclePos = obstacle.position;
+
+        const relativeChunkMultiplier = this.getRelativeChunkMultiplier(distance);
+
+        let preparedIntersection = intersectionVertex;
+        let preparedDistance = Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier;
+
+        const obstacleNeighbors = obstacle.getNeighbors(gameMap);
+
+        let plane = null;
+
+        if (obstacle.isSprite) {
+          plane = obstacle.getSpriteFromObstacle(obstacle, this.angle);
+
+          const castResult = this.rays[i].cast([plane]);
+
+          if (castResult) {
+            preparedDistance = Math.round(castResult.distance * relativeChunkMultiplier) / relativeChunkMultiplier;
+            preparedIntersection = castResult.intersectionVertex;
+          } else {
+            return;
+          }
+        } else {
+          if (preparedIntersection.y !== obstaclePos.y1 && preparedIntersection.x === obstaclePos.x1) {
+            plane = obstacle.getWallFromObstacle(obstacle, OBSTACLE_SIDES.LEFT, obstacleNeighbors.LEFT);
+          }
+          if (preparedIntersection.y !== obstaclePos.y1 && preparedIntersection.x === obstaclePos.x2) {
+            plane = obstacle.getWallFromObstacle(obstacle, OBSTACLE_SIDES.RIGHT, obstacleNeighbors.RIGHT);
+          }
+          if (preparedIntersection.y === obstaclePos.y1 && preparedIntersection.x !== obstaclePos.x1) {
+            plane = obstacle.getWallFromObstacle(obstacle, OBSTACLE_SIDES.TOP, obstacleNeighbors.TOP);
+          }
+          if (preparedIntersection.y === obstaclePos.y2 && preparedIntersection.x !== obstaclePos.x1) {
+            plane = obstacle.getWallFromObstacle(obstacle, OBSTACLE_SIDES.BOTTOM, obstacleNeighbors.BOTTOM);
+          }
+        }
+
+        if (plane) {
+          intersections.push({
+            plane: plane,
+            distance: preparedDistance,
+            index: i,
+            intersectionVertex: preparedIntersection,
+          });
+        }
+      });
+    }
+
+    return intersections;
   }
 
   changeRaysAmount(raysAmount: number) {
@@ -110,7 +154,17 @@ class Camera {
     const segmentLength = screenHalfLength / (trueRaysAmount / 2);
 
     for (let i = 0; i < trueRaysAmount; i++) {
-      this.rays.push(new Ray(this.position, this.angle + Math.atan(segmentLength * i - screenHalfLength), this.angle));
+      let rayAngle = this.angle + Math.atan(segmentLength * i - screenHalfLength);
+
+      if (rayAngle < 0) {
+        rayAngle += Math.PI * 2;
+      }
+
+      if (rayAngle > Math.PI * 2) {
+        rayAngle -= Math.PI * 2;
+      }
+
+      this.rays.push(new Ray(this.position, rayAngle, this.angle));
     }
   }
 
@@ -119,11 +173,25 @@ class Camera {
 
     this.angle = this.angle % (2 * Math.PI);
 
+    if (this.angle < 0) {
+      this.angle += 2 * Math.PI;
+    }
+
     const screenHalfLength = Math.tan(FOV / 2);
     const segmentLength = screenHalfLength / ((Math.floor(this.rays.length / 10) * 10) / 2);
 
     for (let i = 0; i < this.rays.length; i++) {
-      this.rays[i].changeAngle(this.angle + Math.atan(segmentLength * i - screenHalfLength), this.angle);
+      let rayAngle = this.angle + Math.atan(segmentLength * i - screenHalfLength);
+
+      if (rayAngle < 0) {
+        rayAngle += Math.PI * 2;
+      }
+
+      if (rayAngle > Math.PI * 2) {
+        rayAngle -= Math.PI * 2;
+      }
+
+      this.rays[i].changeAngle(rayAngle, this.angle);
     }
   }
 }

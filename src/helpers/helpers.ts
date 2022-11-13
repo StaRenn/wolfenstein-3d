@@ -67,27 +67,27 @@ function fillPortraitFrameSet(condition: HealthFrameSetName): Frame<HTMLImageEle
 function generatePostEffectFrameSet(color: [number, number, number]): PostEffectFrame[] {
   return [
     {
-      data: { color: `rgba(${color.join(',')}, 0)`},
+      data: { color: `rgba(${color.join(',')}, 0)` },
       duration: 10000,
     },
     {
-      data: { color: `rgba(${color.join(',')}, 0.25)`},
+      data: { color: `rgba(${color.join(',')}, 0.25)` },
       duration: 40,
     },
     {
-      data: { color: `rgba(${color.join(',')}, 0.2)`},
+      data: { color: `rgba(${color.join(',')}, 0.2)` },
       duration: 40,
     },
     {
-      data: { color: `rgba(${color.join(',')}, 0.15)`},
+      data: { color: `rgba(${color.join(',')}, 0.15)` },
       duration: 40,
     },
     {
-      data: { color: `rgba(${color.join(',')}, 0.1)`},
+      data: { color: `rgba(${color.join(',')}, 0.1)` },
       duration: 40,
     },
     {
-      data: { color: `rgba(${color.join(',')}, 0.05)`},
+      data: { color: `rgba(${color.join(',')}, 0.05)` },
       duration: 40,
     },
   ];

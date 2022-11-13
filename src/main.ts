@@ -1,12 +1,3 @@
-// DO NOT SET MORE THAN 1
-let RESOLUTION_SCALE = 0.5;
-// 1 / RESOLUTION_SCALE must return integer value, because we cant render floating pixels
-let RESOLUTIONS_SCALE_VALUES = [0.1, 0.25, 0.5, 1];
-
-let IS_PAUSED = false;
-let FOV_DEGREES = 90;
-let FOV = (FOV_DEGREES * Math.PI) / 180;
-
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
 async function main() {
@@ -18,7 +9,7 @@ async function main() {
 
   fovRange.value = String(FOV_DEGREES);
   fovRangeValue.innerText = String(FOV_DEGREES);
-  resolutionScaleRange.value = "2";
+  resolutionScaleRange.value = '3';
 
   continueButton.onclick = () => {
     if (IS_PAUSED) {
@@ -75,7 +66,7 @@ async function main() {
   }
 
   const fpsOut = document.getElementById('fps')!;
-  let filterStrength = 1;
+  let filterStrength = 20;
   let frameTime = 0;
   let lastLoop = Date.now();
 
@@ -94,7 +85,7 @@ async function main() {
 
   setInterval(function () {
     fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + ' fps';
-  }, 300);
+  }, 200);
 
   frame();
 }

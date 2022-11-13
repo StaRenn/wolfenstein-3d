@@ -21,20 +21,23 @@ type Triangle = {
   y3: number;
 };
 
-type Obstacle = {
+type ObstacleParams = {
+  matrixCoordinates: Vertex;
   initialPosition: Vector;
   position: Vector;
   endPosition: Vector;
   textureId: number;
   isDoor: boolean;
+  isInFinalPosition: boolean;
   isInStartPosition: boolean;
   isSecret: boolean;
   isVertical: boolean;
   isMovable: boolean;
+  isMoving: boolean;
   isSprite: boolean;
   isItem: boolean;
-  doesExist: boolean;
   hasCollision: boolean;
+  rawValue: string | number;
   closeTimeout: null | Timeout;
   purpose: null | ItemPurpose<ActorStats>;
 };
@@ -49,7 +52,6 @@ type Plane = {
   isVisible: boolean;
   isItem: boolean;
   hasCollision: boolean;
-  obstacleIdx: number;
   purpose: null | ItemPurpose<ActorStats>;
 };
 
@@ -81,13 +83,6 @@ type ScreenData = {
   screenWidth: number;
 };
 
-type ObstaclesVectorsByPurposes = {
-  walls: Wall[];
-  sprites: Sprite[];
-  items: Item[];
-  collisionObstacles: Plane[];
-};
-
 type PreparedNeighbor = {
   isDoor: boolean;
   isSecret: boolean;
@@ -104,20 +99,26 @@ type ItemPurpose<T extends ActorStats> = {
 };
 
 type Intersection<T extends Wall | Sprite | Plane = Plane> = {
-  x: number;
-  y: number;
+  intersectionVertex: Vertex;
   plane: T;
   distance: number;
 };
 
 type IndexedIntersection<T extends Wall | Sprite | Plane = Plane> = Intersection<T> & { index: number };
 
+type Chunk = {
+  startIndex: number;
+  width: number;
+  isInitial: boolean;
+  rays: IndexedIntersection[];
+};
+
 type Frame<T> = {
   data: T;
   duration: number;
 };
 
-type PostEffectFrame = Frame<{ color: string }>
+type PostEffectFrame = Frame<{ color: string }>;
 
 type HealthFrameSetName =
   | 'SEVERE_DAMAGE'
@@ -143,16 +144,21 @@ const isItem = (plane: Wall | Sprite | Plane | Item): plane is Item => {
   return plane.isItem;
 };
 
-const isItemObstacle = (obstacle: Obstacle): obstacle is Omit<Obstacle, 'isSprite' | 'hasCollision' | 'purpose' | 'isItem'> & {
+const isItemObstacle = (
+  obstacle: Obstacle
+): obstacle is Omit<Obstacle, 'isSprite' | 'hasCollision' | 'purpose' | 'isItem'> & {
   isSprite: true;
   hasCollision: false;
   purpose: ItemPurpose<ActorStats>;
   isItem: true;
 } => {
-  return obstacle.isItem
-}
+  return obstacle.isItem;
+};
 
 // todo rename
-const isDesiredPurpose = <T extends ActorStats>(purpose: ItemPurpose<ActorStats>, type: T): purpose is ItemPurpose<T> => {
-  return purpose.affects === type
-}
+const isDesiredPurpose = <T extends ActorStats>(
+  purpose: ItemPurpose<ActorStats>,
+  type: T
+): purpose is ItemPurpose<T> => {
+  return purpose.affects === type;
+};

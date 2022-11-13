@@ -24,29 +24,6 @@ const CELL_LEFT_OFFSET = 1;
 
 const BFS_ALLOWED_VALUES = [0, 27, 28, 33, 34];
 
-async function prepareSpritesMap(spritesPath) {
-  const spritesMap = {};
-
-  const spriteImages = await fs.readdir(spritesPath);
-
-  for (let file of spriteImages) {
-    const buffer = await sharp(path.join(spritesPath, file))
-      .extract({
-        width: CELL_WIDTH,
-        height: CELL_HEIGHT,
-        left: 0,
-        top: 1, // check code line 20
-      })
-      .flatten({ background: { r: 107, g: 111, b: 110, alpha: 1 } })
-      .jpeg({ quality: 20 })
-      .toBuffer();
-
-    spritesMap[path.basename(file, '.png')] = buffer.toString('base64');
-  }
-
-  return spritesMap;
-}
-
 async function prepareTexturesMap(texturesPath) {
   const texturesMap = {};
 
@@ -60,10 +37,11 @@ async function prepareTexturesMap(texturesPath) {
         left: 0,
         top: 1, // check code line 20
       })
+      .flatten({ background: { r: 107, g: 111, b: 110, alpha: 1 } })
       .jpeg({ quality: 20 })
       .toBuffer();
 
-    texturesMap[path.basename(file, '.png')] = buffer.toString('base64');
+    texturesMap[buffer.toString('base64')] = path.basename(file, '.png');
   }
 
   return texturesMap;
@@ -108,9 +86,9 @@ async function main() {
   const secretsMap = await prepareTexturesMap(SECRETS_PATH);
   const playerStartPosMap = await prepareTexturesMap(START_POS_PATH);
 
-  const staticSpritesMap = await prepareSpritesMap(STATIC_SPRITES_PATH);
-  const hollowSpritesMap = await prepareSpritesMap(HOLLOW_SPRITES_PATH);
-  const itemSpritesMap = await prepareSpritesMap(ITEM_SPRITES_PATH);
+  const staticSpritesMap = await prepareTexturesMap(STATIC_SPRITES_PATH);
+  const hollowSpritesMap = await prepareTexturesMap(HOLLOW_SPRITES_PATH);
+  const itemSpritesMap = await prepareTexturesMap(ITEM_SPRITES_PATH);
 
   const mapNames = await fs.readdir(MAPS_PATH);
 
@@ -148,51 +126,42 @@ async function main() {
 
         const segmentBase64 = buffer.toString('base64');
 
-        Object.keys(texturesMap).forEach((textureId) => {
-          if (texturesMap[textureId] === segmentBase64) {
-            const preparedTextureId = textureId % 2 === 1 ? textureId : textureId - 1;
+        const textureId = texturesMap[segmentBase64];
+        const secretId = secretsMap[segmentBase64];
+        const playerStartPositionId = playerStartPosMap[segmentBase64];
+        const staticSpriteId = staticSpritesMap[segmentBase64];
+        const hollowSpriteId = hollowSpritesMap[segmentBase64];
+        const itemId = itemSpritesMap[segmentBase64];
 
-            // reverse vertically
-            map[rows - (row + 1)][column] = Number(preparedTextureId);
-          }
-        });
+        if (textureId) {
+          const preparedTextureId = textureId % 2 === 1 ? textureId : textureId - 1;
 
-        Object.keys(secretsMap).forEach((textureId) => {
-          if (secretsMap[textureId] === segmentBase64) {
-            const preparedTextureId = textureId % 2 === 1 ? textureId : textureId - 1;
+          map[rows - (row + 1)][column] = Number(preparedTextureId);
+        }
 
-            // reverse vertically
-            map[rows - (row + 1)][column] = `${preparedTextureId}_ID${row}${column}_START`;
-          }
-        });
+        if (secretId) {
+          const preparedTextureId = secretId % 2 === 1 ? secretId : secretId - 1;
 
-        Object.keys(playerStartPosMap).forEach((textureId) => {
-          if (playerStartPosMap[textureId] === segmentBase64) {
-            map[rows - (row + 1)][column] = 'START_POS';
-            playerStartPosition = [rows - (row + 1), column];
-          }
-        });
+          map[rows - (row + 1)][column] = `${preparedTextureId}_ID${row}${column}_START`;
+        }
 
-        Object.keys(staticSpritesMap).forEach((textureId) => {
-          if (staticSpritesMap[textureId] === segmentBase64) {
-            // reverse vertically
-            map[rows - (row + 1)][column] = `${textureId}_SPRITE`;
-          }
-        });
+        if (playerStartPositionId) {
+          playerStartPosition = [rows - (row + 1), column];
 
-        Object.keys(hollowSpritesMap).forEach((textureId) => {
-          if (hollowSpritesMap[textureId] === segmentBase64) {
-            // reverse vertically
-            map[rows - (row + 1)][column] = `${textureId}_SPRITE_HOLLOW`;
-          }
-        });
+          map[rows - (row + 1)][column] = 'START_POS';
+        }
 
-        Object.keys(itemSpritesMap).forEach((textureId) => {
-          if (itemSpritesMap[textureId] === segmentBase64) {
-            // reverse vertically
-            map[rows - (row + 1)][column] = `${textureId}_SPRITE_HOLLOW_ITEM`;
-          }
-        });
+        if (staticSpriteId) {
+          map[rows - (row + 1)][column] = `${staticSpriteId}_SPRITE`;
+        }
+
+        if (hollowSpriteId) {
+          map[rows - (row + 1)][column] = `${hollowSpriteId}_SPRITE_HOLLOW`;
+        }
+
+        if (itemId) {
+          map[rows - (row + 1)][column] = `${itemId}_SPRITE_HOLLOW_ITEM`;
+        }
 
         const percentDone = ((row * rows + column + 1) / (columns * rows)) * 100;
 

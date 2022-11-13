@@ -3,14 +3,11 @@ class Actor {
 
   private ammo: number;
   private currentWeapon: keyof typeof WEAPONS;
-  private currentlyMovingObstacles: { [index: number]: Obstacle };
   private health: number;
   private horizontalSpeed: number;
   private lives: number;
   private level: number;
   private score: number;
-  private obstacles: Obstacle[];
-  private obstaclesVectorsByPurposes: ObstaclesVectorsByPurposes;
   private screenData: ScreenData;
   private verticalSpeed: number;
   private weapons: (keyof typeof WEAPONS)[];
@@ -24,24 +21,15 @@ class Actor {
   public position: Vertex;
   public camera: Camera;
 
-  constructor(
-    ctx: Actor['ctx'],
-    obstacles: Actor['obstacles'],
-    obstaclesVectorsByPurposes: Actor['obstaclesVectorsByPurposes'],
-    screenData: Actor['screenData'],
-    initialPosition: Actor['position']
-  ) {
+  constructor(ctx: Actor['ctx'], screenData: Actor['screenData'], initialPosition: Actor['position']) {
     this.ammo = 50;
     this.score = 0;
     this.ctx = ctx;
     this.currentWeapon = 'PISTOL';
-    this.currentlyMovingObstacles = [];
-    this.health = 100;
+    this.health = 20;
     this.horizontalSpeed = 0;
     this.lives = 3;
     this.level = 1;
-    this.obstacles = obstacles;
-    this.obstaclesVectorsByPurposes = obstaclesVectorsByPurposes;
     this.position = initialPosition;
     this.screenData = screenData;
     this.verticalSpeed = 0;
@@ -50,13 +38,7 @@ class Actor {
 
     this.renderWeapon = this.renderWeapon.bind(this);
 
-    this.camera = new Camera(
-      this.position,
-      this.screenData.screenWidth * RESOLUTION_SCALE,
-      this.ctx,
-      this.obstaclesVectorsByPurposes.walls,
-      this.obstaclesVectorsByPurposes.sprites
-    );
+    this.camera = new Camera(this.position, this.screenData.screenWidth * RESOLUTION_SCALE, this.ctx);
 
     this.hud = new Hud(this.ctx, this.screenData);
 
@@ -78,7 +60,7 @@ class Actor {
       renderFunction: this.renderPostEffect,
       initialFrameIdx: 0,
       isLoopAnimation: false,
-      frameSet: generatePostEffectFrameSet([255,255,0]),
+      frameSet: generatePostEffectFrameSet([255, 255, 0]),
     });
 
     window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
@@ -91,14 +73,11 @@ class Actor {
     return this.timeout.isExpired && (this.ammo > 0 || WEAPONS[this.currentWeapon].ammoPerAttack === 0);
   }
 
-  updateObstaclesVectorsByPurposes(obstacleVectorsByPurposes: Actor['obstaclesVectorsByPurposes']) {
-    this.obstaclesVectorsByPurposes = obstacleVectorsByPurposes;
-
-    this.camera.updateObstacles(obstacleVectorsByPurposes.walls, obstacleVectorsByPurposes.sprites);
-  }
-
-  updateObstacles(obstacles: Obstacle[]) {
-    this.obstacles = obstacles;
+  get currentMatrixPosition() {
+    return {
+      x: Math.floor(this.position.x / TILE_SIZE),
+      y: Math.floor(this.position.y / TILE_SIZE),
+    };
   }
 
   handleKeyDown(event: KeyboardEvent) {
@@ -156,7 +135,7 @@ class Actor {
   }
 
   renderPostEffect(data: PostEffectFrame['data']) {
-    this.ctx.fillStyle = data.color
+    this.ctx.fillStyle = data.color;
     this.ctx.fillRect(0, 0, this.screenData.screenWidth, this.screenData.screenHeight);
   }
 
@@ -188,7 +167,7 @@ class Actor {
     }
   }
 
-  move() {
+  move(gameMap: (Obstacle | null)[][]) {
     if (this.horizontalSpeed === 0 && this.verticalSpeed === 0) {
       return;
     }
@@ -207,138 +186,111 @@ class Actor {
     position.x += xSum >= 0 ? Math.min(xSum, ACTOR_SPEED) : Math.max(xSum, -ACTOR_SPEED);
     position.y += ySum >= 0 ? Math.min(ySum, ACTOR_SPEED) : Math.max(ySum, -ACTOR_SPEED);
 
-    const checkCollision = <T extends Plane>(planes: T[], shouldFixCollision: boolean) => {
-      for (let plane of planes) {
-        const obstacle = this.obstacles[Number(plane.obstacleIdx)];
+    const checkCollision = (obstacle: Obstacle | null) => {
+      if (!obstacle || (!obstacle.hasCollision && !obstacle.isItem)) {
+        return;
+      }
 
-        if (!obstacle.doesExist) {
-          continue
+      let doesCollide = false;
+
+      const preparedObstaclePosition = {
+        ...(obstacle.isInFinalPosition && !obstacle.isDoor ? obstacle.endPosition : obstacle.initialPosition),
+      };
+
+      if (obstacle.isDoor) {
+        if (preparedObstaclePosition.x1 === preparedObstaclePosition.x2) {
+          preparedObstaclePosition.x1 -= TILE_SIZE / 2;
+          preparedObstaclePosition.x2 += TILE_SIZE / 2;
         }
 
-        let doesCollide = false;
-
-        // const obstacleCenter = {
-        //   x: (obstacle.position.x1 + obstacle.position.x2) / 2,
-        //   y: (obstacle.position.y1 + obstacle.position.y2) / 2
-        // }
-        //
-        // const multiplier =
-        //   ((plane.position.x1 + plane.position.x2) / 2 < obstacleCenter.x ||
-        //   (plane.position.y1 + plane.position.y2) / 2 < obstacleCenter.y) ? -1 : 1
-        //
-        // const getOffset = (firstCoordinates: keyof Vector, secondCoordinates: keyof Vector) => {
-        //   return (Math.abs(plane.position[firstCoordinates] - plane.position[secondCoordinates]) > 0 ? TILE_SIZE / 2.25 * multiplier : 0)
-        // }
-        //
-        // const getWidthOffset = (coordinate: keyof Vector) => {
-        //   if(plane.type === 'VERTICAL' && coordinate !== 'x1' && coordinate !== 'x2') {
-        //     console.log(plane)
-        //     return 0
-        //   }
-        //
-        //   if(plane.type === 'HORIZONTAL' && coordinate !== 'y1' && coordinate !== 'y2') {
-        //     return 0
-        //   }
-        //
-        //   return ['x1', 'y1'].includes(coordinate) ? TILE_SIZE / 2.25 * -1 : TILE_SIZE / 2.25
-        // }
-        //
-        // const planePosition = {
-        //   x1: plane.position.x1 + getOffset("y1", "y2") + getWidthOffset('x1'),
-        //   y1: plane.position.y1 + getOffset("x1", "x2") + getWidthOffset('y1'),
-        //   x2: plane.position.x2 - getOffset("y2", "y1") + getWidthOffset("x2"),
-        //   y2: plane.position.y2 - getOffset("x2", "x1") + getWidthOffset("y2")
-        // }
-
-        if (
-          this.position.y >= plane.position.y1 &&
-          this.position.y <= plane.position.y2 &&
-          ((position.x >= plane.position.x1 && this.position.x <= plane.position.x1) ||
-            (position.x <= plane.position.x1 && this.position.x >= plane.position.x1))
-        ) {
-          if(shouldFixCollision) {
-            position.x = this.position.x;
-          }
-
-          doesCollide = true
-        }
-
-        if (
-          this.position.x >= plane.position.x1 &&
-          this.position.x <= plane.position.x2 &&
-          ((position.y >= plane.position.y1 && this.position.y <= plane.position.y1) ||
-            (position.y <= plane.position.y1 && this.position.y >= plane.position.y1))
-        ) {
-          if(shouldFixCollision) {
-            position.y = this.position.y;
-          }
-
-          doesCollide = true
-        }
-
-        if (
-          position.x >= obstacle.position.x1 &&
-          position.x <= obstacle.position.x2 &&
-          position.y >= obstacle.position.y1 &&
-          position.y <= obstacle.position.y2
-        ) {
-          if(shouldFixCollision) {
-            position.y = this.position.y;
-            position.x = this.position.x;
-          }
-
-          doesCollide = true
-        }
-
-        if (doesCollide && isItemObstacle(obstacle)) {
-          const purpose = obstacle.purpose
-
-          if (isDesiredPurpose(purpose, 'ammo')) {
-            if (this.ammo === 100) {
-              continue
-            }
-
-            this.ammo += purpose.value;
-
-            if (this.ammo > 100) {
-              this.ammo = 100
-            }
-          }
-
-          if (isDesiredPurpose(purpose, 'health')) {
-            if (this.health === 100) {
-              continue
-            }
-
-            this.health += purpose.value;
-
-            if (this.health > 100) {
-              this.health = 100
-            }
-          }
-
-          if (isDesiredPurpose(purpose, 'score')) {
-            this.score += purpose.value;
-          }
-
-          if (isDesiredPurpose(purpose, 'weapons')) {
-            this.weapons.push(purpose.value);
-          }
-
-          if (isDesiredPurpose(purpose, 'lives')) {
-            this.lives += purpose.value;
-          }
-
-          this.postEffectAnimationController.updateFrameSet(generatePostEffectFrameSet([255, 255, 0]))
-          this.postEffectAnimationController.playAnimation()
-
-          this.obstacles[Number(plane.obstacleIdx)].doesExist = false
+        if (preparedObstaclePosition.y1 === preparedObstaclePosition.y2) {
+          preparedObstaclePosition.y1 -= TILE_SIZE / 2;
+          preparedObstaclePosition.y2 += TILE_SIZE / 2;
         }
       }
-    }
 
-    checkCollision(this.obstaclesVectorsByPurposes.collisionObstacles, true)
-    checkCollision(this.obstaclesVectorsByPurposes.items, false)
+      const expandedObstacleVector = {
+        x1: preparedObstaclePosition.x1 - TILE_SIZE * 0.3,
+        y1: preparedObstaclePosition.y1 - TILE_SIZE * 0.3,
+        x2: preparedObstaclePosition.x2 + TILE_SIZE * 0.3,
+        y2: preparedObstaclePosition.y2 + TILE_SIZE * 0.3,
+      };
+
+      if (
+        position.x >= expandedObstacleVector.x1 &&
+        position.x <= expandedObstacleVector.x2 &&
+        position.y >= expandedObstacleVector.y1 &&
+        position.y <= expandedObstacleVector.y2
+      ) {
+        if (!obstacle.isItem) {
+          if (this.position.x >= expandedObstacleVector.x1 && this.position.x <= expandedObstacleVector.x2) {
+            position.y = this.position.y;
+          }
+          if (this.position.y >= expandedObstacleVector.y1 && this.position.y <= expandedObstacleVector.y2) {
+            position.x = this.position.x;
+          }
+        }
+
+        doesCollide = true;
+      }
+
+      if (doesCollide && isItemObstacle(obstacle)) {
+        const purpose = obstacle.purpose;
+
+        if (isDesiredPurpose(purpose, 'ammo')) {
+          if (this.ammo === 100) {
+            return;
+          }
+
+          this.ammo += purpose.value;
+
+          if (this.ammo > 100) {
+            this.ammo = 100;
+          }
+        }
+
+        if (isDesiredPurpose(purpose, 'health')) {
+          if (this.health === 100) {
+            return;
+          }
+
+          this.health += purpose.value;
+
+          if (this.health > 100) {
+            this.health = 100;
+          }
+        }
+
+        if (isDesiredPurpose(purpose, 'score')) {
+          this.score += purpose.value;
+        }
+
+        if (isDesiredPurpose(purpose, 'weapons')) {
+          this.weapons.push(purpose.value);
+        }
+
+        if (isDesiredPurpose(purpose, 'lives')) {
+          this.lives += purpose.value;
+        }
+
+        this.postEffectAnimationController.updateFrameSet(generatePostEffectFrameSet([255, 255, 0]));
+        this.postEffectAnimationController.playAnimation();
+
+        // remove from map when item picked up
+        gameMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+      }
+    };
+
+    const positionOnMap = this.currentMatrixPosition;
+
+    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
+    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
+    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
+    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
+    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
+    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
+    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
+    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
 
     this.position = position;
     this.camera.updatePosition(this.position);
@@ -361,8 +313,6 @@ class Actor {
       health: this.health,
     });
 
-    this.postEffectAnimationController.iterate()
-
-    this.move();
+    this.postEffectAnimationController.iterate();
   }
 }

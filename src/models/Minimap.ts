@@ -16,31 +16,49 @@ class Minimap {
     this.columnsLength = columnsLength;
   }
 
-  render(position: Vertex, intersections: IndexedIntersection<Wall>[]) {
-    this.ctx.strokeStyle = 'orange';
-    this.ctx.beginPath();
+  render(position: Vertex, angle: number) {
+    const endPosition = {
+      x: position.x + (TILE_SIZE / MAP_SCALE) * Math.sin(angle),
+      y: position.y + (TILE_SIZE / MAP_SCALE) * Math.cos(angle),
+    };
 
-    const width = this.columnsLength * TILE_SIZE;
     const height = this.rowsLength * TILE_SIZE;
 
-    for (let i = 0; i < intersections.length; i++) {
-      const intersection = intersections[i];
+    for (let obstacle of this.obstacles) {
+      if (obstacle.isSecret) {
+        this.ctx.fillStyle = 'orange';
+      } else {
+        this.ctx.fillStyle = 'white';
+      }
 
-      // reverse by y
-      this.ctx.moveTo(position.x, height - position.y);
-      this.ctx.lineTo(intersection.x, height - intersection.y);
+      if (!obstacle.isDoor && !obstacle.isSprite) {
+        // reverse by y
+        this.ctx.fillRect(
+          obstacle.initialPosition.x1 * MAP_SCALE,
+          (height - obstacle.initialPosition.y1 - TILE_SIZE) * MAP_SCALE,
+          TILE_SIZE * MAP_SCALE,
+          TILE_SIZE * MAP_SCALE
+        );
+      }
     }
 
+    this.ctx.strokeStyle = 'orange';
+    this.ctx.beginPath();
+    this.ctx.moveTo(position.x * MAP_SCALE, (height - position.y) * MAP_SCALE);
+    this.ctx.lineTo(endPosition.x * MAP_SCALE, (height - endPosition.y) * MAP_SCALE);
     this.ctx.closePath();
     this.ctx.stroke();
 
-    this.ctx.fillStyle = 'white';
-
-    for (let obstacle of this.obstacles) {
-      if (!obstacle.isDoor && !obstacle.isSprite) {
-        // reverse by y
-        this.ctx.fillRect(obstacle.position.x1, height - obstacle.position.y1 - TILE_SIZE, TILE_SIZE, TILE_SIZE);
-      }
-    }
+    this.ctx.fillStyle = 'red';
+    this.ctx.ellipse(
+      position.x * MAP_SCALE,
+      (height - position.y) * MAP_SCALE,
+      TILE_SIZE * 0.8 * MAP_SCALE,
+      TILE_SIZE * 0.8 * MAP_SCALE,
+      0,
+      0,
+      360
+    );
+    this.ctx.fill();
   }
 }
