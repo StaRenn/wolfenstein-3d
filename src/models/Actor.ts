@@ -1,4 +1,4 @@
-import { Frame, Obstacle, PostEffectFrame, ScreenData, Vertex, WeaponType } from '../types';
+import { Frame, Obstacle, ParsedMap, PostEffectFrame, ScreenData, Vertex, WeaponType } from '../types';
 import { AnimationController } from './AnimationController';
 import { Hud } from './Hud';
 import { Timeout } from './Timeout';
@@ -185,7 +185,7 @@ export class Actor {
     }
   }
 
-  move(RawMap: (Obstacle | null)[][]) {
+  move(gameMap: ParsedMap) {
     if (this.horizontalSpeed === 0 && this.verticalSpeed === 0) {
       return;
     }
@@ -303,20 +303,20 @@ export class Actor {
         this.postEffectAnimationController.playAnimation();
 
         // remove from map when item picked up
-        RawMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+        gameMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
       }
     };
 
     const positionOnMap = this.currentMatrixPosition;
 
-    checkCollision((RawMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
-    checkCollision((RawMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
-    checkCollision((RawMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
-    checkCollision((RawMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
-    checkCollision((RawMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
-    checkCollision((RawMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
-    checkCollision((RawMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
-    checkCollision((RawMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
+    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
+    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
+    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
+    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
+    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
+    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
+    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
+    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
 
     this._position = position;
     this._camera.updatePosition(this._position);
