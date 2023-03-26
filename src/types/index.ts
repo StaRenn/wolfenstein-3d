@@ -1,18 +1,25 @@
-type GameMap = (string | number)[][];
+import { DoorObstacle } from '../models/obstacles/Door';
+import { WallObstacle } from '../models/obstacles/Wall';
+import { SpriteObstacle } from '../models/obstacles/Sprite';
+import { ItemObstacle } from '../models/obstacles/Item';
 
-type Vertex = {
+export type RawMap = (string | number)[][];
+
+export type ParsedMap = (DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle | null)[][];
+
+export type Vertex = {
   x: number;
   y: number;
 };
 
-type Vector = {
+export type Vector = {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
 };
 
-type Triangle = {
+export type Triangle = {
   x1: number;
   y1: number;
   x2: number;
@@ -21,52 +28,11 @@ type Triangle = {
   y3: number;
 };
 
-type ObstacleParams = {
-  matrixCoordinates: Vertex;
-  initialPosition: Vector;
-  position: Vector;
-  endPosition: Vector;
-  textureId: number;
-  isDoor: boolean;
-  isInFinalPosition: boolean;
-  isInStartPosition: boolean;
-  isSecret: boolean;
-  isVertical: boolean;
-  isMovable: boolean;
-  isMoving: boolean;
-  isSprite: boolean;
-  isItem: boolean;
-  hasCollision: boolean;
-  rawValue: string | number;
-  closeTimeout: null | Timeout;
-  purpose: null | ItemPurpose<ActorStats>;
-};
+export type Obstacle = DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle;
 
-type Plane = {
-  position: Vector;
-  type: keyof typeof INTERSECTION_TYPES;
-  shouldReverseTexture: boolean;
-  textureId: number;
-  isMovable: boolean;
-  isSprite: boolean;
-  isVisible: boolean;
-  isItem: boolean;
-  hasCollision: boolean;
-  purpose: null | ItemPurpose<ActorStats>;
-};
+export type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
 
-type Wall = Omit<Plane, 'isSprite' | 'isItem' | 'purpose'> & { isSprite: false; isItem: false; purpose: null };
-type Sprite = Omit<Plane, 'isSprite'> & { isSprite: true };
-type Item = Omit<Plane, 'isSprite' | 'hasCollision' | 'purpose' | 'isItem'> & {
-  isSprite: true;
-  hasCollision: false;
-  purpose: ItemPurpose<ActorStats>;
-  isItem: true;
-};
-
-type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
-
-type Weapon = {
+export type Weapon = {
   frameSet: Frame<HTMLImageElement>[];
   maxDistance: number;
   damage: number;
@@ -76,89 +42,52 @@ type Weapon = {
   icon: HTMLImageElement;
 };
 
-type Weapons = { readonly [key in WeaponType]: Weapon };
+export type Weapons = { readonly [key in WeaponType]: Weapon };
 
-type ScreenData = {
+export type ScreenData = {
   screenHeight: number;
   screenWidth: number;
 };
 
-type PreparedNeighbor = {
-  isDoor: boolean;
-  isSecret: boolean;
-  isMovable: boolean;
-  number: number;
-};
-
-type ActorStats = 'ammo' | 'health' | 'score' | 'lives' | 'weapons' | 'keys';
+export type ActorStats = 'ammo' | 'health' | 'score' | 'lives' | 'weapons' | 'keys';
 
 // todo keys
-type ItemPurpose<T extends ActorStats> = {
+export type ItemPurpose<T extends ActorStats> = {
   affects: T;
   value: T extends 'ammo' | 'health' | 'score' | 'lives' ? number : WeaponType;
 };
 
-type Intersection<T extends Wall | Sprite | Plane = Plane> = {
+export type Intersection<T extends DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle> = {
   intersectionVertex: Vertex;
-  plane: T;
+  obstacle: T;
   distance: number;
 };
 
-type IndexedIntersection<T extends Wall | Sprite | Plane = Plane> = Intersection<T> & { index: number };
+export type IndexedIntersection<
+  T extends DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle
+> = Intersection<T> & { index: number };
 
-type Chunk = {
+export type Chunk = {
   startIndex: number;
   width: number;
   isInitial: boolean;
-  rays: IndexedIntersection[];
+  rays: IndexedIntersection<DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle>[];
 };
 
-type Frame<T> = {
+export type Frame<T> = {
   data: T;
   duration: number;
 };
 
-type PostEffectFrame = Frame<{ color: string }>;
+export type PostEffectFrame = Frame<{ color: string }>;
 
-type HealthFrameSetName =
-  | 'SEVERE_DAMAGE'
-  | 'JUST_A_SCRATCH'
-  | 'NEAR_DEATH'
-  | 'MODERATE_DAMAGE'
-  | 'HEALTHY'
-  | 'DEAD'
-  | 'SUFFERING'
-  | 'MINOR_DAMAGE';
-
-type HealthFrameSets = { [key in HealthFrameSetName]: Frame<HTMLImageElement>[] };
-
-const isSprite = (plane: Wall | Sprite | Plane | Item): plane is Sprite => {
-  return plane.isSprite;
-};
-
-const isWall = (plane: Wall | Sprite | Plane | Item): plane is Wall => {
-  return !plane.isSprite;
-};
-
-const isItem = (plane: Wall | Sprite | Plane | Item): plane is Item => {
-  return plane.isItem;
-};
-
-const isItemObstacle = (
-  obstacle: Obstacle
-): obstacle is Omit<Obstacle, 'isSprite' | 'hasCollision' | 'purpose' | 'isItem'> & {
-  isSprite: true;
-  hasCollision: false;
-  purpose: ItemPurpose<ActorStats>;
-  isItem: true;
-} => {
-  return obstacle.isItem;
-};
-
-// todo rename
-const isDesiredPurpose = <T extends ActorStats>(
-  purpose: ItemPurpose<ActorStats>,
-  type: T
-): purpose is ItemPurpose<T> => {
-  return purpose.affects === type;
+export type HealthFrameSets = {
+  SEVERE_DAMAGE: Frame<HTMLImageElement>[];
+  JUST_A_SCRATCH: Frame<HTMLImageElement>[];
+  NEAR_DEATH: Frame<HTMLImageElement>[];
+  MODERATE_DAMAGE: Frame<HTMLImageElement>[];
+  HEALTHY: Frame<HTMLImageElement>[];
+  DEAD: Frame<HTMLImageElement>[];
+  SUFFERING: Frame<HTMLImageElement>[];
+  MINOR_DAMAGE: Frame<HTMLImageElement>[];
 };

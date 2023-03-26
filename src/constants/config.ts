@@ -1,23 +1,32 @@
-// 1 / RESOLUTION_SCALE must return integer value, because we cant render floating pixels
-let RESOLUTIONS_SCALE_VALUES = [0.1, 0.25, 0.5, 1] as const;
+import { ActorStats, ItemPurpose, Weapons } from '../types';
+import { fillWeaponFrameSet } from '../helpers/frameSets';
+import { getImageWithSource } from '../utils/getImageWithSource';
+import { toRadians } from '../helpers/maths';
+
+export const TILE_SIZE = 10;
+export const RAY_LENGTH = TILE_SIZE * 64;
+export const DOOR_TIMEOUT = 4000;
+export const DOOR_IDS = [27, 28, 33, 34, 35, 36];
+export const DOOR_SIDE_WALL_TEXTURE_ID = 30;
+export const DOOR_SIDE_WALL_TEXTURE_DARK_ID = 29;
+export const TEXTURE_SIZE = 64;
+export const HUD_WIDTH_COEFFICIENT = 0.6;
+export const MAP_SCALE = 0.6;
+export const DEFAULT_FRAME_DURATION = 1000 / 60;
+export const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
+export const ACTOR_SPEED = 1;
+// 1 / RESOLUTION_SCALE must return integer value, because we cant render 0.1 of pixel, 0.5 of pixel etc
+export const RESOLUTIONS_SCALE_VALUES = [0.1, 0.25, 0.5, 1] as const;
+
+// globals
 // DO NOT SET MORE THAN 1
-let RESOLUTION_SCALE: typeof RESOLUTIONS_SCALE_VALUES[number] = 1;
+window.RESOLUTION_SCALE = 1;
+window.IS_PAUSED = false;
+window.FOV_DEGREES = 90;
+window.FOV = toRadians(FOV_DEGREES);
+window.TIME_SCALE = 1;
 
-let IS_PAUSED = false;
-let FOV_DEGREES = 90;
-let FOV = (FOV_DEGREES * Math.PI) / 180;
-
-const TILE_SIZE = 10;
-const RAY_LENGTH = TILE_SIZE * 64;
-const ACTOR_SPEED = 1;
-const DOOR_TIMEOUT = 4000;
-const DOOR_IDS = [27, 28, 33, 34, 35, 36];
-const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
-const TEXTURE_SIZE = 64;
-const HUD_WIDTH_COEFFICIENT = 0.6;
-const MAP_SCALE = 0.6;
-
-const WEAPONS: Weapons = {
+export const WEAPONS: Weapons = {
   KNIFE: {
     frameSet: fillWeaponFrameSet('KNIFE', 50),
     maxDistance: 10,
@@ -47,7 +56,7 @@ const WEAPONS: Weapons = {
   },
 };
 
-const ITEMS_PURPOSES: { readonly [key: number]: ItemPurpose<ActorStats> } = {
+export const ITEMS_PURPOSES: { readonly [key: number]: ItemPurpose<ActorStats> } = {
   34: {
     affects: 'ammo',
     value: 8,
@@ -86,19 +95,19 @@ const ITEMS_PURPOSES: { readonly [key: number]: ItemPurpose<ActorStats> } = {
   },
 } as const;
 
-const INTERSECTION_TYPES = {
+export const INTERSECTION_TYPES = {
   VERTICAL: 'VERTICAL',
   HORIZONTAL: 'HORIZONTAL',
 } as const;
 
-const OBSTACLE_SIDES = {
+export const OBSTACLE_SIDES = {
   TOP: 'TOP',
   BOTTOM: 'BOTTOM',
   LEFT: 'LEFT',
   RIGHT: 'RIGHT',
 } as const;
 
-const NEIGHBOR_OFFSET = {
+export const NEIGHBOR_OFFSET = {
   [OBSTACLE_SIDES.TOP]: -1,
   [OBSTACLE_SIDES.BOTTOM]: 1,
   [OBSTACLE_SIDES.LEFT]: -1,

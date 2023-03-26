@@ -1,4 +1,4 @@
-class Timeout {
+export class Timeout {
   private timeoutTime: null | number;
   private onTimeoutExpire: () => void;
 
@@ -20,6 +20,10 @@ class Timeout {
   }
 
   iterate() {
+    if (IS_PAUSED) {
+      return;
+    }
+
     if (this.timeoutTime) {
       const currentTime = new Date().getTime();
 

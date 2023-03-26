@@ -1,4 +1,7 @@
-class AnimationController<FrameType extends Frame<any>> {
+import { Timeout } from './Timeout';
+import { Frame } from '../types';
+
+export class AnimationController<FrameType extends Frame<unknown>> {
   private frameSet: FrameType[];
   private currentFrameIdx: number;
   private isLoopAnimation: boolean;
@@ -6,7 +9,6 @@ class AnimationController<FrameType extends Frame<any>> {
   private onAnimationEnd: () => void;
   private onAnimationStart: () => void;
   private onFrameChange: (frameIdx: number) => void;
-
   private timeout: Timeout;
 
   constructor({

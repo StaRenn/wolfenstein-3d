@@ -1,4 +1,7 @@
-function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Frame<HTMLImageElement>[] {
+import { Frame, HealthFrameSets, PostEffectFrame, WeaponType } from '../types';
+import { getImageWithSource } from '../utils/getImageWithSource';
+
+export function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Frame<HTMLImageElement>[] {
   const frameSet = [];
 
   for (let i = 0; i < 5; i++) {
@@ -13,7 +16,7 @@ function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Frame<HTM
   }));
 }
 
-function fillPortraitFrameSet(condition: HealthFrameSetName): Frame<HTMLImageElement>[] {
+export function fillPortraitFrameSet(condition: keyof HealthFrameSets): Frame<HTMLImageElement>[] {
   const frameSet = [];
 
   for (let i = 0; i < 3; i++) {
@@ -64,7 +67,7 @@ function fillPortraitFrameSet(condition: HealthFrameSetName): Frame<HTMLImageEle
   ];
 }
 
-function generatePostEffectFrameSet(color: [number, number, number]): PostEffectFrame[] {
+export function generatePostEffectFrameSet(color: [number, number, number]): PostEffectFrame[] {
   return [
     {
       data: { color: `rgba(${color.join(',')}, 0)` },
@@ -91,10 +94,4 @@ function generatePostEffectFrameSet(color: [number, number, number]): PostEffect
       duration: 40,
     },
   ];
-}
-
-function getImageWithSource(path: string) {
-  const image = new Image();
-  image.src = path;
-  return image;
 }

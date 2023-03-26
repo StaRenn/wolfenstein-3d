@@ -1,4 +1,9 @@
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+import { Scene } from './models/Scene';
+import { DEFAULT_FRAME_DURATION, RESOLUTIONS_SCALE_VALUES } from './constants/config';
+import { map } from './map';
+import { toRadians } from './helpers/maths';
+
+export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
 async function main() {
   const menu = document.getElementById('menu-container') as HTMLDivElement;
@@ -19,7 +24,7 @@ async function main() {
     }
   };
 
-  resolutionScaleRange.oninput = (event: InputEvent) => {
+  resolutionScaleRange.oninput = (event: Event) => {
     if (event.target) {
       RESOLUTION_SCALE = RESOLUTIONS_SCALE_VALUES[Number((event.target as HTMLInputElement).value)];
 
@@ -28,10 +33,10 @@ async function main() {
     }
   };
 
-  fovRange.oninput = (event: InputEvent) => {
+  fovRange.oninput = (event: Event) => {
     if (event.target) {
       FOV_DEGREES = Number((event.target as HTMLInputElement).value);
-      FOV = (FOV_DEGREES * Math.PI) / 180;
+      FOV = toRadians(FOV_DEGREES);
 
       fovRangeValue.innerText = (event.target as HTMLInputElement).value;
 
@@ -56,29 +61,32 @@ async function main() {
 
   const scene = new Scene(canvas, map);
 
-  {
-    function handleResize() {
-      scene.resize(window.innerWidth, window.innerHeight);
-    }
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
+  function handleResize() {
+    scene.resize(window.innerWidth, window.innerHeight);
   }
 
+  handleResize();
+  window.addEventListener('resize', handleResize);
+
   const fpsOut = document.getElementById('fps')!;
+  let prevFrameDuration = 0;
+  let frameDuration = 0;
   let filterStrength = 20;
   let frameTime = 0;
-  let lastLoop = Date.now();
 
-  function frame() {
+  function frame(currentFrameDuration: number) {
     if (!IS_PAUSED) {
       scene.render();
     }
 
-    const thisLoop = Date.now();
-    const thisFrameTime = thisLoop - lastLoop;
-    frameTime += (thisFrameTime - frameTime) / filterStrength;
-    lastLoop = thisLoop;
+    prevFrameDuration = frameDuration;
+    frameDuration = currentFrameDuration;
+
+    const frameDiff = frameDuration - prevFrameDuration;
+
+    frameTime += (frameDiff - frameTime) / filterStrength;
+
+    TIME_SCALE = Math.min(Math.round((frameDiff / DEFAULT_FRAME_DURATION) * 100) / 100, 1);
 
     requestAnimationFrame(frame);
   }
@@ -87,7 +95,7 @@ async function main() {
     fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + ' fps';
   }, 200);
 
-  frame();
+  frame(0);
 }
 
 window.onload = main;

@@ -1,4 +1,14 @@
-class Actor {
+import { Frame, Obstacle, PostEffectFrame, ScreenData, Vertex, WeaponType } from '../types';
+import { AnimationController } from './AnimationController';
+import { Hud } from './Hud';
+import { Timeout } from './Timeout';
+import { Camera } from './Camera';
+import { isDesiredPurpose, isDoor, isItem, isMovableEntity, isWall } from '../types/typeGuards';
+import { ACTOR_SPEED, HUD_WIDTH_COEFFICIENT, TEXTURE_SIZE, TILE_SIZE, WEAPONS } from '../constants/config';
+import { generatePostEffectFrameSet } from '../helpers/frameSets';
+import { HUD_PANEL } from '../constants/hud';
+
+export class Actor {
   private readonly ctx: CanvasRenderingContext2D;
 
   private ammo: number;
@@ -16,12 +26,12 @@ class Actor {
   private weaponAnimationController: AnimationController<Frame<HTMLImageElement>>;
   private postEffectAnimationController: AnimationController<PostEffectFrame>;
   private hud: Hud;
-  private timeout: Timeout;
+  private attackTimeout: Timeout;
 
-  public position: Vertex;
-  public camera: Camera;
+  private _position: Vertex;
+  private _camera: Camera;
 
-  constructor(ctx: Actor['ctx'], screenData: Actor['screenData'], initialPosition: Actor['position']) {
+  constructor(ctx: Actor['ctx'], screenData: Actor['screenData'], initialPosition: Actor['_position']) {
     this.ammo = 50;
     this.score = 0;
     this.ctx = ctx;
@@ -30,7 +40,7 @@ class Actor {
     this.horizontalSpeed = 0;
     this.lives = 3;
     this.level = 1;
-    this.position = initialPosition;
+    this._position = initialPosition;
     this.screenData = screenData;
     this.verticalSpeed = 0;
     this.weapons = ['KNIFE', 'PISTOL'];
@@ -38,11 +48,11 @@ class Actor {
 
     this.renderWeapon = this.renderWeapon.bind(this);
 
-    this.camera = new Camera(this.position, this.screenData.screenWidth * RESOLUTION_SCALE, this.ctx);
+    this._camera = new Camera(this._position, this.screenData.screenWidth * RESOLUTION_SCALE, this.ctx);
 
     this.hud = new Hud(this.ctx, this.screenData);
 
-    this.timeout = new Timeout();
+    this.attackTimeout = new Timeout();
 
     this.shoot = this.shoot.bind(this);
     this.renderWeapon = this.renderWeapon.bind(this);
@@ -69,14 +79,22 @@ class Actor {
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
   }
 
+  get position() {
+    return this._position;
+  }
+
+  get camera() {
+    return this._camera;
+  }
+
   get canShoot() {
-    return this.timeout.isExpired && (this.ammo > 0 || WEAPONS[this.currentWeapon].ammoPerAttack === 0);
+    return this.attackTimeout.isExpired && (this.ammo > 0 || WEAPONS[this.currentWeapon].ammoPerAttack === 0);
   }
 
   get currentMatrixPosition() {
     return {
-      x: Math.floor(this.position.x / TILE_SIZE),
-      y: Math.floor(this.position.y / TILE_SIZE),
+      x: Math.floor(this._position.x / TILE_SIZE),
+      y: Math.floor(this._position.y / TILE_SIZE),
     };
   }
 
@@ -145,7 +163,7 @@ class Actor {
       this.weaponAnimationController.updateFrameSet(WEAPONS[this.currentWeapon].frameSet);
 
       // weapon change timeout to prevent spamming 1-2-1-2-1-2 for fast shooting
-      this.timeout.set(100);
+      this.attackTimeout.set(100);
     }
   }
 
@@ -154,7 +172,7 @@ class Actor {
       const weapon = WEAPONS[this.currentWeapon];
 
       this.weaponAnimationController.playAnimation();
-      this.timeout.set(weapon.frameDuration * weapon.frameSet.length - 1);
+      this.attackTimeout.set(weapon.frameDuration * weapon.frameSet.length - 1);
     }
   }
 
@@ -167,42 +185,50 @@ class Actor {
     }
   }
 
-  move(gameMap: (Obstacle | null)[][]) {
+  move(RawMap: (Obstacle | null)[][]) {
     if (this.horizontalSpeed === 0 && this.verticalSpeed === 0) {
       return;
     }
 
-    const position: Vertex = { x: this.position.x, y: this.position.y };
+    const position: Vertex = { x: this._position.x, y: this._position.y };
 
-    const verticalChangeX = Math.sin(this.camera.angle) * this.verticalSpeed;
-    const verticalChangeY = Math.cos(this.camera.angle) * this.verticalSpeed;
+    const verticalChangeX = Math.sin(this._camera.angle) * this.verticalSpeed * TIME_SCALE;
+    const verticalChangeY = Math.cos(this._camera.angle) * this.verticalSpeed * TIME_SCALE;
 
-    const horizontalChangeX = Math.sin(this.camera.angle + Math.PI / 2) * this.horizontalSpeed;
-    const horizontalChangeY = Math.cos(this.camera.angle + Math.PI / 2) * this.horizontalSpeed;
+    const horizontalChangeX = Math.sin(this._camera.angle + Math.PI / 2) * this.horizontalSpeed * TIME_SCALE;
+    const horizontalChangeY = Math.cos(this._camera.angle + Math.PI / 2) * this.horizontalSpeed * TIME_SCALE;
 
     const xSum = verticalChangeX + horizontalChangeX;
     const ySum = verticalChangeY + horizontalChangeY;
 
-    position.x += xSum >= 0 ? Math.min(xSum, ACTOR_SPEED) : Math.max(xSum, -ACTOR_SPEED);
-    position.y += ySum >= 0 ? Math.min(ySum, ACTOR_SPEED) : Math.max(ySum, -ACTOR_SPEED);
+    position.x += xSum >= 0 ? Math.min(xSum, ACTOR_SPEED * TIME_SCALE) : Math.max(xSum, -ACTOR_SPEED * TIME_SCALE);
+    position.y += ySum >= 0 ? Math.min(ySum, ACTOR_SPEED * TIME_SCALE) : Math.max(ySum, -ACTOR_SPEED * TIME_SCALE);
 
     const checkCollision = (obstacle: Obstacle | null) => {
-      if (!obstacle || (!obstacle.hasCollision && !obstacle.isItem)) {
+      if (!obstacle || (!obstacle.hasCollision && !isItem(obstacle))) {
         return;
       }
 
       let doesCollide = false;
 
-      const preparedObstaclePosition = {
-        ...(obstacle.isInFinalPosition && !obstacle.isDoor ? obstacle.endPosition : obstacle.initialPosition),
+      let preparedObstaclePosition = {
+        ...obstacle.position,
       };
 
-      if (obstacle.isDoor) {
+      if (isDoor(obstacle)) {
+        preparedObstaclePosition = { ...obstacle.initialPosition };
+      } else if (isWall(obstacle)) {
+        preparedObstaclePosition = {
+          ...(obstacle.isInFinalPosition ? obstacle.endPosition : obstacle.initialPosition),
+        };
+      }
+
+      if (isDoor(obstacle)) {
         if (preparedObstaclePosition.x1 === preparedObstaclePosition.x2) {
           preparedObstaclePosition.x1 -= TILE_SIZE / 2;
           preparedObstaclePosition.x2 += TILE_SIZE / 2;
         }
-
+        6;
         if (preparedObstaclePosition.y1 === preparedObstaclePosition.y2) {
           preparedObstaclePosition.y1 -= TILE_SIZE / 2;
           preparedObstaclePosition.y2 += TILE_SIZE / 2;
@@ -222,19 +248,19 @@ class Actor {
         position.y >= expandedObstacleVector.y1 &&
         position.y <= expandedObstacleVector.y2
       ) {
-        if (!obstacle.isItem) {
-          if (this.position.x >= expandedObstacleVector.x1 && this.position.x <= expandedObstacleVector.x2) {
-            position.y = this.position.y;
+        if (!isItem(obstacle)) {
+          if (this._position.x >= expandedObstacleVector.x1 && this._position.x <= expandedObstacleVector.x2) {
+            position.y = this._position.y;
           }
-          if (this.position.y >= expandedObstacleVector.y1 && this.position.y <= expandedObstacleVector.y2) {
-            position.x = this.position.x;
+          if (this._position.y >= expandedObstacleVector.y1 && this._position.y <= expandedObstacleVector.y2) {
+            position.x = this._position.x;
           }
         }
 
         doesCollide = true;
       }
 
-      if (doesCollide && isItemObstacle(obstacle)) {
+      if (doesCollide && isItem(obstacle)) {
         const purpose = obstacle.purpose;
 
         if (isDesiredPurpose(purpose, 'ammo')) {
@@ -277,27 +303,27 @@ class Actor {
         this.postEffectAnimationController.playAnimation();
 
         // remove from map when item picked up
-        gameMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+        RawMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
       }
     };
 
     const positionOnMap = this.currentMatrixPosition;
 
-    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
-    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
-    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
-    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
-    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
-    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
-    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
-    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
+    checkCollision((RawMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
+    checkCollision((RawMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
+    checkCollision((RawMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
+    checkCollision((RawMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
+    checkCollision((RawMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
+    checkCollision((RawMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
+    checkCollision((RawMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
+    checkCollision((RawMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
 
-    this.position = position;
-    this.camera.updatePosition(this.position);
+    this._position = position;
+    this._camera.updatePosition(this._position);
   }
 
   render() {
-    this.timeout.iterate();
+    this.attackTimeout.iterate();
     this.weaponAnimationController.iterate();
 
     if (this.isShooting && !this.weaponAnimationController.getIsCurrentlyInTimeout()) {

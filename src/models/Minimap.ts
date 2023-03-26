@@ -1,4 +1,8 @@
-class Minimap {
+import { Obstacle, Vertex } from '../types';
+import { isWall } from '../types/typeGuards';
+import { MAP_SCALE, TILE_SIZE } from '../constants/config';
+
+export class Minimap {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly obstacles: Obstacle[];
   private readonly rowsLength: number;
@@ -16,22 +20,17 @@ class Minimap {
     this.columnsLength = columnsLength;
   }
 
-  render(position: Vertex, angle: number) {
-    const endPosition = {
-      x: position.x + (TILE_SIZE / MAP_SCALE) * Math.sin(angle),
-      y: position.y + (TILE_SIZE / MAP_SCALE) * Math.cos(angle),
-    };
-
+  render(position: Vertex) {
     const height = this.rowsLength * TILE_SIZE;
 
     for (let obstacle of this.obstacles) {
-      if (obstacle.isSecret) {
+      if (isWall(obstacle) && obstacle.isMovable) {
         this.ctx.fillStyle = 'orange';
       } else {
         this.ctx.fillStyle = 'white';
       }
 
-      if (!obstacle.isDoor && !obstacle.isSprite) {
+      if (isWall(obstacle)) {
         // reverse by y
         this.ctx.fillRect(
           obstacle.initialPosition.x1 * MAP_SCALE,
@@ -42,14 +41,7 @@ class Minimap {
       }
     }
 
-    this.ctx.strokeStyle = 'orange';
-    this.ctx.beginPath();
-    this.ctx.moveTo(position.x * MAP_SCALE, (height - position.y) * MAP_SCALE);
-    this.ctx.lineTo(endPosition.x * MAP_SCALE, (height - endPosition.y) * MAP_SCALE);
-    this.ctx.closePath();
-    this.ctx.stroke();
-
-    this.ctx.fillStyle = 'red';
+    this.ctx.fillStyle = 'blue';
     this.ctx.ellipse(
       position.x * MAP_SCALE,
       (height - position.y) * MAP_SCALE,

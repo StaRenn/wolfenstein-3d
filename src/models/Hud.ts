@@ -1,7 +1,23 @@
-class Hud {
+import { AnimationController } from './AnimationController';
+import { Frame, HealthFrameSets, ScreenData } from '../types';
+import { Actor } from './Actor';
+import {
+  ACTOR_PORTRAIT_FRAME_SETS,
+  FONT_IMAGE,
+  FONT_SYMBOL_HEIGHT,
+  FONT_SYMBOL_WIDTH,
+  HUD_PANEL,
+  PORTRAIT_HEIGHT,
+  PORTRAIT_WIDTH,
+  WEAPON_ICON_HEIGHT,
+  WEAPON_ICON_WIDTH,
+} from '../constants/hud';
+import { HUD_WIDTH_COEFFICIENT, WEAPONS } from '../constants/config';
+
+export class Hud {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly screenData: ScreenData;
-  private currentFrameSet: HealthFrameSets[HealthFrameSetName];
+  private currentFrameSet: HealthFrameSets[keyof HealthFrameSets];
   private portraitAnimation: AnimationController<Frame<HTMLImageElement>>;
   private scale: number;
   private width: number;
@@ -14,6 +30,14 @@ class Hud {
     this.screenData = screenData;
     this.currentFrameSet = ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
 
+    this.scale = (this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT) / HUD_PANEL.WIDTH;
+
+    this.width = Math.round(this.screenData.screenWidth * HUD_WIDTH_COEFFICIENT);
+    this.height = Math.round(HUD_PANEL.HEIGHT * this.scale);
+
+    this.offsetX = this.screenData.screenWidth / 2 - this.width / 2;
+    this.offsetY = this.screenData.screenHeight - this.height;
+
     this.renderPortrait = this.renderPortrait.bind(this);
 
     this.portraitAnimation = new AnimationController({
@@ -24,7 +48,7 @@ class Hud {
     });
   }
 
-  getHealthFrameSet(health: number): HealthFrameSets[HealthFrameSetName] {
+  getHealthFrameSet(health: number): HealthFrameSets[keyof HealthFrameSets] {
     if (health > 85) {
       return ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
     } else if (health > 75) {

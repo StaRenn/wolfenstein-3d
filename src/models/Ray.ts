@@ -1,4 +1,9 @@
-class Ray {
+import { Intersection, Obstacle, Vector, Vertex } from '../types';
+import { isDoor, isItem, isMovableEntity, isSprite } from '../types/typeGuards';
+import { RAY_LENGTH, TILE_SIZE } from '../constants/config';
+import { getIntersectionVertexWithPlane, unitVector } from '../helpers/maths';
+
+export class Ray {
   private angle: number;
   private cameraAngle: number;
   private cameraPosition: Vector;
@@ -6,6 +11,12 @@ class Ray {
   constructor(position: Vertex, angle: Ray['angle'], cameraAngle: Ray['cameraAngle']) {
     this.angle = angle;
     this.cameraAngle = cameraAngle;
+    this.cameraPosition = {
+      x1: 0,
+      y1: 0,
+      x2: 0,
+      y2: 0,
+    };
 
     this.move(position);
   }
@@ -21,37 +32,6 @@ class Ray {
     return distance * Math.cos(this.angle - this.cameraAngle);
   }
 
-  static getIntersectionVertexWithPlane(firstVector: Vector, secondVector: Vector) {
-    const { x1, x2, y1, y2 } = firstVector;
-    const { x1: x3, y1: y3, x2: x4, y2: y4 } = secondVector;
-
-    // Check if none of the lines are of length 0
-    if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
-      return;
-    }
-
-    const denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-
-    // Lines are parallel
-    if (denominator === 0) {
-      return;
-    }
-
-    let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-    let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
-
-    // is the intersection along the segments
-    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
-      return;
-    }
-
-    // Return a object with the x and y coordinates of the intersection
-    let x = x1 + ua * (x2 - x1);
-    let y = y1 + ua * (y2 - y1);
-
-    return { x, y };
-  }
-
   getDistance(vertex: Vertex) {
     return Math.sqrt((vertex.x - this.cameraPosition.x1) ** 2 + (vertex.y - this.cameraPosition.y1) ** 2);
   }
@@ -65,18 +45,8 @@ class Ray {
     };
   }
 
-  vectorSize({ x, y }: Vertex) {
-    return Math.sqrt(x * x + y * y);
-  }
-
-  unitVector({ x, y }: Vertex) {
-    const magnitude = this.vectorSize({ x, y });
-    // We need to return a vector here, so we return an array of coordinates:
-    return { x: x / magnitude, y: y / magnitude };
-  }
-
   castDDA(
-    gameMap: (Obstacle | null)[][]
+    RawMap: (Obstacle | null)[][]
   ): {
     obstacle: Obstacle;
     distance: number;
@@ -84,7 +54,7 @@ class Ray {
   }[] {
     const intersections = [];
 
-    const directionVector = this.unitVector({
+    const directionVector = unitVector({
       x: this.cameraPosition.x2 - this.cameraPosition.x1,
       y: this.cameraPosition.y2 - this.cameraPosition.y1,
     });
@@ -144,10 +114,10 @@ class Ray {
         currentMapPosition.y >= 0 &&
         currentMapPosition.y < 64
       ) {
-        if (gameMap[currentMapPosition.y] && gameMap[currentMapPosition.y][currentMapPosition.x]) {
-          const intersectedObstacle = gameMap[currentMapPosition.y][currentMapPosition.x]!;
+        if (RawMap[currentMapPosition.y] && RawMap[currentMapPosition.y][currentMapPosition.x]) {
+          const intersectedObstacle = RawMap[currentMapPosition.y][currentMapPosition.x]!;
 
-          if (intersectedObstacle.isDoor || intersectedObstacle.isMoving) {
+          if (isDoor(intersectedObstacle) || (isMovableEntity(intersectedObstacle) && intersectedObstacle.isMoving)) {
             continue;
           }
 
@@ -164,7 +134,7 @@ class Ray {
             intersectionVertex: intersectionPoint,
           });
 
-          if (intersectedObstacle.isSprite) {
+          if (isSprite(intersectedObstacle) || isItem(intersectedObstacle)) {
             continue;
           }
 
@@ -176,16 +146,16 @@ class Ray {
     return intersections;
   }
 
-  cast(planes: Plane[]): Intersection | null {
-    let intersections: { vertex: Vertex; plane: Plane }[] = [];
+  cast(obstacles: Obstacle[]): Intersection<Obstacle> | null {
+    let intersections: { vertex: Vertex; obstacle: Obstacle }[] = [];
 
-    for (let plane of planes) {
-      const intersection = Ray.getIntersectionVertexWithPlane(this.cameraPosition, plane.position);
+    for (let obstacle of obstacles) {
+      const intersection = getIntersectionVertexWithPlane(this.cameraPosition, obstacle.position);
 
       if (intersection) {
         intersections.push({
           vertex: intersection,
-          plane,
+          obstacle,
         });
       }
     }
@@ -206,7 +176,7 @@ class Ray {
 
       return {
         intersectionVertex: closestIntersection.vertex,
-        plane: closestIntersection.plane,
+        obstacle: closestIntersection.obstacle,
         distance: this.fixFishEye(closestDistance),
       };
     }

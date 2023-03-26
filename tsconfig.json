@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
-    "module": "none",
+    "module": "commonjs",
+    "lib": ["es5", "es6", "dom"],
+    "rootDir": "src",
     "noImplicitAny": true,
-    "outFile": "./build/build.js",
+    "outDir": "./build",
     "preserveConstEnums": true,
     "removeComments": true,
-    "rootDir": "./",
     "sourceMap": true,
-    "target": "es2016",
+    "target": "es5",
+    "strict": true,
+    "importsNotUsedAsValues": "preserve",
     "moduleResolution": "node",
-    "strictNullChecks": true
+    "strictNullChecks": true,
   }
 }

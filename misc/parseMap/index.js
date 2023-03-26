@@ -38,7 +38,7 @@ async function prepareTexturesMap(texturesPath) {
         top: 1, // check code line 20
       })
       .flatten({ background: { r: 107, g: 111, b: 110, alpha: 1 } })
-      .jpeg({ quality: 20 })
+      .jpeg()
       .toBuffer();
 
     texturesMap[buffer.toString('base64')] = path.basename(file, '.png');
@@ -121,7 +121,7 @@ async function main() {
             left: column * CELL_SIZE_WITH_BORDER + CELL_LEFT_OFFSET,
             top: row * CELL_SIZE_WITH_BORDER + CELL_TOP_OFFSET,
           })
-          .jpeg({ quality: 20 })
+          .jpeg()
           .toBuffer();
 
         const segmentBase64 = buffer.toString('base64');
