@@ -1,6 +1,7 @@
-import { IndexedIntersection, Obstacle } from '../types';
-import { isDoor, isItem, isSprite, isWall } from '../types/typeGuards';
-import { INTERSECTION_TYPES, TEXTURE_SIZE } from '../constants/config';
+import { INTERSECTION_TYPES, TEXTURE_SIZE } from 'src/constants/config';
+
+import type { IndexedIntersection, Obstacle } from 'src/types';
+import { isDoor, isItem, isSprite, isWall } from 'src/types/typeGuards';
 
 // we calculate object width in players perspective
 // calculate length from start of the plane to the intersection |object.x - intersection.x| = n

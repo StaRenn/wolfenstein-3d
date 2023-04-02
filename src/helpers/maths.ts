@@ -1,8 +1,13 @@
-import { Triangle, Vector, Vertex } from '../types';
-import { RAY_LENGTH } from '../constants/config';
+import { RAY_LENGTH } from 'src/constants/config';
+
+import type { Triangle, Vector, Vertex } from 'src/types';
 
 export function toRadians(angle: number) {
   return (angle * Math.PI) / 180;
+}
+
+export function toDegrees(angleRad: number) {
+  return (180 / Math.PI) * angleRad;
 }
 
 export function hasEqualPosition(firstPosition: Vector, secondPosition: Vector) {
@@ -16,6 +21,13 @@ export function hasEqualPosition(firstPosition: Vector, secondPosition: Vector) 
 
 export function getAreaSize(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
   return Math.abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
+}
+
+export function getAngleBetweenVertexes(vertexAPosition: Vertex, vertexBPosition: Vertex) {
+  const dx = vertexBPosition.x - vertexAPosition.x;
+  const dy = vertexBPosition.y - vertexAPosition.y;
+
+  return Math.atan2(dx, dy);
 }
 
 export function getVertexByPositionAndAngle(position: Vertex, angle: number): Vertex {

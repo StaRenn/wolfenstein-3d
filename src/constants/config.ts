@@ -1,7 +1,9 @@
-import { ActorStats, ItemPurpose, Weapons } from '../types';
-import { fillWeaponFrameSet } from '../helpers/frameSets';
-import { getImageWithSource } from '../utils/getImageWithSource';
-import { toRadians } from '../helpers/maths';
+import { getImageWithSource } from 'src/utils/getImageWithSource';
+
+import { fillWeaponFrameSet } from 'src/helpers/frameSets';
+import { toRadians } from 'src/helpers/maths';
+
+import type { ItemPurpose, Weapons } from 'src/types';
 
 export const TILE_SIZE = 10;
 export const RAY_LENGTH = TILE_SIZE * 64;
@@ -17,13 +19,12 @@ export const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
 export const ACTOR_SPEED = 1;
 // 1 / RESOLUTION_SCALE must return integer value, because we cant render 0.1 of pixel, 0.5 of pixel etc
 export const RESOLUTIONS_SCALE_VALUES = [0.1, 0.25, 0.5, 1] as const;
+export const DEFAULT_FOV_DEGREES = 90;
+export const DEFAULT_FOV = toRadians(DEFAULT_FOV_DEGREES);
+// DO NOT SET MORE THAN 1
+export const DEFAULT_RESOLUTION_SCALE = 0.5 as typeof RESOLUTIONS_SCALE_VALUES[number];
 
 // globals
-// DO NOT SET MORE THAN 1
-window.RESOLUTION_SCALE = 1;
-window.IS_PAUSED = false;
-window.FOV_DEGREES = 90;
-window.FOV = toRadians(FOV_DEGREES);
 window.TIME_SCALE = 1;
 
 export const WEAPONS: Weapons = {
@@ -56,7 +57,7 @@ export const WEAPONS: Weapons = {
   },
 };
 
-export const ITEMS_PURPOSES: { readonly [key: number]: ItemPurpose<ActorStats> } = {
+export const ITEMS_PURPOSES: { readonly [key: number]: ItemPurpose } = {
   34: {
     affects: 'ammo',
     value: 8,
@@ -112,4 +113,11 @@ export const NEIGHBOR_OFFSET = {
   [OBSTACLE_SIDES.BOTTOM]: 1,
   [OBSTACLE_SIDES.LEFT]: -1,
   [OBSTACLE_SIDES.RIGHT]: 1,
+} as const;
+
+export const ENEMY_FACING_DIRECTION_MAP = {
+  WEST: 0,
+  NORTH: 90,
+  EAST: 180,
+  SOUTH: -90,
 } as const;

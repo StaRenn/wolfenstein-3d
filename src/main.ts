@@ -1,6 +1,14 @@
 import { Scene } from './models/Scene';
-import { DEFAULT_FRAME_DURATION, RESOLUTIONS_SCALE_VALUES } from './constants/config';
-import { map } from './map';
+
+import {
+  DEFAULT_FOV,
+  DEFAULT_FOV_DEGREES,
+  DEFAULT_FRAME_DURATION,
+  DEFAULT_RESOLUTION_SCALE,
+  RESOLUTIONS_SCALE_VALUES,
+} from './constants/config';
+import { map } from './constants/map';
+
 import { toRadians } from './helpers/maths';
 
 export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -12,61 +20,18 @@ async function main() {
   const fovRangeValue = document.getElementById('fovValue') as HTMLInputElement;
   const continueButton = document.getElementById('continue-button') as HTMLButtonElement;
 
-  fovRange.value = String(FOV_DEGREES);
-  fovRangeValue.innerText = String(FOV_DEGREES);
-  resolutionScaleRange.value = '3';
+  let isPaused = false;
+  let resolutionScale = DEFAULT_RESOLUTION_SCALE;
+  let fov = DEFAULT_FOV;
 
-  continueButton.onclick = () => {
-    if (IS_PAUSED) {
-      IS_PAUSED = false;
+  fovRange.value = String(DEFAULT_FOV_DEGREES);
+  fovRangeValue.innerText = String(DEFAULT_FOV_DEGREES);
+  resolutionScaleRange.value = String(RESOLUTIONS_SCALE_VALUES.indexOf(DEFAULT_RESOLUTION_SCALE));
 
-      menu.style.display = 'none';
-    }
-  };
-
-  resolutionScaleRange.oninput = (event: Event) => {
-    if (event.target) {
-      RESOLUTION_SCALE = RESOLUTIONS_SCALE_VALUES[Number((event.target as HTMLInputElement).value)];
-
-      handleResize();
-      scene.render();
-    }
-  };
-
-  fovRange.oninput = (event: Event) => {
-    if (event.target) {
-      FOV_DEGREES = Number((event.target as HTMLInputElement).value);
-      FOV = toRadians(FOV_DEGREES);
-
-      fovRangeValue.innerText = (event.target as HTMLInputElement).value;
-
-      handleResize();
-      scene.render();
-    }
-  };
-
-  canvas.onclick = () => {
-    IS_PAUSED = false;
-
-    canvas.requestPointerLock();
-  };
-
-  window.onkeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      IS_PAUSED = true;
-
-      menu.style.display = 'flex';
-    }
-  };
-
-  const scene = new Scene(canvas, map);
-
-  function handleResize() {
-    scene.resize(window.innerWidth, window.innerHeight);
-  }
-
-  handleResize();
-  window.addEventListener('resize', handleResize);
+  const scene = new Scene(canvas, map, {
+    height: window.innerHeight,
+    width: window.innerWidth,
+  });
 
   const fpsOut = document.getElementById('fps')!;
   let prevFrameDuration = 0;
@@ -74,10 +39,51 @@ async function main() {
   let filterStrength = 20;
   let frameTime = 0;
 
-  function frame(currentFrameDuration: number) {
-    if (!IS_PAUSED) {
-      scene.render();
+  function handleResize() {
+    scene.resize(window.innerWidth, window.innerHeight);
+  }
+
+  function handleResolutionScaleChange(event: Event) {
+    if (event.target) {
+      resolutionScale = RESOLUTIONS_SCALE_VALUES[Number((event.target as HTMLInputElement).value)];
+
+      scene.resolutionScale = resolutionScale;
     }
+  }
+
+  function handleFOVChange(event: Event) {
+    if (event.target) {
+      const degrees = Number((event.target as HTMLInputElement).value);
+      fov = toRadians(degrees);
+
+      fovRangeValue.innerText = (event.target as HTMLInputElement).value;
+
+      scene.fov = fov;
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      isPaused = true;
+
+      menu.style.display = 'flex';
+    }
+  }
+
+  function resume() {
+    if (isPaused) {
+      isPaused = false;
+
+      menu.style.display = 'none';
+    }
+  }
+
+  (function frame(currentFrameDuration: number) {
+    if (!isPaused) {
+      scene.iterate();
+    }
+
+    scene.render();
 
     prevFrameDuration = frameDuration;
     frameDuration = currentFrameDuration;
@@ -89,13 +95,24 @@ async function main() {
     TIME_SCALE = Math.min(Math.round((frameDiff / DEFAULT_FRAME_DURATION) * 100) / 100, 1);
 
     requestAnimationFrame(frame);
-  }
+  })(0);
 
   setInterval(function () {
     fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + ' fps';
   }, 200);
 
-  frame(0);
+  continueButton.onclick = resume;
+
+  resolutionScaleRange.oninput = handleResolutionScaleChange;
+
+  fovRange.oninput = handleFOVChange;
+
+  window.onkeydown = handleKeyDown;
+  window.addEventListener('resize', handleResize);
+
+  canvas.onclick = () => {
+    canvas.requestPointerLock();
+  };
 }
 
 window.onload = main;

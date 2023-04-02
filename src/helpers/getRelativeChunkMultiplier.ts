@@ -1,4 +1,4 @@
-import { TILE_SIZE } from '../constants/config';
+import { TILE_SIZE } from 'src/constants/config';
 
 // rounding for chunk rendering, Math.round(distance * multiplier) / multiplier, same distance on multiple rays means
 // that we can render these rays in 1 iteration that saves a lot of resources

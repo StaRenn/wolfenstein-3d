@@ -1,21 +1,20 @@
-import { Vector, Vertex } from '../../types';
-import { OBSTACLES_MOVE_SPEED, TILE_SIZE } from '../../constants/config';
+import { OBSTACLES_MOVE_SPEED, TILE_SIZE } from 'src/constants/config';
+
 import { Entity, EntityParams } from './Entity';
 
+import type { Vector, Vertex } from 'src/types';
+
 export type MovableEntityParams = EntityParams & {
-  endPositionMatrixCoordinates: Vertex;
-  initialPosition: Vector;
-  endPosition: Vector;
-  isMoving: boolean;
-  isMovable: boolean;
-  isInFinalPosition: boolean;
-  isInStartPosition: boolean;
+  initialPosition: MovableEntity['_initialPosition'];
+  endPosition: MovableEntity['_endPosition'];
+  isMoving: MovableEntity['_isMoving'];
+  isMovable: MovableEntity['isMovable'];
+  isInFinalPosition: MovableEntity['_isInFinalPosition'];
+  isInStartPosition: MovableEntity['_isInStartPosition'];
 };
 
 export abstract class MovableEntity extends Entity {
-  protected _position: Vector;
   protected _endPositionMatrixCoordinates: Vertex;
-  protected _matrixCoordinates: Vertex;
   protected _initialPosition: Vector;
   protected _endPosition: Vector;
   protected _isMoving: boolean;
@@ -27,24 +26,18 @@ export abstract class MovableEntity extends Entity {
   protected constructor(params: MovableEntityParams) {
     super(params);
 
-    this._matrixCoordinates = params.matrixCoordinates;
-    this._endPositionMatrixCoordinates = params.endPositionMatrixCoordinates;
     this._initialPosition = params.initialPosition;
-    this._position = params.position;
     this._endPosition = params.endPosition;
     this._isMoving = params.isMoving;
     this._isInFinalPosition = params.isInFinalPosition;
     this._isInStartPosition = params.isInStartPosition;
 
+    this._endPositionMatrixCoordinates = {
+      x: Math.floor(this._endPosition.x1 / TILE_SIZE),
+      y: Math.floor(this._endPosition.y1 / TILE_SIZE),
+    };
+
     this.isMovable = params.isMovable;
-  }
-
-  get position() {
-    return this._position;
-  }
-
-  get matrixCoordinates() {
-    return this._matrixCoordinates;
   }
 
   get endPositionMatrixCoordinates() {
@@ -82,7 +75,7 @@ export abstract class MovableEntity extends Entity {
   }
 
   iterateMovement() {
-    if (IS_PAUSED || !this.isMovable) {
+    if (!this.isMovable) {
       return;
     }
 
@@ -97,6 +90,7 @@ export abstract class MovableEntity extends Entity {
       y2: this._position.y2 + this.getPositionChange(this._position.y2, finalPosition.y2) * TIME_SCALE,
     };
 
+    // if reached end position
     if (
       Math.round(this._position.x1 * TILE_SIZE) / TILE_SIZE === finalPosition.x1 &&
       Math.round(this._position.y1 * TILE_SIZE) / TILE_SIZE === finalPosition.y1 &&

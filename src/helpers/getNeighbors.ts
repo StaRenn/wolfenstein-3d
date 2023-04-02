@@ -1,5 +1,6 @@
-import { Obstacle, ParsedMap, Vertex } from '../types';
-import { NEIGHBOR_OFFSET, OBSTACLE_SIDES } from '../constants/config';
+import { NEIGHBOR_OFFSET, OBSTACLE_SIDES } from 'src/constants/config';
+
+import type { Obstacle, ParsedMap, Vertex } from 'src/types';
 
 export function getNeighbors(map: ParsedMap, matrixCoordinates: Vertex) {
   const neighbors: Record<keyof typeof OBSTACLE_SIDES, Obstacle | null> = {

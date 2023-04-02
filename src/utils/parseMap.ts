@@ -1,10 +1,18 @@
-import { RawMap, Obstacle, Vector, Vertex } from '../types';
-import { DoorObstacle } from '../models/obstacles/Door';
-import { WallObstacle } from '../models/obstacles/Wall';
-import { SpriteObstacle } from '../models/obstacles/Sprite';
-import { ItemObstacle } from '../models/obstacles/Item';
-import { DOOR_IDS, ITEMS_PURPOSES, TILE_SIZE } from '../constants/config';
+import { DoorObstacle } from 'src/models/obstacles/Door';
+import { ItemObstacle } from 'src/models/obstacles/Item';
+import { SpriteObstacle } from 'src/models/obstacles/Sprite';
+import { WallObstacle } from 'src/models/obstacles/Wall';
+
+import type { Enemy } from 'src/models/actors/abstract/Enemy';
+import { Guard } from 'src/models/actors/enemies/Guard';
+
+import { DOOR_IDS, ENEMY_FACING_DIRECTION_MAP, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/config';
+
+import { toRadians } from 'src/helpers/maths';
+
 import { getImageWithSource } from './getImageWithSource';
+
+import type { EntityFrameSetByAction, Obstacle, RawMap, Vector, Vertex } from 'src/types';
 
 export function parseMap(
   map: RawMap
@@ -13,10 +21,12 @@ export function parseMap(
   obstacles: Obstacle[];
   startPosition: Vertex;
   doors: DoorObstacle[];
+  enemies: Enemy[];
 } {
   const parsedMap: (Obstacle | null)[][] = [];
   const obstacles: Obstacle[] = [];
   const doors: DoorObstacle[] = [];
+  const enemies: Enemy[] = [];
 
   let startPosition: Vertex = { x: 0, y: 0 };
   let secretObstaclesEndPositions: { [id: string]: Vector } = {};
@@ -74,12 +84,13 @@ export function parseMap(
 
         const nextToVoid = xAxis % 63 === 0 || yAxis % 63 === 0;
 
+        const isEnemy = obstacleParams.includes('ENEMY');
         const isItem = obstacleParams.includes('ITEM');
         const isSprite = obstacleParams.includes('SPRITE') || false;
         const isSecret = !isSprite && obstacleParams.includes('START');
         const isDoor = !isSprite && DOOR_IDS.includes(textureId);
         const isMovable = !isSprite && (isDoor || isSecret) && !nextToVoid;
-        const isWall = !isItem && !isSprite && !isDoor;
+        const isWall = !isEnemy && !isItem && !isSprite && !isDoor;
         const hasCollision = !obstacleParams.includes('HOLLOW');
 
         let purpose = null;
@@ -107,13 +118,31 @@ export function parseMap(
                 y2: !isVertical ? position.y2 - TILE_SIZE : position.y2,
               };
 
-        if (isWall) {
+        if(isSecret && !endPosition) {
+          console.log(secretObstaclesEndPositions, obstacleParams)
+        }
+
+        if (isEnemy) {
+          const enemyType = obstacleParams[1].toLowerCase();
+          const enemyAction = obstacleParams[2] as keyof EntityFrameSetByAction;
+          const enemyDirection = obstacleParams[3] as keyof typeof ENEMY_FACING_DIRECTION_MAP;
+
+          if (enemyType === 'guard') {
+            const enemy = new Guard({
+              rawValue: value,
+              initialAction: enemyAction,
+              angle: toRadians(ENEMY_FACING_DIRECTION_MAP[enemyDirection]),
+              position: {
+                x: (position.x1 + position.x2) / 2,
+                y: (position.y1 + position.y2) / 2,
+              },
+            });
+
+            enemies.push(enemy);
+            parsedMap[yAxis].push(null);
+          }
+        } else if (isWall) {
           const wall = new WallObstacle({
-            endPositionMatrixCoordinates: {
-              y: Math.floor(endPosition.y1 / TILE_SIZE),
-              x: Math.floor(endPosition.x1 / TILE_SIZE),
-            },
-            matrixCoordinates: { y: Math.floor(position.y1 / TILE_SIZE), x: Math.floor(position.x1 / TILE_SIZE) },
             initialPosition: position,
             position,
             endPosition,
@@ -131,10 +160,6 @@ export function parseMap(
           obstacles.push(wall);
         } else if (isSprite && !isItem) {
           const sprite = new SpriteObstacle({
-            matrixCoordinates: {
-              y: Math.floor(position.y1 / TILE_SIZE),
-              x: Math.floor(position.x1 / TILE_SIZE),
-            },
             position,
             hasCollision,
             texture: getImageWithSource(`src/assets/sprites/${hasCollision ? 'static' : 'hollow'}/${textureId}.png`),
@@ -145,7 +170,6 @@ export function parseMap(
           obstacles.push(sprite);
         } else if (isItem) {
           const item = new ItemObstacle({
-            matrixCoordinates: { y: Math.floor(position.y1 / TILE_SIZE), x: Math.floor(position.x1 / TILE_SIZE) },
             position,
             hasCollision,
             texture: getImageWithSource(`src/assets/sprites/items/${textureId}.png`),
@@ -157,11 +181,6 @@ export function parseMap(
           obstacles.push(item);
         } else if (isDoor) {
           const door = new DoorObstacle({
-            endPositionMatrixCoordinates: {
-              y: Math.floor(endPosition.y1 / TILE_SIZE),
-              x: Math.floor(endPosition.x1 / TILE_SIZE),
-            },
-            matrixCoordinates: { y: Math.floor(position.y1 / TILE_SIZE), x: Math.floor(position.x1 / TILE_SIZE) },
             initialPosition: position,
             position,
             endPosition,
@@ -184,5 +203,5 @@ export function parseMap(
       }
     }
   }
-  return { map: parsedMap, obstacles, startPosition, doors };
+  return { map: parsedMap, obstacles, startPosition, doors, enemies };
 }

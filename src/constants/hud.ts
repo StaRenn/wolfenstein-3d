@@ -1,6 +1,8 @@
-import { HealthFrameSets } from '../types';
-import { fillPortraitFrameSet } from '../helpers/frameSets';
-import { getImageWithSource } from '../utils/getImageWithSource';
+import { getImageWithSource } from 'src/utils/getImageWithSource';
+
+import { fillPortraitFrameSet } from 'src/helpers/frameSets';
+
+import type { HealthFrameSets } from 'src/types';
 
 export const HUD_PANEL = {
   TEXTURE: getImageWithSource(`src/assets/hud/panel.png`),

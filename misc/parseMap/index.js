@@ -8,6 +8,7 @@ const sharp = require('sharp');
 
 const TEXTURES_PATH = '../../src/assets/textures';
 const SECRETS_PATH = './secretWallsTextures';
+const ENEMIES_PATH = './enemies';
 const STATIC_SPRITES_PATH = '../../src/assets/sprites/static';
 const HOLLOW_SPRITES_PATH = '../../src/assets/sprites/hollow';
 const ITEM_SPRITES_PATH = '../../src/assets/sprites/items';
@@ -55,7 +56,7 @@ function resolveSecrets(array, root) {
   function checkNeighbor(coordinates, endCoordinates, arrayToMutate) {
     const node = (graph[coordinates[0]] || [])[coordinates[1]];
     const isSecretWallStart = typeof node === 'string' && node.includes('START') && node !== 'START_POS';
-    const isHollow = typeof node === 'string' && node.includes('HOLLOW');
+    const isHollow = typeof node === 'string' && (node.includes('HOLLOW') || node.includes('ENEMY'));
 
     if (BFS_ALLOWED_VALUES.includes(node) || isSecretWallStart || isHollow) {
       const node = graph[coordinates[0]][coordinates[1]];
@@ -84,6 +85,7 @@ function resolveSecrets(array, root) {
 async function main() {
   const texturesMap = await prepareTexturesMap(TEXTURES_PATH);
   const secretsMap = await prepareTexturesMap(SECRETS_PATH);
+  const enemiesMap = await prepareTexturesMap(ENEMIES_PATH);
   const playerStartPosMap = await prepareTexturesMap(START_POS_PATH);
 
   const staticSpritesMap = await prepareTexturesMap(STATIC_SPRITES_PATH);
@@ -128,38 +130,31 @@ async function main() {
 
         const textureId = texturesMap[segmentBase64];
         const secretId = secretsMap[segmentBase64];
+        const enemyId = enemiesMap[segmentBase64];
         const playerStartPositionId = playerStartPosMap[segmentBase64];
         const staticSpriteId = staticSpritesMap[segmentBase64];
         const hollowSpriteId = hollowSpritesMap[segmentBase64];
         const itemId = itemSpritesMap[segmentBase64];
 
-        if (textureId) {
+        if (enemyId) {
+          map[rows - (row + 1)][column] = `ENEMY_${enemyId.toUpperCase()}`
+        }else if (textureId) {
           const preparedTextureId = textureId % 2 === 1 ? textureId : textureId - 1;
 
           map[rows - (row + 1)][column] = Number(preparedTextureId);
-        }
-
-        if (secretId) {
+        } else if (secretId) {
           const preparedTextureId = secretId % 2 === 1 ? secretId : secretId - 1;
 
           map[rows - (row + 1)][column] = `${preparedTextureId}_ID${row}${column}_START`;
-        }
-
-        if (playerStartPositionId) {
+        }else if (playerStartPositionId) {
           playerStartPosition = [rows - (row + 1), column];
 
           map[rows - (row + 1)][column] = 'START_POS';
-        }
-
-        if (staticSpriteId) {
+        } else if (staticSpriteId) {
           map[rows - (row + 1)][column] = `${staticSpriteId}_SPRITE`;
-        }
-
-        if (hollowSpriteId) {
+        } else if (hollowSpriteId) {
           map[rows - (row + 1)][column] = `${hollowSpriteId}_SPRITE_HOLLOW`;
-        }
-
-        if (itemId) {
+        } else if (itemId) {
           map[rows - (row + 1)][column] = `${itemId}_SPRITE_HOLLOW_ITEM`;
         }
 

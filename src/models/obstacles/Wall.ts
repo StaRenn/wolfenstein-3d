@@ -1,21 +1,25 @@
-import { MovableEntity, MovableEntityParams } from '../abstract/MovableEntity';
-import { Obstacle } from '../../types';
-import { isDoor } from '../../types/typeGuards';
 import {
   DOOR_SIDE_WALL_TEXTURE_DARK_ID,
   DOOR_SIDE_WALL_TEXTURE_ID,
   INTERSECTION_TYPES,
   OBSTACLE_SIDES,
   TILE_SIZE,
-} from '../../constants/config';
-import { getImageWithSource } from '../../utils/getImageWithSource';
+} from 'src/constants/config';
+
+import { getImageWithSource } from 'src/utils/getImageWithSource';
+
+import { MovableEntity, MovableEntityParams } from './abstract/MovableEntity';
+
+import type { Obstacle } from 'src/types';
+import { isDoor } from 'src/types/typeGuards';
 
 export type WallParams = MovableEntityParams & {
-  textureDark: HTMLImageElement;
+  textureDark: WallObstacle['textureDark'];
 };
 
 export class WallObstacle extends MovableEntity {
-  public readonly textureDark: HTMLImageElement;
+  private _textureDark: HTMLImageElement;
+
   public readonly isWall: true;
   public readonly intersectionType: keyof typeof INTERSECTION_TYPES;
   public readonly shouldReverseTexture: boolean;
@@ -25,12 +29,21 @@ export class WallObstacle extends MovableEntity {
 
     this.isWall = true;
 
-    this.textureDark = params.textureDark;
+    this._textureDark = params.textureDark;
 
     this.intersectionType = INTERSECTION_TYPES.HORIZONTAL;
     this.shouldReverseTexture = false;
   }
 
+  set textureDark(newTextureDark: HTMLImageElement) {
+    this._textureDark = newTextureDark;
+  }
+
+  get textureDark() {
+    return this._textureDark;
+  }
+
+  // get side of the wall
   getWallBySide(side: keyof typeof OBSTACLE_SIDES, neighbor: Obstacle | null): WallObstacle {
     const isVertical = side === OBSTACLE_SIDES.TOP || side === OBSTACLE_SIDES.BOTTOM;
 
@@ -41,8 +54,8 @@ export class WallObstacle extends MovableEntity {
       y2: this.position.y2 - (side === OBSTACLE_SIDES.TOP ? TILE_SIZE : 0),
     };
 
-    let texture = this.texture;
-    let textureDark = this.textureDark;
+    let texture = this._texture;
+    let textureDark = this._textureDark;
 
     if (isDoor(neighbor)) {
       texture = getImageWithSource(`src/assets/textures/${DOOR_SIDE_WALL_TEXTURE_ID}.png`);

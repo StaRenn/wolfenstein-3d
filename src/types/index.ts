@@ -1,7 +1,7 @@
-import { DoorObstacle } from '../models/obstacles/Door';
-import { WallObstacle } from '../models/obstacles/Wall';
-import { SpriteObstacle } from '../models/obstacles/Sprite';
-import { ItemObstacle } from '../models/obstacles/Item';
+import type { DoorObstacle } from 'src/models/obstacles/Door';
+import type { ItemObstacle } from 'src/models/obstacles/Item';
+import type { SpriteObstacle } from 'src/models/obstacles/Sprite';
+import type { WallObstacle } from 'src/models/obstacles/Wall';
 
 export type RawMap = (string | number)[][];
 
@@ -45,17 +45,22 @@ export type Weapon = {
 export type Weapons = { readonly [key in WeaponType]: Weapon };
 
 export type ScreenData = {
-  screenHeight: number;
-  screenWidth: number;
+  height: number;
+  width: number;
 };
 
-export type ActorStats = 'ammo' | 'health' | 'score' | 'lives' | 'weapons' | 'keys';
+export type ActorStats = 'ammo' | 'health' | 'score' | 'lives' | 'weapons';
 
 // todo keys
-export type ItemPurpose<T extends ActorStats> = {
-  affects: T;
-  value: T extends 'ammo' | 'health' | 'score' | 'lives' ? number : WeaponType;
-};
+export type ItemPurpose =
+  | {
+      affects: 'ammo' | 'health' | 'score' | 'lives';
+      value: number;
+    }
+  | {
+      affects: 'weapons';
+      value: WeaponType;
+    };
 
 export type Intersection<T extends DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle> = {
   intersectionVertex: Vertex;
@@ -77,6 +82,26 @@ export type Chunk = {
 export type Frame<T> = {
   data: T;
   duration: number;
+};
+
+export type EnemyDirections = readonly [
+  'FRONT',
+  'FRONT_RIGHT',
+  'RIGHT',
+  'BACK_LEFT',
+  'BACK',
+  'BACK_RIGHT',
+  'LEFT',
+  'FRONT_LEFT'
+];
+
+export type EntityFrameSetByAction = {
+  IDLE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  WALK: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  RUN: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  SHOOT: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  DIE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  TAKING_DAMAGE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
 };
 
 export type PostEffectFrame = Frame<{ color: string }>;

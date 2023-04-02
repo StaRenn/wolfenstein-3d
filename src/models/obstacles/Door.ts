@@ -1,15 +1,18 @@
-import { MovableEntity, MovableEntityParams } from '../abstract/MovableEntity';
-import { Timeout } from '../Timeout';
-import { INTERSECTION_TYPES, TILE_SIZE } from '../../constants/config';
+import type { Timeout } from 'src/models/utility/Timeout';
+
+import { INTERSECTION_TYPES } from 'src/constants/config';
+
+import { MovableEntity, MovableEntityParams } from './abstract/MovableEntity';
 
 export type DoorParams = MovableEntityParams & {
-  textureDark: HTMLImageElement;
-  closeTimeout: null | Timeout;
-  isVertical: boolean;
+  textureDark: DoorObstacle['_textureDark'];
+  closeTimeout: DoorObstacle['closeTimeout'];
+  isVertical: DoorObstacle['isVertical'];
 };
 
 export class DoorObstacle extends MovableEntity {
-  public readonly textureDark: HTMLImageElement;
+  public _textureDark: HTMLImageElement;
+
   public readonly isVertical: boolean;
   public readonly isDoor: true;
   public readonly shouldReverseTexture: boolean;
@@ -17,10 +20,15 @@ export class DoorObstacle extends MovableEntity {
 
   public closeTimeout: null | Timeout;
 
+  get textureDark() {
+    return this._textureDark;
+  }
+
   constructor(params: DoorParams) {
     super(params);
 
-    this.textureDark = params.textureDark;
+    this._textureDark = params.textureDark;
+
     this.isVertical = params.isVertical;
     this.isDoor = true;
     this.closeTimeout = params.closeTimeout;

@@ -1,5 +1,24 @@
-import { Frame, HealthFrameSets, PostEffectFrame, WeaponType } from '../types';
-import { getImageWithSource } from '../utils/getImageWithSource';
+import { getImageWithSource } from 'src/utils/getImageWithSource';
+
+import type {
+  EnemyDirections,
+  EntityFrameSetByAction,
+  Frame,
+  HealthFrameSets,
+  PostEffectFrame,
+  WeaponType,
+} from 'src/types';
+
+const ENEMY_DIRECTIONS: EnemyDirections = [
+  'FRONT',
+  'FRONT_RIGHT',
+  'RIGHT',
+  'BACK_LEFT',
+  'BACK',
+  'BACK_RIGHT',
+  'LEFT',
+  'FRONT_LEFT',
+] as const;
 
 export function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Frame<HTMLImageElement>[] {
   const frameSet = [];
@@ -14,6 +33,34 @@ export function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Fr
     data: frame,
     duration,
   }));
+}
+
+export function fillDirection<T>() {
+  return ENEMY_DIRECTIONS.reduce((acc, key) => {
+    acc[key as EnemyDirections[number]] = [];
+
+    return acc;
+  }, {} as Record<EnemyDirections[number], T[]>);
+}
+
+export function getEnemyFrameSet(type: 'guard'): EntityFrameSetByAction {
+  const frameSet: EntityFrameSetByAction = {
+    IDLE: fillDirection<Frame<HTMLImageElement>>(),
+    WALK: fillDirection<Frame<HTMLImageElement>>(),
+    RUN: fillDirection<Frame<HTMLImageElement>>(),
+    SHOOT: fillDirection<Frame<HTMLImageElement>>(),
+    DIE: fillDirection<Frame<HTMLImageElement>>(),
+    TAKING_DAMAGE: fillDirection<Frame<HTMLImageElement>>(),
+  };
+
+  for (const key of ENEMY_DIRECTIONS) {
+    frameSet.IDLE[key].push({
+      data: getImageWithSource(`src/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
+      duration: Infinity,
+    });
+  }
+
+  return frameSet;
 }
 
 export function fillPortraitFrameSet(condition: keyof HealthFrameSets): Frame<HTMLImageElement>[] {

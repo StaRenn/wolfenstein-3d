@@ -1,4 +1,18 @@
 {
+  "importOrder": [
+    "^.*/view.*",
+    "^.*/obstacles.*",
+    "^.*/actors.*",
+    "^.*/utility.*",
+    "^.*/models.*",
+    "^.*/constants.*",
+    "^.*/utils.*",
+    "^.*/helpers.*",
+    "^(?!.*types).*$",
+    ".*"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
   "experimentalBabelParserPluginsList": ["classProperties", "jsx", "decorators-legacy"],
   "printWidth": 120,
   "singleQuote": true,

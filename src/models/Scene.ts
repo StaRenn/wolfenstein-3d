@@ -1,78 +1,126 @@
-import { Camera } from './Camera';
-import { Chunk, RawMap, Obstacle, ScreenData } from '../types';
-import { Minimap } from './Minimap';
-import { DoorObstacle } from './obstacles/Door';
-import { Actor } from './Actor';
-import { WallObstacle } from './obstacles/Wall';
-import { parseMap } from '../utils/parseMap';
-import { isDoor, isItem, isSprite, isWall } from '../types/typeGuards';
-import { DOOR_TIMEOUT, INTERSECTION_TYPES, OBSTACLE_SIDES, TEXTURE_SIZE, TILE_SIZE } from '../constants/config';
-import { Timeout } from './Timeout';
-import { getIsVertexInTheTriangle, getVertexByPositionAndAngle, hasEqualPosition } from '../helpers/maths';
-import { getTextureOffset } from '../helpers/getTextureOffset';
+import { Hud } from './view/Hud';
+import { Minimap } from './view/Minimap';
+
+import type { DoorObstacle } from './obstacles/Door';
+import type { WallObstacle } from './obstacles/Wall';
+
+import { Wolf } from './actors/Wolf/Wolf';
+import type { Enemy } from './actors/abstract/Enemy';
+
+import { Timeout } from './utility/Timeout';
+
+import { DOOR_TIMEOUT, INTERSECTION_TYPES, OBSTACLE_SIDES, TEXTURE_SIZE, TILE_SIZE } from 'src/constants/config';
+
+import { parseMap } from 'src/utils/parseMap';
+
+import { getTextureOffset } from 'src/helpers/getTextureOffset';
+import { getIsVertexInTheTriangle, getVertexByPositionAndAngle, hasEqualPosition } from 'src/helpers/maths';
+
+import type { Chunk, Obstacle, RawMap, ScreenData, Triangle } from 'src/types';
+import { isDoor, isEnemy, isItem, isSprite, isWall } from 'src/types/typeGuards';
 
 export class Scene {
-  private readonly camera: Camera;
-  private readonly canvas: HTMLCanvasElement;
-  private readonly ctx: CanvasRenderingContext2D;
-  private readonly map: RawMap;
-  private readonly minimap: Minimap;
+  private readonly _canvas: HTMLCanvasElement;
+  private readonly _ctx: CanvasRenderingContext2D;
+  private readonly _map: RawMap;
+  private readonly _hud: Hud;
+  private readonly _minimap: Minimap;
+  private readonly _wolf: Wolf;
 
-  private parsedMap: (Obstacle | null)[][];
-  private obstacles: Obstacle[];
-  private doors: DoorObstacle[];
-  private actor: Actor;
-  private currentlyMovingObstacles: (DoorObstacle | WallObstacle)[];
-  private screenData: ScreenData;
+  private _parsedMap: (Obstacle | null)[][];
+  private _obstacles: Obstacle[];
+  private _doors: DoorObstacle[];
+  private _enemies: Enemy[];
+  private _currentlyMovingObstacles: (DoorObstacle | WallObstacle)[];
+  private _screenData: ScreenData;
 
-  constructor(canvas: Scene['canvas'], map: Scene['map']) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d')!;
-    this.map = map;
+  constructor(canvas: Scene['_canvas'], map: Scene['_map'], screenData: ScreenData) {
+    this._canvas = canvas;
+    this._ctx = canvas.getContext('2d')!;
+    this._map = map;
 
-    this.currentlyMovingObstacles = [];
+    this._currentlyMovingObstacles = [];
 
-    this.screenData = {
-      screenHeight: this.canvas.height,
-      screenWidth: this.canvas.width,
-    };
+    this._screenData = screenData;
 
-    const { obstacles, startPosition, doors, map: parsedMap } = parseMap(map);
+    const { obstacles, startPosition, doors, enemies, map: parsedMap } = parseMap(map);
 
-    this.parsedMap = parsedMap;
-    this.obstacles = obstacles;
-    this.doors = doors;
+    this._parsedMap = parsedMap;
+    this._obstacles = obstacles;
+    this._doors = doors;
+    this._enemies = enemies;
 
-    this.minimap = new Minimap(this.ctx, this.obstacles, this.map.length, this.map[0].length);
+    this._hud = new Hud({
+      ctx: this._ctx,
+      screenData: this._screenData,
+      initialWeapon: 'PISTOL',
+    });
 
-    this.actor = new Actor(this.ctx, this.screenData, startPosition);
-    this.camera = this.actor.camera;
+    this._wolf = new Wolf({
+      angle: 0,
+      ammo: 50,
+      ctx: this._ctx,
+      currentWeapon: 'PISTOL',
+      health: 50,
+      level: 0,
+      lives: 3,
+      maxHealth: 100,
+      position: startPosition,
+      score: 0,
+      screenData: this._screenData,
+      weapons: ['KNIFE', 'PISTOL'],
+      onBoostPickup: this._hud.onBoostPickup,
+      onShoot: this._hud.onShoot,
+      onWeaponChange: this._hud.onWeaponChange,
+      rawValue: 'START_POS',
+    });
+
+    this._minimap = new Minimap({
+      ctx: this._ctx,
+      obstacles: this._obstacles,
+      rowsLength: this._map.length,
+    });
+
+    this.resize(this._screenData.width, this._screenData.height);
 
     window.addEventListener('keypress', this.handleKeyPress.bind(this));
   }
 
-  resize(width: Scene['canvas']['width'], height: Scene['canvas']['height']) {
-    this.canvas.width = width;
-    this.canvas.height = height;
+  set resolutionScale(scale: number) {
+    this._wolf.camera.resolutionScale = scale;
 
-    this.screenData.screenHeight = height;
-    this.screenData.screenWidth = width;
+    this._wolf.camera.changeRaysAmount(this._canvas.width);
+  }
 
-    this.camera.changeRaysAmount(this.canvas.width);
+  set fov(newFov: number) {
+    this._wolf.camera.fov = newFov;
+
+    this._wolf.camera.changeRaysAmount(this._canvas.width);
+  }
+
+  resize(width: Scene['_canvas']['width'], height: Scene['_canvas']['height']) {
+    this._canvas.width = width;
+    this._canvas.height = height;
+
+    this._screenData.height = height;
+    this._screenData.width = width;
+
+    this._wolf.camera.changeRaysAmount(this._canvas.width);
   }
 
   getNonGridObstacles(): Obstacle[] {
-    const position = this.actor.position;
-    const angle = this.camera.angle;
+    const position = this._wolf.position;
+    const angle = this._wolf.camera.angle;
 
-    const leftExtremumAngle = angle - FOV;
-    const rightExtremumAngle = angle + FOV;
+    const leftExtremumAngle = angle - this._wolf.camera.fov;
+    const rightExtremumAngle = angle + this._wolf.camera.fov;
 
     const currentAngleRayEndVertex = getVertexByPositionAndAngle(position, angle);
     const leftFOVExtremumVertex = getVertexByPositionAndAngle(currentAngleRayEndVertex, leftExtremumAngle);
     const rightFOVExtremumVertex = getVertexByPositionAndAngle(currentAngleRayEndVertex, rightExtremumAngle);
 
-    const rangeBoundaries = {
+    // triangle of view
+    const rangeBoundaries: Triangle = {
       x1: position.x,
       y1: position.y,
       x2: leftFOVExtremumVertex.x,
@@ -81,12 +129,16 @@ export class Scene {
       y3: rightFOVExtremumVertex.y,
     };
 
-    const nonGridObstacles = [...this.currentlyMovingObstacles, ...this.doors];
+    const nonGridObstacles = [...this._currentlyMovingObstacles, ...this._doors, ...this._enemies];
 
     // For optimization, we must reduce the number of vectors with which intersections are searched
     // push only those planes that can be visible by player side
-    const planes = nonGridObstacles.reduce<Obstacle[]>((acc, obstacle) => {
-      const obstaclePos = obstacle.position;
+    const obstacles = nonGridObstacles.reduce<Obstacle[]>((acc, obstacle) => {
+      if (isEnemy(obstacle)) {
+        acc.push(obstacle.getPreparedSprite());
+
+        return acc;
+      }
 
       if (!isWall(obstacle)) {
         acc.push(obstacle);
@@ -94,6 +146,9 @@ export class Scene {
         return acc;
       }
 
+      const obstaclePos = obstacle.position;
+
+      // get visible sides of the wall by player position
       if (position.x <= obstaclePos.x1) {
         acc.push(obstacle.getWallBySide(OBSTACLE_SIDES.LEFT, null));
       }
@@ -111,12 +166,12 @@ export class Scene {
     }, []);
 
     // get walls that are in the FOV range
-    return planes.filter((plane) => {
+    return obstacles.filter((obstacle) => {
       // If user comes straight to the plane, vertexes of the plane will not be in range of vision
       // so we need to check if user looking at the plane rn
-      const isLookingAt = !!this.camera.getViewAngleIntersection(plane.position);
+      const isLookingAt = !!this._wolf.camera.getViewAngleIntersection(obstacle.position);
 
-      const { x1, y1, x2, y2 } = plane.position;
+      const { x1, y1, x2, y2 } = obstacle.position;
 
       return (
         isLookingAt ||
@@ -127,7 +182,7 @@ export class Scene {
   }
 
   moveObstacles() {
-    this.currentlyMovingObstacles.forEach((obstacle) => {
+    this._currentlyMovingObstacles.forEach((obstacle) => {
       const animationEnded = obstacle.iterateMovement();
 
       if (isDoor(obstacle) && animationEnded) {
@@ -135,10 +190,10 @@ export class Scene {
           obstacle.closeTimeout = new Timeout(() => {
             // if player is near door, dont close door, instead reset timeout
             if (
-              this.actor.currentMatrixPosition.x >= obstacle.endPositionMatrixCoordinates.x - 1 &&
-              this.actor.currentMatrixPosition.x <= obstacle.endPositionMatrixCoordinates.x + 1 &&
-              this.actor.currentMatrixPosition.y >= obstacle.endPositionMatrixCoordinates.y - 1 &&
-              this.actor.currentMatrixPosition.y <= obstacle.endPositionMatrixCoordinates.y + 1
+              this._wolf.currentMatrixPosition.x >= obstacle.endPositionMatrixCoordinates.x - 1 &&
+              this._wolf.currentMatrixPosition.x <= obstacle.endPositionMatrixCoordinates.x + 1 &&
+              this._wolf.currentMatrixPosition.y >= obstacle.endPositionMatrixCoordinates.y - 1 &&
+              this._wolf.currentMatrixPosition.y <= obstacle.endPositionMatrixCoordinates.y + 1
             ) {
               obstacle.closeTimeout!.set(DOOR_TIMEOUT);
 
@@ -148,7 +203,7 @@ export class Scene {
             obstacle.closeTimeout = null;
             obstacle.hasCollision = true;
 
-            this.currentlyMovingObstacles.push(obstacle);
+            this._currentlyMovingObstacles.push(obstacle);
           });
 
           obstacle.closeTimeout.set(DOOR_TIMEOUT);
@@ -156,13 +211,15 @@ export class Scene {
         }
       }
 
+      // swap matrix coordinates for collision update
       if (isWall(obstacle) && animationEnded) {
-        this.parsedMap[obstacle.endPositionMatrixCoordinates.y][obstacle.endPositionMatrixCoordinates.x] = obstacle;
-        this.parsedMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+        this._parsedMap[obstacle.endPositionMatrixCoordinates.y][obstacle.endPositionMatrixCoordinates.x] = obstacle;
+        this._parsedMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
       }
 
+      // remove obstacle from moving list on animation end
       if (animationEnded) {
-        this.currentlyMovingObstacles = this.currentlyMovingObstacles.filter(
+        this._currentlyMovingObstacles = this._currentlyMovingObstacles.filter(
           (movingObstacle) => movingObstacle !== obstacle
         );
       }
@@ -174,23 +231,26 @@ export class Scene {
       let obstacleInViewIndex = null;
       let obstacleInView = null;
 
-      for (let i = 0; i < this.obstacles.length; i++) {
-        const obstacle = this.obstacles[i];
+      for (let i = 0; i < this._obstacles.length; i++) {
+        const obstacle = this._obstacles[i];
 
+        // not interactive
         if (isSprite(obstacle) || isItem(obstacle) || !obstacle.isMovable) {
           continue;
         }
 
-        if (this.currentlyMovingObstacles.includes(obstacle)) {
+        // already activated
+        if (this._currentlyMovingObstacles.includes(obstacle)) {
           continue;
         }
 
-        const intersection = this.camera.getViewAngleIntersection(obstacle.position);
+        const intersection = this._wolf.camera.getViewAngleIntersection(obstacle.position);
 
         const distance = Math.sqrt(
-          (this.actor.position.x - obstacle.position.x1) ** 2 + (this.actor.position.y - obstacle.position.y1) ** 2
+          (this._wolf.position.x - obstacle.position.x1) ** 2 + (this._wolf.position.y - obstacle.position.y1) ** 2
         );
 
+        // obstacle is close to player
         if (intersection && distance <= TILE_SIZE * 2) {
           obstacleInViewIndex = i;
           obstacleInView = obstacle;
@@ -205,32 +265,41 @@ export class Scene {
         return;
       }
 
-      this.currentlyMovingObstacles.push(obstacleInView);
+      this._currentlyMovingObstacles.push(obstacleInView);
     }
   }
 
-  render() {
-    this.ctx.imageSmoothingEnabled = false;
+  iterate() {
+    this._wolf.iterate(this._parsedMap);
 
-    this.ctx.beginPath();
-    this.ctx.clearRect(0, 0, this.screenData.screenWidth, this.screenData.screenHeight);
-    this.ctx.closePath();
+    this.moveObstacles();
+
+    this._obstacles.forEach((obstacle) => {
+      if (isDoor(obstacle) && obstacle.closeTimeout) {
+        obstacle.closeTimeout.iterate();
+      }
+    });
+
+    this._enemies.forEach((enemy) => {
+      enemy.iterate(this._wolf.position, this._wolf.camera.angle);
+    });
+
+    this._hud.iterate();
+  }
+
+  render() {
+    this._ctx.imageSmoothingEnabled = false;
+
+    this._ctx.beginPath();
+    this._ctx.clearRect(0, 0, this._screenData.width, this._screenData.height);
+    this._ctx.closePath();
 
     // ceiling
-    this.ctx.fillStyle = '#383838';
-    this.ctx.fillRect(0, 0, 1920, Math.ceil(this.screenData.screenHeight / 2));
+    this._ctx.fillStyle = '#383838';
+    this._ctx.fillRect(0, 0, 1920, Math.ceil(this._screenData.height / 2));
 
-    if (!IS_PAUSED) {
-      this.moveObstacles();
-
-      this.obstacles.forEach((obstacle) => {
-        if (isDoor(obstacle) && obstacle.closeTimeout) {
-          obstacle.closeTimeout.iterate();
-        }
-      });
-    }
-
-    const intersections = this.camera.getIntersections(this.parsedMap, this.getNonGridObstacles());
+    const intersections = this._wolf.camera.getIntersections(this._parsedMap, this.getNonGridObstacles());
+    // sort intersections by closest
     const sortedAndMergedIntersections = [...intersections].sort((a, b) => b.distance - a.distance);
 
     const chunk: Chunk = {
@@ -263,6 +332,7 @@ export class Scene {
       const sameTextureId = nextIntersection?.obstacle.texture === obstacle.texture;
       const sameTextureOffset = nextTextureOffset === textureOffsetX;
 
+      // if true: add image to chunk and continue, if false: draw chunked images in 1 iteration
       if (sameOrNextIndex && sameDistance && sameTextureId && sameTextureOffset) {
         chunk.rays.push(nextIntersection);
         chunk.width += 1;
@@ -273,7 +343,7 @@ export class Scene {
         textureOffsetX = getTextureOffset(chunk.rays[0]);
 
         const textureHeight =
-          ((TILE_SIZE / intersection.distance) * (180 / FOV_DEGREES) * this.screenData.screenHeight) / 1.75;
+          ((TILE_SIZE / intersection.distance) * (Math.PI / this._wolf.camera.fov) * this._screenData.height) / 1.75;
 
         const texture =
           isHorizontalIntersection && (isWall(obstacle) || isDoor(obstacle)) ? obstacle.textureDark : obstacle.texture;
@@ -281,16 +351,16 @@ export class Scene {
         const textureOffsetY = 0;
         const textureWidth = 1;
         const textureSize = TEXTURE_SIZE;
-        const textureXPositionOnScreen = chunk.startIndex / RESOLUTION_SCALE;
-        const textureYPositionOnScreen = this.screenData.screenHeight / 2 - textureHeight / 2;
-        const textureWidthOnScreen = chunk.width / RESOLUTION_SCALE;
+        const textureXPositionOnScreen = chunk.startIndex / this._wolf.camera.resolutionScale;
+        const textureYPositionOnScreen = this._screenData.height / 2 - textureHeight / 2;
+        const textureWidthOnScreen = chunk.width / this._wolf.camera.resolutionScale;
 
         chunk.rays = [];
         chunk.width = 0;
         chunk.startIndex = 0;
         chunk.isInitial = true;
 
-        this.ctx.drawImage(
+        this._ctx.drawImage(
           texture,
           textureOffsetX,
           textureOffsetY,
@@ -304,11 +374,15 @@ export class Scene {
       }
     }
 
-    if (!IS_PAUSED) {
-      this.actor.render();
-      this.actor.move(this.parsedMap);
-    }
+    this._hud.render({
+      currentWeapon: this._wolf.currentWeapon,
+      ammo: this._wolf.ammo,
+      lives: this._wolf.lives,
+      score: this._wolf.score,
+      level: this._wolf.level,
+      health: this._wolf.health,
+    });
 
-    this.minimap.render(this.actor.position);
+    this._minimap.render(this._wolf.position, this._enemies);
   }
 }
