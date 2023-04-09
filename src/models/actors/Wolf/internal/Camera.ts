@@ -1,6 +1,5 @@
-import { DEFAULT_FOV, DEFAULT_RESOLUTION_SCALE, OBSTACLE_SIDES } from 'src/constants/config';
+import { DEFAULT_FOV, DEFAULT_RESOLUTION_SCALE } from 'src/constants/config';
 
-import { getNeighbors } from 'src/helpers/getNeighbors';
 import { getRelativeChunkMultiplier } from 'src/helpers/getRelativeChunkMultiplier';
 import { getIntersectionVertexWithPlane, getVertexByPositionAndAngle, toRadians } from 'src/helpers/maths';
 
@@ -15,7 +14,7 @@ type CameraParams = {
   raysAmount: number;
 };
 
-/** @internal for Wolf.ts */
+/** @internal for Wolf.ts and Enemy.ts */
 export class Camera {
   private _rays: Ray[];
   private _position: Vertex;
@@ -83,7 +82,7 @@ export class Camera {
     const intersections: IndexedIntersection<Obstacle>[] = [];
 
     for (let i = 0; i < this._rays.length; i++) {
-      const nonGridCastResult = this._rays[i].cast(nonGridPlanes);
+      const nonGridCastResult = this._rays[i].cast(nonGridPlanes, this._angle);
 
       // calculate non grid intersections
       nonGridCastResult.forEach(({ obstacle, intersectionVertex, distance }) => {
@@ -98,7 +97,7 @@ export class Camera {
       });
 
       // calculate grid intersections
-      this._rays[i].castDDA(parsedMap).forEach(({ obstacle, intersectionVertex, distance }) => {
+      this._rays[i].castDDA(parsedMap, this._angle).forEach(({ obstacle, intersectionVertex, distance }) => {
         const obstaclePos = obstacle.position;
 
         const relativeChunkMultiplier = getRelativeChunkMultiplier(distance);
@@ -106,17 +105,15 @@ export class Camera {
         let preparedIntersection = intersectionVertex;
         let preparedDistance = Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier;
 
-        const obstacleNeighbors = getNeighbors(parsedMap, obstacle.matrixCoordinates);
-
         let intersectedObstacle: Obstacle | null = null;
 
         if (isSprite(obstacle) || isItem(obstacle)) {
           intersectedObstacle = obstacle.rotatePerpendicularlyToView(this._angle);
 
-          const castResult = this._rays[i].cast([intersectedObstacle]);
+          const castResult = this._rays[i].cast([intersectedObstacle], this._angle);
 
           const closest = castResult.sort(
-            ({ distance: distanceA }, { distance: distanceB }) => distanceB - distanceA
+            ({ distance: distanceA }, { distance: distanceB }) => distanceA - distanceB
           )[0];
 
           if (closest) {
@@ -129,16 +126,16 @@ export class Camera {
           // from grid cast result we get unprepared wall obstacle (with diagonal vector that represents 4 walls)
           // we need to get wall side with prepared position
           if (preparedIntersection.y !== obstaclePos.y1 && preparedIntersection.x === obstaclePos.x1) {
-            intersectedObstacle = obstacle.getWallBySide(OBSTACLE_SIDES.LEFT, obstacleNeighbors.LEFT);
+            intersectedObstacle = obstacle.wallSides.LEFT;
           }
           if (preparedIntersection.y !== obstaclePos.y1 && preparedIntersection.x === obstaclePos.x2) {
-            intersectedObstacle = obstacle.getWallBySide(OBSTACLE_SIDES.RIGHT, obstacleNeighbors.RIGHT);
+            intersectedObstacle = obstacle.wallSides.RIGHT;
           }
           if (preparedIntersection.y === obstaclePos.y1 && preparedIntersection.x !== obstaclePos.x1) {
-            intersectedObstacle = obstacle.getWallBySide(OBSTACLE_SIDES.TOP, obstacleNeighbors.TOP);
+            intersectedObstacle = obstacle.wallSides.TOP;
           }
           if (preparedIntersection.y === obstaclePos.y2 && preparedIntersection.x !== obstaclePos.x1) {
-            intersectedObstacle = obstacle.getWallBySide(OBSTACLE_SIDES.BOTTOM, obstacleNeighbors.BOTTOM);
+            intersectedObstacle = obstacle.wallSides.BOTTOM;
           }
         }
 
@@ -178,7 +175,6 @@ export class Camera {
       this._rays.push(
         new Ray({
           angle: rayAngle,
-          cameraAngle: this._angle,
           initialPosition: this._position,
         })
       );
@@ -209,7 +205,7 @@ export class Camera {
         rayAngle -= Math.PI * 2;
       }
 
-      this._rays[i].changeAngle(rayAngle, this._angle);
+      this._rays[i].changeAngle(rayAngle);
     }
   }
 }

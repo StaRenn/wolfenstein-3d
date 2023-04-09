@@ -48,6 +48,18 @@ export class Minimap {
     for (const enemy of enemies) {
       this._ctx.fillStyle = 'red';
 
+      const endPosition = {
+        x: enemy.position.x + (TILE_SIZE / MAP_SCALE) * Math.sin(enemy.angle),
+        y: enemy.position.y + (TILE_SIZE / MAP_SCALE) * Math.cos(enemy.angle),
+      };
+
+      this._ctx.strokeStyle = 'orange';
+      this._ctx.beginPath();
+      this._ctx.moveTo(enemy.position.x * MAP_SCALE, (height - enemy.position.y) * MAP_SCALE);
+      this._ctx.lineTo(endPosition.x * MAP_SCALE, (height - endPosition.y) * MAP_SCALE);
+      this._ctx.closePath();
+      this._ctx.stroke();
+
       this._ctx.beginPath();
       this._ctx.ellipse(
         enemy.position.x * MAP_SCALE,

@@ -118,10 +118,6 @@ export function parseMap(
                 y2: !isVertical ? position.y2 - TILE_SIZE : position.y2,
               };
 
-        if(isSecret && !endPosition) {
-          console.log(secretObstaclesEndPositions, obstacleParams)
-        }
-
         if (isEnemy) {
           const enemyType = obstacleParams[1].toLowerCase();
           const enemyAction = obstacleParams[2] as keyof EntityFrameSetByAction;
@@ -143,6 +139,12 @@ export function parseMap(
           }
         } else if (isWall) {
           const wall = new WallObstacle({
+            neighborIsDoorMap: {
+              TOP: !!map[yAxis - 1]?.[xAxis] && DOOR_IDS.includes(map[yAxis - 1][xAxis] as number),
+              RIGHT: !!map[yAxis]?.[xAxis + 1] && DOOR_IDS.includes(map[yAxis][xAxis + 1] as number),
+              BOTTOM: !!map[yAxis + 1]?.[xAxis] && DOOR_IDS.includes(map[yAxis + 1][xAxis] as number),
+              LEFT: !!map[yAxis]?.[xAxis - 1] && DOOR_IDS.includes(map[yAxis][xAxis - 1] as number)
+            },
             initialPosition: position,
             position,
             endPosition,

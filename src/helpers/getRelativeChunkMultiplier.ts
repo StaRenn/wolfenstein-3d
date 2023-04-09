@@ -7,11 +7,11 @@ export function getRelativeChunkMultiplier(distance: number) {
   let relativeChunkMultiplier;
 
   if (distance < TILE_SIZE / 2) {
-    relativeChunkMultiplier = 32;
+    relativeChunkMultiplier = 24;
   } else if (distance < TILE_SIZE * 3) {
-    relativeChunkMultiplier = 16;
+    relativeChunkMultiplier = 12;
   } else if (distance < TILE_SIZE * 6) {
-    relativeChunkMultiplier = 8;
+    relativeChunkMultiplier = 2;
   } else {
     relativeChunkMultiplier = 1;
   }

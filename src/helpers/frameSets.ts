@@ -20,6 +20,16 @@ const ENEMY_DIRECTIONS: EnemyDirections = [
   'FRONT_LEFT',
 ] as const;
 
+export const NON_DIRECTED_FRAME_SETS_BY_ACTION: (keyof Pick<
+  EntityFrameSetByAction,
+  'ATTACK' | 'DIE' | 'TAKING_DAMAGE'
+>)[] = ['ATTACK', 'DIE', 'TAKING_DAMAGE'];
+
+export const DIRECTED_FRAME_SETS_BY_ACTION: (keyof Pick<
+  EntityFrameSetByAction,
+  'IDLE' | 'WANDER' | 'CHASE'
+  >)[] = ['IDLE', 'WANDER', 'CHASE'];
+
 export function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Frame<HTMLImageElement>[] {
   const frameSet = [];
 
@@ -46,17 +56,36 @@ export function fillDirection<T>() {
 export function getEnemyFrameSet(type: 'guard'): EntityFrameSetByAction {
   const frameSet: EntityFrameSetByAction = {
     IDLE: fillDirection<Frame<HTMLImageElement>>(),
-    WALK: fillDirection<Frame<HTMLImageElement>>(),
-    RUN: fillDirection<Frame<HTMLImageElement>>(),
-    SHOOT: fillDirection<Frame<HTMLImageElement>>(),
-    DIE: fillDirection<Frame<HTMLImageElement>>(),
-    TAKING_DAMAGE: fillDirection<Frame<HTMLImageElement>>(),
+    WANDER: fillDirection<Frame<HTMLImageElement>>(),
+    CHASE: fillDirection<Frame<HTMLImageElement>>(),
+    ATTACK: [] as Frame<HTMLImageElement>[],
+    DIE: [] as Frame<HTMLImageElement>[],
+    TAKING_DAMAGE: [] as Frame<HTMLImageElement>[],
   };
+
+  frameSet.TAKING_DAMAGE.push({
+    data: getImageWithSource(`src/assets/enemies/${type}/taking_damage/0.png`),
+    duration: 150,
+  })
 
   for (const key of ENEMY_DIRECTIONS) {
     frameSet.IDLE[key].push({
       data: getImageWithSource(`src/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
       duration: Infinity,
+    });
+  }
+
+  for(let i = 0; i <= 2; i++) {
+    frameSet.ATTACK.push({
+      data: getImageWithSource(`src/assets/enemies/${type}/attack/${i}.png`),
+      duration: 150,
+    });
+  }
+
+  for(let i = 0; i <= 4; i++) {
+    frameSet.DIE.push({
+      data: getImageWithSource(`src/assets/enemies/${type}/die/${i}.png`),
+      duration: i === 4 ? Infinity : 100,
     });
   }
 

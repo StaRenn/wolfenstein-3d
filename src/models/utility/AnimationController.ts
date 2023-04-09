@@ -44,9 +44,21 @@ export class AnimationController<FrameType extends Frame<unknown>> {
 
     this._timeout = new Timeout(this.playAnimation);
 
-    if (isLoopAnimation) {
+    if (isLoopAnimation && this.currentFrame.duration !== Infinity) {
       this._timeout.set(this.currentFrame.duration);
     }
+  }
+
+  set onAnimationEnd(callback: AnimationController<FrameType>['_onAnimationEnd']) {
+    this._onAnimationEnd = callback;
+  }
+
+  set onAnimationStart(callback: AnimationController<FrameType>['_onAnimationStart']) {
+    this._onAnimationStart = callback;
+  }
+
+  set onFrameChange(callback: AnimationController<FrameType>['_onFrameChange']) {
+    this._onFrameChange = callback;
   }
 
   get currentFrameIdx() {
@@ -70,7 +82,7 @@ export class AnimationController<FrameType extends Frame<unknown>> {
       this._onAnimationEnd();
 
       // if looped, start same animation
-      if (this._isLoopAnimation) {
+      if (this._isLoopAnimation && this.currentFrame.duration !== Infinity) {
         this._timeout.set(this.currentFrame.duration);
       }
     } else {
@@ -79,7 +91,10 @@ export class AnimationController<FrameType extends Frame<unknown>> {
       }
 
       this._currentFrameIdx += 1;
-      this._timeout.set(this.currentFrame.duration);
+
+      if(this.currentFrame.duration !== Infinity) {
+        this._timeout.set(this.currentFrame.duration);
+      }
     }
 
     this._onFrameChange(this._currentFrameIdx);
@@ -90,7 +105,7 @@ export class AnimationController<FrameType extends Frame<unknown>> {
     this._currentFrameIdx = 0;
     this._timeout.reset();
 
-    if (this._isLoopAnimation) {
+    if (this._isLoopAnimation && this.currentFrame.duration !== Infinity) {
       this._timeout.set(this.currentFrame.duration);
     }
   }
@@ -103,7 +118,7 @@ export class AnimationController<FrameType extends Frame<unknown>> {
     this._currentFrameIdx = frameIdx;
     this._timeout.reset();
 
-    if (this._isLoopAnimation) {
+    if (this._isLoopAnimation && this.currentFrame.duration !== Infinity) {
       this._timeout.set(this.currentFrame.duration);
     }
   }

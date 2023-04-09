@@ -97,11 +97,11 @@ export type EnemyDirections = readonly [
 
 export type EntityFrameSetByAction = {
   IDLE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  WALK: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  RUN: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  SHOOT: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  DIE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  TAKING_DAMAGE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  WANDER: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  CHASE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
+  ATTACK: Frame<HTMLImageElement>[];
+  DIE: Frame<HTMLImageElement>[];
+  TAKING_DAMAGE: Frame<HTMLImageElement>[];
 };
 
 export type PostEffectFrame = Frame<{ color: string }>;

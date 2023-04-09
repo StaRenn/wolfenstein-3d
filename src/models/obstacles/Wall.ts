@@ -10,15 +10,15 @@ import { getImageWithSource } from 'src/utils/getImageWithSource';
 
 import { MovableEntity, MovableEntityParams } from './abstract/MovableEntity';
 
-import type { Obstacle } from 'src/types';
-import { isDoor } from 'src/types/typeGuards';
-
 export type WallParams = MovableEntityParams & {
   textureDark: WallObstacle['textureDark'];
+  neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>
 };
 
 export class WallObstacle extends MovableEntity {
   private _textureDark: HTMLImageElement;
+  private _neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>
+  private _wallSides: Record<keyof typeof OBSTACLE_SIDES, WallObstacle>
 
   public readonly isWall: true;
   public readonly intersectionType: keyof typeof INTERSECTION_TYPES;
@@ -33,6 +33,18 @@ export class WallObstacle extends MovableEntity {
 
     this.intersectionType = INTERSECTION_TYPES.HORIZONTAL;
     this.shouldReverseTexture = false;
+    this._neighborIsDoorMap = params.neighborIsDoorMap;
+
+    this._wallSides = {
+      TOP: this.getWallBySide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),
+      RIGHT: this.getWallBySide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
+      BOTTOM: this.getWallBySide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
+      LEFT: this.getWallBySide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
+    }
+  }
+
+  get wallSides() {
+    return this._wallSides;
   }
 
   set textureDark(newTextureDark: HTMLImageElement) {
@@ -43,8 +55,21 @@ export class WallObstacle extends MovableEntity {
     return this._textureDark;
   }
 
+  override iterateMovement() {
+    const result = super.iterateMovement();
+
+    this._wallSides = {
+      TOP: this.getWallBySide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),
+      RIGHT: this.getWallBySide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
+      BOTTOM: this.getWallBySide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
+      LEFT: this.getWallBySide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
+    }
+
+    return result
+  }
+
   // get side of the wall
-  getWallBySide(side: keyof typeof OBSTACLE_SIDES, neighbor: Obstacle | null): WallObstacle {
+  private getWallBySide(side: keyof typeof OBSTACLE_SIDES, neighborIsDoor: boolean): WallObstacle {
     const isVertical = side === OBSTACLE_SIDES.TOP || side === OBSTACLE_SIDES.BOTTOM;
 
     const position = {
@@ -57,7 +82,7 @@ export class WallObstacle extends MovableEntity {
     let texture = this._texture;
     let textureDark = this._textureDark;
 
-    if (isDoor(neighbor)) {
+    if (neighborIsDoor) {
       texture = getImageWithSource(`src/assets/textures/${DOOR_SIDE_WALL_TEXTURE_ID}.png`);
       textureDark = getImageWithSource(`src/assets/textures/${DOOR_SIDE_WALL_TEXTURE_DARK_ID}.png`);
     }
@@ -66,7 +91,7 @@ export class WallObstacle extends MovableEntity {
       ...this,
       position,
       intersectionType: isVertical ? INTERSECTION_TYPES.VERTICAL : INTERSECTION_TYPES.HORIZONTAL,
-      shouldReverseTexture: !isDoor(neighbor) && (side === OBSTACLE_SIDES.LEFT || side === OBSTACLE_SIDES.BOTTOM),
+      shouldReverseTexture: !neighborIsDoor && (side === OBSTACLE_SIDES.LEFT || side === OBSTACLE_SIDES.BOTTOM),
       texture,
       textureDark,
     };

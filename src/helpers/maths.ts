@@ -30,10 +30,32 @@ export function getAngleBetweenVertexes(vertexAPosition: Vertex, vertexBPosition
   return Math.atan2(dx, dy);
 }
 
-export function getVertexByPositionAndAngle(position: Vertex, angle: number): Vertex {
+export function getVertexByPositionAndAngle(vertex: Vertex, angle: number): Vertex {
   return {
-    x: position.x + RAY_LENGTH * Math.sin(angle),
-    y: position.y + RAY_LENGTH * Math.cos(angle),
+    x: vertex.x + RAY_LENGTH * Math.sin(angle),
+    y: vertex.y + RAY_LENGTH * Math.cos(angle),
+  };
+}
+
+export function getDistanceBetweenVertexes(startVertex: Vertex, endVertex: Vertex) {
+  return Math.sqrt((endVertex.x - startVertex.x) ** 2 + (endVertex.y - startVertex.y) ** 2)
+}
+
+export function getRangeOfView(angle: number, fov: number, position: Vertex): Triangle {
+  const leftExtremumAngle = angle - fov;
+  const rightExtremumAngle = angle + fov;
+
+  const currentAngleRayEndVertex = getVertexByPositionAndAngle(position, angle);
+  const leftFOVExtremumVertex = getVertexByPositionAndAngle(currentAngleRayEndVertex, leftExtremumAngle);
+  const rightFOVExtremumVertex = getVertexByPositionAndAngle(currentAngleRayEndVertex, rightExtremumAngle);
+
+  return {
+    x1: position.x,
+    y1: position.y,
+    x2: leftFOVExtremumVertex.x,
+    y2: leftFOVExtremumVertex.y,
+    x3: rightFOVExtremumVertex.x,
+    y3: rightFOVExtremumVertex.y,
   };
 }
 
@@ -55,6 +77,10 @@ export function unitVector({ x, y }: Vertex) {
   const magnitude = vectorSize({ x, y });
 
   return { x: x / magnitude, y: y / magnitude };
+}
+
+export function getDistanceWithoutFishEyeEffect(distance: number, mainAngle: number, secondaryAngle: number) {
+  return distance * Math.cos(mainAngle - secondaryAngle)
 }
 
 export function getIntersectionVertexWithPlane(firstVector: Vector, secondVector: Vector) {

@@ -61,6 +61,10 @@ export class Wolf extends Actor {
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
   }
 
+  override get angle() {
+    return this.camera.angle;
+  }
+
   get ammo() {
     return this._ammo;
   }

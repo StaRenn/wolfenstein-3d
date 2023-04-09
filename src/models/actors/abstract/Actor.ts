@@ -39,6 +39,10 @@ export abstract class Actor {
     this._verticalSpeed = 0;
   }
 
+  get angle() {
+    return this._angle;
+  }
+
   get position() {
     return this._position;
   }

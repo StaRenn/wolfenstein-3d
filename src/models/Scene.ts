@@ -9,14 +9,25 @@ import type { Enemy } from './actors/abstract/Enemy';
 
 import { Timeout } from './utility/Timeout';
 
-import { DOOR_TIMEOUT, INTERSECTION_TYPES, OBSTACLE_SIDES, TEXTURE_SIZE, TILE_SIZE } from 'src/constants/config';
+import {
+  DOOR_TIMEOUT,
+  INTERSECTION_TYPES,
+  TEXTURE_SIZE,
+  TILE_SIZE,
+  WEAPONS,
+  WOLF_ATTACK_FOV,
+} from 'src/constants/config';
 
 import { parseMap } from 'src/utils/parseMap';
 
 import { getTextureOffset } from 'src/helpers/getTextureOffset';
-import { getIsVertexInTheTriangle, getVertexByPositionAndAngle, hasEqualPosition } from 'src/helpers/maths';
+import {
+  getIsVertexInTheTriangle,
+  getRangeOfView,
+  hasEqualPosition,
+} from 'src/helpers/maths';
 
-import type { Chunk, Obstacle, RawMap, ScreenData, Triangle } from 'src/types';
+import type { Chunk, Obstacle, RawMap, ScreenData } from 'src/types';
 import { isDoor, isEnemy, isItem, isSprite, isWall } from 'src/types/typeGuards';
 
 export class Scene {
@@ -68,9 +79,12 @@ export class Scene {
       position: startPosition,
       score: 0,
       screenData: this._screenData,
-      weapons: ['KNIFE', 'PISTOL'],
+      weapons: ['KNIFE', 'PISTOL', 'MACHINE_GUN'],
       onBoostPickup: this._hud.onBoostPickup,
-      onShoot: this._hud.onShoot,
+      onShoot: () => {
+        this._hud.onShoot();
+        this.handleWolfShoot();
+      },
       onWeaponChange: this._hud.onWeaponChange,
       rawValue: 'START_POS',
     });
@@ -110,24 +124,10 @@ export class Scene {
 
   getNonGridObstacles(): Obstacle[] {
     const position = this._wolf.position;
-    const angle = this._wolf.camera.angle;
+    const angle = this._wolf.angle;
+    const fov = this._wolf.camera.fov
 
-    const leftExtremumAngle = angle - this._wolf.camera.fov;
-    const rightExtremumAngle = angle + this._wolf.camera.fov;
-
-    const currentAngleRayEndVertex = getVertexByPositionAndAngle(position, angle);
-    const leftFOVExtremumVertex = getVertexByPositionAndAngle(currentAngleRayEndVertex, leftExtremumAngle);
-    const rightFOVExtremumVertex = getVertexByPositionAndAngle(currentAngleRayEndVertex, rightExtremumAngle);
-
-    // triangle of view
-    const rangeBoundaries: Triangle = {
-      x1: position.x,
-      y1: position.y,
-      x2: leftFOVExtremumVertex.x,
-      y2: leftFOVExtremumVertex.y,
-      x3: rightFOVExtremumVertex.x,
-      y3: rightFOVExtremumVertex.y,
-    };
+    const rangeOfView = getRangeOfView(angle, fov, position);
 
     const nonGridObstacles = [...this._currentlyMovingObstacles, ...this._doors, ...this._enemies];
 
@@ -150,16 +150,16 @@ export class Scene {
 
       // get visible sides of the wall by player position
       if (position.x <= obstaclePos.x1) {
-        acc.push(obstacle.getWallBySide(OBSTACLE_SIDES.LEFT, null));
+        acc.push(obstacle.wallSides.LEFT);
       }
       if (position.x >= obstaclePos.x2) {
-        acc.push(obstacle.getWallBySide(OBSTACLE_SIDES.RIGHT, null));
+        acc.push(obstacle.wallSides.RIGHT);
       }
       if (position.y <= obstaclePos.y1) {
-        acc.push(obstacle.getWallBySide(OBSTACLE_SIDES.TOP, null));
+        acc.push(obstacle.wallSides.TOP);
       }
       if (position.y >= obstaclePos.y2) {
-        acc.push(obstacle.getWallBySide(OBSTACLE_SIDES.BOTTOM, null));
+        acc.push(obstacle.wallSides.BOTTOM);
       }
 
       return acc;
@@ -175,8 +175,8 @@ export class Scene {
 
       return (
         isLookingAt ||
-        getIsVertexInTheTriangle({ x: x1, y: y1 }, rangeBoundaries) ||
-        getIsVertexInTheTriangle({ x: x2, y: y2 }, rangeBoundaries)
+        getIsVertexInTheTriangle({ x: x1, y: y1 }, rangeOfView) ||
+        getIsVertexInTheTriangle({ x: x2, y: y2 }, rangeOfView)
       );
     });
   }
@@ -224,6 +224,42 @@ export class Scene {
         );
       }
     });
+  }
+
+  handleWolfShoot() {
+    const attackRange = getRangeOfView(this._wolf.angle, WOLF_ATTACK_FOV, this._wolf.position);
+
+    const enemiesInAttackRange = this._enemies.filter(enemy => {
+      if(enemy.currentState === 'DIE') {
+        return false
+      }
+
+      if (!getIsVertexInTheTriangle(enemy.position, attackRange)) {
+        return false;
+      }
+
+      const castResult = enemy.castToPosition(this._wolf.position, this._parsedMap);
+
+      if(castResult.distance > WEAPONS[this._wolf.currentWeapon].maxDistance) {
+        return false
+      }
+
+      return enemy.castToPosition(this._wolf.position, this._parsedMap).isVisible
+    })
+
+    const closestEnemy = enemiesInAttackRange.sort((enemy, nextEnemy) => {
+      const castResult = enemy.castToPosition(this._wolf.position, this._parsedMap)
+      const nextCastResult = nextEnemy.castToPosition(this._wolf.position, this._parsedMap)
+
+      return castResult.distance - nextCastResult.distance;
+    })[0]
+
+    if(closestEnemy) {
+      const weapon = WEAPONS[this._wolf.currentWeapon]
+      const damage = weapon.damage
+
+      closestEnemy.takeDamage(this._wolf.position, damage, this._parsedMap)
+    }
   }
 
   handleKeyPress(event: KeyboardEvent) {
@@ -281,7 +317,7 @@ export class Scene {
     });
 
     this._enemies.forEach((enemy) => {
-      enemy.iterate(this._wolf.position, this._wolf.camera.angle);
+      enemy.iterate(this._wolf.position, this._wolf.angle, this._parsedMap);
     });
 
     this._hud.iterate();
@@ -321,10 +357,9 @@ export class Scene {
         chunk.isInitial = false;
       }
 
-      let textureOffsetX = getTextureOffset(intersection);
-
       const nextIntersection = sortedAndMergedIntersections[i + 1];
 
+      const textureOffsetX = getTextureOffset(intersection);
       const nextTextureOffset = nextIntersection && getTextureOffset(nextIntersection);
 
       const sameOrNextIndex = nextIntersection?.index === index || nextIntersection?.index === index + 1;
@@ -339,8 +374,6 @@ export class Scene {
       } else {
         const isHorizontalIntersection =
           (!isWall(obstacle) && !isDoor(obstacle)) || obstacle.intersectionType === INTERSECTION_TYPES.HORIZONTAL;
-
-        textureOffsetX = getTextureOffset(chunk.rays[0]);
 
         const textureHeight =
           ((TILE_SIZE / intersection.distance) * (Math.PI / this._wolf.camera.fov) * this._screenData.height) / 1.75;

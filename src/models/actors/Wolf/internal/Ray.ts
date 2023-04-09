@@ -1,26 +1,28 @@
 import { RAY_LENGTH, TILE_SIZE } from 'src/constants/config';
 
-import { getIntersectionVertexWithPlane, unitVector } from 'src/helpers/maths';
+import {
+  getDistanceBetweenVertexes,
+  getDistanceWithoutFishEyeEffect,
+  getIntersectionVertexWithPlane,
+  unitVector,
+} from 'src/helpers/maths';
 
 import type { Intersection, Obstacle, ParsedMap, Vector, Vertex } from 'src/types';
 import { isDoor, isMovableEntity, isSprite } from 'src/types/typeGuards';
 
 type RayParams = {
   angle: Ray['_angle'];
-  cameraAngle: Ray['_cameraAngle'];
   initialPosition: Vertex;
 };
 
 /** @internal for Camera.ts */
 export class Ray {
   private _angle: number;
-  private _cameraAngle: number;
-  private _cameraPosition: Vector;
+  private _position: Vector;
 
   constructor(params: RayParams) {
     this._angle = params.angle;
-    this._cameraAngle = params.cameraAngle;
-    this._cameraPosition = {
+    this._position = {
       x1: 0,
       y1: 0,
       x2: 0,
@@ -30,23 +32,18 @@ export class Ray {
     this.move(params.initialPosition);
   }
 
-  changeAngle(angle: Ray['_angle'], cameraAngle: Ray['_cameraAngle']) {
-    this._cameraAngle = cameraAngle;
+  get angle() {
+    return this._angle;
+  }
+
+  changeAngle(angle: Ray['_angle']) {
     this._angle = angle;
 
-    this.move({ x: this._cameraPosition.x1, y: this._cameraPosition.y1 });
-  }
-
-  fixFishEye(distance: number) {
-    return distance * Math.cos(this._angle - this._cameraAngle);
-  }
-
-  getDistance(vertex: Vertex) {
-    return Math.sqrt((vertex.x - this._cameraPosition.x1) ** 2 + (vertex.y - this._cameraPosition.y1) ** 2);
+    this.move({ x: this._position.x1, y: this._position.y1 });
   }
 
   move(position: Vertex) {
-    this._cameraPosition = {
+    this._position = {
       x1: position.x,
       y1: position.y,
       x2: position.x + Math.sin(this._angle) * RAY_LENGTH,
@@ -56,22 +53,22 @@ export class Ray {
 
   // optimized casting algorithm, used for obstacles that use map grid
   // https://www.youtube.com/watch?v=NbSee-XM7WA
-  castDDA(parsedMap: ParsedMap): Intersection<Obstacle>[] {
+  castDDA(parsedMap: ParsedMap, cameraAngle: number): Intersection<Obstacle>[] {
     const intersections = [];
 
     const directionVector = unitVector({
-      x: this._cameraPosition.x2 - this._cameraPosition.x1,
-      y: this._cameraPosition.y2 - this._cameraPosition.y1,
+      x: this._position.x2 - this._position.x1,
+      y: this._position.y2 - this._position.y1,
     });
 
     const currentPlayerPosition: Vertex = {
-      x: this._cameraPosition.x1 / TILE_SIZE,
-      y: this._cameraPosition.y1 / TILE_SIZE,
+      x: this._position.x1 / TILE_SIZE,
+      y: this._position.y1 / TILE_SIZE,
     };
 
     const currentMapPosition: Vertex = {
-      x: Math.floor(this._cameraPosition.x1 / TILE_SIZE),
-      y: Math.floor(this._cameraPosition.y1 / TILE_SIZE),
+      x: Math.floor(this._position.x1 / TILE_SIZE),
+      y: Math.floor(this._position.y1 / TILE_SIZE),
     };
 
     const stepLengthX = Math.abs(1 / directionVector.x);
@@ -122,7 +119,7 @@ export class Ray {
         if (parsedMap[currentMapPosition.y] && parsedMap[currentMapPosition.y][currentMapPosition.x]) {
           const intersectedObstacle = parsedMap[currentMapPosition.y][currentMapPosition.x]!;
 
-          if (isDoor(intersectedObstacle) || (isMovableEntity(intersectedObstacle) && intersectedObstacle.isMoving)) {
+          if (isMovableEntity(intersectedObstacle) && intersectedObstacle.isMoving) {
             continue;
           }
 
@@ -133,7 +130,7 @@ export class Ray {
 
           intersectionPoint[intersectionOrigin] = Math.round(intersectionPoint[intersectionOrigin]);
 
-          const fixedDistance = this.fixFishEye(distance * TILE_SIZE);
+          const fixedDistance = getDistanceWithoutFishEyeEffect(distance * TILE_SIZE, cameraAngle, this._angle);
 
           if (fixedDistance > TILE_SIZE / 5 || !isSprite(intersectedObstacle)) {
             intersections.push({
@@ -143,7 +140,7 @@ export class Ray {
             });
           }
 
-          if (isSprite(intersectedObstacle)) {
+          if (isSprite(intersectedObstacle) || isDoor(intersectedObstacle)) {
             continue;
           }
 
@@ -156,20 +153,21 @@ export class Ray {
   }
 
   // non-optimized casting algorithm, used for obstacles that DON'T use map grid
-  cast(obstacles: Obstacle[]): Intersection<Obstacle>[] {
+  cast(obstacles: Obstacle[], cameraAngle: number): Intersection<Obstacle>[] {
     let intersections: Intersection<Obstacle>[] = [];
 
     for (let obstacle of obstacles) {
-      const intersectionVertex = getIntersectionVertexWithPlane(this._cameraPosition, obstacle.position);
+      const intersectionVertex = getIntersectionVertexWithPlane(this._position, obstacle.position);
 
       if (intersectionVertex) {
-        const distance = this.fixFishEye(this.getDistance(intersectionVertex));
+        const distance = getDistanceBetweenVertexes({x: this._position.x1, y: this._position.y1}, intersectionVertex);
+        const fixedDistance = getDistanceWithoutFishEyeEffect(distance, cameraAngle, this._angle);
 
         // if sprite too close to player, dont count it as intersection
-        if (distance > TILE_SIZE / 5 || !isSprite(obstacle)) {
+        if (fixedDistance > TILE_SIZE / 5 || !isSprite(obstacle)) {
           intersections.push({
             intersectionVertex,
-            distance,
+            distance: fixedDistance,
             obstacle,
           });
         }
