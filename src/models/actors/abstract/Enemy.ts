@@ -181,19 +181,19 @@ export abstract class Enemy extends Actor {
       if (angleBetweenEnemyAndWolf <= HALF_SIDE || angleBetweenEnemyAndWolf > HALF_SIDE + SIDE * 7) {
         newSide = 'FRONT';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE) {
-        newSide = 'FRONT_RIGHT';
+        newSide = 'FRONT_LEFT';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE * 2) {
-        newSide = 'RIGHT';
+        newSide = 'LEFT';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE * 3) {
-        newSide = 'BACK_LEFT';
+        newSide = 'BACK_RIGHT';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE * 4) {
         newSide = 'BACK';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE * 5) {
-        newSide = 'BACK_RIGHT';
+        newSide = 'BACK_LEFT';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE * 6) {
-        newSide = 'LEFT';
+        newSide = 'RIGHT';
       } else if (angleBetweenEnemyAndWolf < HALF_SIDE + SIDE * 7) {
-        newSide = 'FRONT_LEFT';
+        newSide = 'FRONT_RIGHT';
       }
 
       if (newSide !== this._currentSide) {

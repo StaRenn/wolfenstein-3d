@@ -7,14 +7,14 @@ import type { ItemPurpose, Weapons } from 'src/types';
 
 // core, do not change
 export const TILE_SIZE = 10;
-export const RAY_LENGTH = TILE_SIZE * 64;
+export const RAY_LENGTH = TILE_SIZE * 48;
 export const DOOR_IDS = [27, 28, 33, 34, 35, 36];
 export const AMMO_ID = 34
 export const DOOR_SIDE_WALL_TEXTURE_ID = 30;
 export const DOOR_SIDE_WALL_TEXTURE_DARK_ID = 29;
 export const TEXTURE_SIZE = 64;
 export const DEFAULT_FRAME_DURATION = 1000 / 60;
-export const RESOLUTIONS_SCALE_VALUES = [0.1, 0.25, 0.5, 1] as const;
+export const RESOLUTIONS_SCALE_VALUES = [0.5, 1] as const;
 
 // secondary
 export const DOOR_TIMEOUT = 4000;
@@ -31,7 +31,7 @@ export const ENEMY_VIEW_DISTANCE = TILE_SIZE * 16;
 export const DEFAULT_FOV_DEGREES = 90;
 export const DEFAULT_FOV = toRadians(DEFAULT_FOV_DEGREES);
 // DO NOT SET MORE THAN 1
-export const DEFAULT_RESOLUTION_SCALE = 0.5 as typeof RESOLUTIONS_SCALE_VALUES[number];
+export const DEFAULT_RESOLUTION_SCALE: typeof RESOLUTIONS_SCALE_VALUES[number] = 0.5;
 
 // globals
 window.TIME_SCALE = 1;

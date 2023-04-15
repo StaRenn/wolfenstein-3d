@@ -6,7 +6,7 @@ import { getIntersectionVertexWithPlane, getVertexByPositionAndAngle, toRadians 
 import { Ray } from './Ray';
 import { canvas } from 'src/main';
 
-import type { IndexedIntersection, Obstacle, ParsedMap, Vector, Vertex } from 'src/types';
+import type { IndexedIntersection, Intersection, Obstacle, ParsedMap, Vector, Vertex } from 'src/types';
 import { isItem, isSprite, isWall } from 'src/types/typeGuards';
 
 type CameraParams = {
@@ -82,25 +82,51 @@ export class Camera {
     const intersections: IndexedIntersection<Obstacle>[] = [];
 
     for (let i = 0; i < this._rays.length; i++) {
-      const nonGridCastResult = this._rays[i].cast(nonGridPlanes, this._angle);
+      let currentIntersections: IndexedIntersection<Obstacle>[] = []
+
+      let nonGridCastResult = this._rays[i].cast(nonGridPlanes, this._angle);
+      const gridCastResult = this._rays[i].castDDA(parsedMap, this._angle);
+
+      const closestNonHollowGridCast = gridCastResult.reduce<Intersection<Obstacle> | null>((acc, intersection) => {
+        if(!acc && isWall(intersection.obstacle)) {
+          acc = intersection
+        } else if(acc && isWall(intersection.obstacle) && intersection.distance < acc.distance) {
+          acc = intersection
+        }
+
+        return acc
+      }, null);
+
+      if (closestNonHollowGridCast) {
+        nonGridCastResult = nonGridCastResult.filter((castResult) => castResult.distance < closestNonHollowGridCast.distance);
+      }
 
       // calculate non grid intersections
       nonGridCastResult.forEach(({ obstacle, intersectionVertex, distance }) => {
-        const relativeChunkMultiplier = getRelativeChunkMultiplier(distance);
+        const relativeChunkMultiplier = isSprite(obstacle) ? 4 : getRelativeChunkMultiplier(distance);
+        const preparedDistance = Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier;
 
-        intersections.push({
+        const intersectionsAmountWithSameDistance = currentIntersections.reduce((acc,intersection) => {
+          if(intersection.distance === preparedDistance) {
+            acc += 1;
+          }
+
+          return acc
+        }, 0)
+
+        currentIntersections.push({
           intersectionVertex,
           obstacle,
           distance: Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier,
           index: i,
+          layer: intersectionsAmountWithSameDistance
         });
       });
 
-      // calculate grid intersections
-      this._rays[i].castDDA(parsedMap, this._angle).forEach(({ obstacle, intersectionVertex, distance }) => {
+      gridCastResult.forEach(({ obstacle, intersectionVertex, distance }) => {
         const obstaclePos = obstacle.position;
 
-        const relativeChunkMultiplier = getRelativeChunkMultiplier(distance);
+        const relativeChunkMultiplier = isSprite(obstacle) ? 4 : getRelativeChunkMultiplier(distance);
 
         let preparedIntersection = intersectionVertex;
         let preparedDistance = Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier;
@@ -140,14 +166,25 @@ export class Camera {
         }
 
         if (intersectedObstacle) {
-          intersections.push({
+          const intersectionsAmountWithSameDistance = currentIntersections.reduce((acc,intersection) => {
+            if(intersection.distance === preparedDistance) {
+              acc += 1;
+            }
+
+            return acc
+          }, 0)
+
+          currentIntersections.push({
             obstacle: intersectedObstacle,
             distance: preparedDistance,
             index: i,
             intersectionVertex: preparedIntersection,
+            layer: intersectionsAmountWithSameDistance
           });
         }
       });
+
+      intersections.push(...currentIntersections)
     }
 
     return intersections;

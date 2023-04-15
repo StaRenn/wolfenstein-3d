@@ -70,9 +70,10 @@ export type Intersection<T extends DoorObstacle | ItemObstacle | WallObstacle | 
 
 export type IndexedIntersection<
   T extends DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle
-> = Intersection<T> & { index: number };
+> = Intersection<T> & { index: number, layer: number };
 
 export type Chunk = {
+  startTextureOffsetX: number,
   startIndex: number;
   width: number;
   isInitial: boolean;

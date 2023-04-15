@@ -21,11 +21,7 @@ import {
 import { parseMap } from 'src/utils/parseMap';
 
 import { getTextureOffset } from 'src/helpers/getTextureOffset';
-import {
-  getIsVertexInTheTriangle,
-  getRangeOfView,
-  hasEqualPosition,
-} from 'src/helpers/maths';
+import { getIsVertexInTheTriangle, getRangeOfView, hasEqualPosition } from 'src/helpers/maths';
 
 import type { Chunk, Obstacle, RawMap, ScreenData } from 'src/types';
 import { isDoor, isEnemy, isItem, isSprite, isWall } from 'src/types/typeGuards';
@@ -125,7 +121,7 @@ export class Scene {
   getNonGridObstacles(): Obstacle[] {
     const position = this._wolf.position;
     const angle = this._wolf.angle;
-    const fov = this._wolf.camera.fov
+    const fov = this._wolf.camera.fov;
 
     const rangeOfView = getRangeOfView(angle, fov, position);
 
@@ -229,9 +225,9 @@ export class Scene {
   handleWolfShoot() {
     const attackRange = getRangeOfView(this._wolf.angle, WOLF_ATTACK_FOV, this._wolf.position);
 
-    const enemiesInAttackRange = this._enemies.filter(enemy => {
-      if(enemy.currentState === 'DIE') {
-        return false
+    const enemiesInAttackRange = this._enemies.filter((enemy) => {
+      if (enemy.currentState === 'DIE') {
+        return false;
       }
 
       if (!getIsVertexInTheTriangle(enemy.position, attackRange)) {
@@ -240,25 +236,25 @@ export class Scene {
 
       const castResult = enemy.castToPosition(this._wolf.position, this._parsedMap);
 
-      if(castResult.distance > WEAPONS[this._wolf.currentWeapon].maxDistance) {
-        return false
+      if (castResult.distance > WEAPONS[this._wolf.currentWeapon].maxDistance) {
+        return false;
       }
 
-      return enemy.castToPosition(this._wolf.position, this._parsedMap).isVisible
-    })
+      return enemy.castToPosition(this._wolf.position, this._parsedMap).isVisible;
+    });
 
     const closestEnemy = enemiesInAttackRange.sort((enemy, nextEnemy) => {
-      const castResult = enemy.castToPosition(this._wolf.position, this._parsedMap)
-      const nextCastResult = nextEnemy.castToPosition(this._wolf.position, this._parsedMap)
+      const castResult = enemy.castToPosition(this._wolf.position, this._parsedMap);
+      const nextCastResult = nextEnemy.castToPosition(this._wolf.position, this._parsedMap);
 
       return castResult.distance - nextCastResult.distance;
-    })[0]
+    })[0];
 
-    if(closestEnemy) {
-      const weapon = WEAPONS[this._wolf.currentWeapon]
-      const damage = weapon.damage
+    if (closestEnemy) {
+      const weapon = WEAPONS[this._wolf.currentWeapon];
+      const damage = weapon.damage;
 
-      closestEnemy.takeDamage(this._wolf.position, damage, this._parsedMap)
+      closestEnemy.takeDamage(this._wolf.position, damage, this._parsedMap);
     }
   }
 
@@ -336,9 +332,16 @@ export class Scene {
 
     const intersections = this._wolf.camera.getIntersections(this._parsedMap, this.getNonGridObstacles());
     // sort intersections by closest
-    const sortedAndMergedIntersections = [...intersections].sort((a, b) => b.distance - a.distance);
+    const sortedAndMergedIntersections = [...intersections].sort((a, b) => {
+      if(b.distance === a.distance) {
+        return b.distance * (b.layer * 100000) - a.distance * (a.layer * 100000)
+      }
+
+      return b.distance - a.distance
+    });
 
     const chunk: Chunk = {
+      startTextureOffsetX: 0,
       startIndex: 0,
       width: 0,
       isInitial: true,
@@ -349,26 +352,33 @@ export class Scene {
       const intersection = sortedAndMergedIntersections[i];
       const obstacle = intersection.obstacle;
       const index = intersection.index;
-
-      if (chunk.isInitial) {
-        chunk.rays.push(intersection);
-        chunk.width = 1;
-        chunk.startIndex = intersection.index;
-        chunk.isInitial = false;
-      }
+      const isSpriteObstacle = isSprite(obstacle);
 
       const nextIntersection = sortedAndMergedIntersections[i + 1];
 
       const textureOffsetX = getTextureOffset(intersection);
       const nextTextureOffset = nextIntersection && getTextureOffset(nextIntersection);
 
+      if (chunk.isInitial) {
+        chunk.rays.push(intersection);
+        chunk.width = 1;
+        chunk.startIndex = intersection.index;
+        chunk.startTextureOffsetX = textureOffsetX;
+        chunk.isInitial = false;
+      }
+
+      const sameLayer = nextIntersection?.layer === intersection.layer
+      const sameObstacle = nextIntersection?.obstacle === intersection.obstacle;
       const sameOrNextIndex = nextIntersection?.index === index || nextIntersection?.index === index + 1;
-      const sameDistance = nextIntersection?.distance === intersection.distance;
+      const sameDistance = isSpriteObstacle || nextIntersection?.distance === intersection.distance;
       const sameTextureId = nextIntersection?.obstacle.texture === obstacle.texture;
-      const sameTextureOffset = nextTextureOffset === textureOffsetX;
+      const sameTextureOffset = isSpriteObstacle || nextTextureOffset === textureOffsetX;
 
       // if true: add image to chunk and continue, if false: draw chunked images in 1 iteration
-      if (sameOrNextIndex && sameDistance && sameTextureId && sameTextureOffset) {
+      if (
+        (isSpriteObstacle && sameObstacle && sameLayer) ||
+        (!isSpriteObstacle && sameOrNextIndex && sameDistance && sameTextureId && sameTextureOffset)
+      ) {
         chunk.rays.push(nextIntersection);
         chunk.width += 1;
       } else {
@@ -381,8 +391,9 @@ export class Scene {
         const texture =
           isHorizontalIntersection && (isWall(obstacle) || isDoor(obstacle)) ? obstacle.textureDark : obstacle.texture;
 
+        const totalTextureOffsetX = isSpriteObstacle ? TEXTURE_SIZE - chunk.startTextureOffsetX - 1 : textureOffsetX;
         const textureOffsetY = 0;
-        const textureWidth = 1;
+        const textureWidth = isSpriteObstacle ? Math.abs(chunk.startTextureOffsetX - textureOffsetX) : 1;
         const textureSize = TEXTURE_SIZE;
         const textureXPositionOnScreen = chunk.startIndex / this._wolf.camera.resolutionScale;
         const textureYPositionOnScreen = this._screenData.height / 2 - textureHeight / 2;
@@ -395,7 +406,7 @@ export class Scene {
 
         this._ctx.drawImage(
           texture,
-          textureOffsetX,
+          totalTextureOffsetX,
           textureOffsetY,
           textureWidth,
           textureSize,
