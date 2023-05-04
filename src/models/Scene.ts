@@ -21,7 +21,7 @@ import {
 import { parseMap } from 'src/utils/parseMap';
 
 import { getTextureOffset } from 'src/helpers/getTextureOffset';
-import { getIsVertexInTheTriangle, getRangeOfView, hasEqualPosition } from 'src/helpers/maths';
+import { clamp, getIsVertexInTheTriangle, getRangeOfView, hasEqualPosition } from 'src/helpers/maths';
 
 import type { Chunk, Obstacle, RawMap, ScreenData } from 'src/types';
 import { isDoor, isEnemy, isItem, isSprite, isWall } from 'src/types/typeGuards';
@@ -33,7 +33,6 @@ export class Scene {
   private readonly _hud: Hud;
   private readonly _minimap: Minimap;
   private readonly _wolf: Wolf;
-
   private _parsedMap: (Obstacle | null)[][];
   private _obstacles: Obstacle[];
   private _doors: DoorObstacle[];
@@ -119,9 +118,8 @@ export class Scene {
   }
 
   getNonGridObstacles(): Obstacle[] {
-    const position = this._wolf.position;
-    const angle = this._wolf.angle;
-    const fov = this._wolf.camera.fov;
+    const { position, angle } = this._wolf;
+    const { fov } = this._wolf.camera;
 
     const rangeOfView = getRangeOfView(angle, fov, position);
 
@@ -230,7 +228,10 @@ export class Scene {
         return false;
       }
 
-      if (!getIsVertexInTheTriangle(enemy.position, attackRange)) {
+      const enemyPositionVector = enemy.getPreparedSprite().position;
+      const isLookingAt = !!this._wolf.camera.getViewAngleIntersection(enemyPositionVector);
+
+      if (!getIsVertexInTheTriangle(enemy.position, attackRange) && !isLookingAt) {
         return false;
       }
 
@@ -252,7 +253,10 @@ export class Scene {
 
     if (closestEnemy) {
       const weapon = WEAPONS[this._wolf.currentWeapon];
-      const damage = weapon.damage;
+
+      const { distance } = closestEnemy.castToPosition(this._wolf.position, this._parsedMap);
+      const damageMultiplier = (weapon.maxDistance - distance) / weapon.maxDistance;
+      const damage = clamp(weapon.maxDamage * damageMultiplier, weapon.minDamage, weapon.maxDamage);
 
       closestEnemy.takeDamage(this._wolf.position, damage, this._parsedMap);
     }
@@ -260,8 +264,8 @@ export class Scene {
 
   handleKeyPress(event: KeyboardEvent) {
     if (event.keyCode === 32 /* space */) {
-      let obstacleInViewIndex = null;
-      let obstacleInView = null;
+      let obstacleInViewIndex: number | null = null;
+      let obstacleInView: Obstacle | null = null;
 
       for (let i = 0; i < this._obstacles.length; i++) {
         const obstacle = this._obstacles[i];
@@ -333,11 +337,11 @@ export class Scene {
     const intersections = this._wolf.camera.getIntersections(this._parsedMap, this.getNonGridObstacles());
     // sort intersections by closest
     const sortedAndMergedIntersections = [...intersections].sort((a, b) => {
-      if(b.distance === a.distance) {
-        return b.distance * (b.layer * 100000) - a.distance * (a.layer * 100000)
+      if (b.distance === a.distance) {
+        return b.distance * (b.layer * 100000) - a.distance * (a.layer * 100000);
       }
 
-      return b.distance - a.distance
+      return b.distance - a.distance;
     });
 
     const chunk: Chunk = {
@@ -350,8 +354,8 @@ export class Scene {
 
     for (let i = 0; i < sortedAndMergedIntersections.length; i++) {
       const intersection = sortedAndMergedIntersections[i];
-      const obstacle = intersection.obstacle;
-      const index = intersection.index;
+      const { obstacle } = intersection;
+      const { index } = intersection;
       const isSpriteObstacle = isSprite(obstacle);
 
       const nextIntersection = sortedAndMergedIntersections[i + 1];
@@ -367,7 +371,7 @@ export class Scene {
         chunk.isInitial = false;
       }
 
-      const sameLayer = nextIntersection?.layer === intersection.layer
+      const sameLayer = nextIntersection?.layer === intersection.layer;
       const sameObstacle = nextIntersection?.obstacle === intersection.obstacle;
       const sameOrNextIndex = nextIntersection?.index === index || nextIntersection?.index === index + 1;
       const sameDistance = isSpriteObstacle || nextIntersection?.distance === intersection.distance;

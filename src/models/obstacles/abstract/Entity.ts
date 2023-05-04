@@ -40,16 +40,16 @@ export abstract class Entity {
     };
   }
 
+  get position() {
+    return this._position;
+  }
+
   set texture(newTexture: HTMLImageElement) {
     this._texture = newTexture;
   }
 
   get texture() {
     return this._texture;
-  }
-
-  get position() {
-    return this._position;
   }
 
   get matrixCoordinates() {

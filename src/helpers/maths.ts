@@ -10,6 +10,10 @@ export function toDegrees(angleRad: number) {
   return (180 / Math.PI) * angleRad;
 }
 
+export function clamp(number: number, min: number, max: number) {
+  return Math.max(min, Math.min(number, max));
+}
+
 export function hasEqualPosition(firstPosition: Vector, secondPosition: Vector) {
   return (
     firstPosition.x1 === secondPosition.x1 &&
@@ -38,7 +42,7 @@ export function getVertexByPositionAndAngle(vertex: Vertex, angle: number): Vert
 }
 
 export function getDistanceBetweenVertexes(startVertex: Vertex, endVertex: Vertex) {
-  return Math.sqrt((endVertex.x - startVertex.x) ** 2 + (endVertex.y - startVertex.y) ** 2)
+  return Math.sqrt((endVertex.x - startVertex.x) ** 2 + (endVertex.y - startVertex.y) ** 2);
 }
 
 export function getRangeOfView(angle: number, fov: number, position: Vertex): Triangle {
@@ -66,7 +70,7 @@ export function getIsVertexInTheTriangle({ x, y }: Vertex, { x1, y1, x2, y2, x3,
   const pacArea = getAreaSize(x1, y1, x, y, x3, y3);
   const pabArea = getAreaSize(x1, y1, x2, y2, x, y);
 
-  return Math.round(abcArea) == Math.round(pbcArea + pacArea + pabArea);
+  return Math.round(abcArea) === Math.round(pbcArea + pacArea + pabArea);
 }
 
 export function vectorSize({ x, y }: Vertex) {
@@ -80,7 +84,7 @@ export function unitVector({ x, y }: Vertex) {
 }
 
 export function getDistanceWithoutFishEyeEffect(distance: number, mainAngle: number, secondaryAngle: number) {
-  return distance * Math.cos(mainAngle - secondaryAngle)
+  return distance * Math.cos(mainAngle - secondaryAngle);
 }
 
 export function getIntersectionVertexWithPlane(firstVector: Vector, secondVector: Vector) {
@@ -89,27 +93,27 @@ export function getIntersectionVertexWithPlane(firstVector: Vector, secondVector
 
   // Check if none of the lines are of length 0
   if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
-    return;
+    return null;
   }
 
   const denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
 
   // Lines are parallel
   if (denominator === 0) {
-    return;
+    return null;
   }
 
-  let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-  let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+  const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+  const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
 
   // is the intersection along the segments
   if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
-    return;
+    return null;
   }
 
   // Return a object with the x and y coordinates of the intersection
-  let x = x1 + ua * (x2 - x1);
-  let y = y1 + ua * (y2 - y1);
+  const x = x1 + ua * (x2 - x1);
+  const y = y1 + ua * (y2 - y1);
 
   return { x, y };
 }

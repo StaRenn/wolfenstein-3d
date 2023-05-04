@@ -12,13 +12,13 @@ import { MovableEntity, MovableEntityParams } from './abstract/MovableEntity';
 
 export type WallParams = MovableEntityParams & {
   textureDark: WallObstacle['textureDark'];
-  neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>
+  neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>;
 };
 
 export class WallObstacle extends MovableEntity {
   private _textureDark: HTMLImageElement;
-  private _neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>
-  private _wallSides: Record<keyof typeof OBSTACLE_SIDES, WallObstacle>
+  private _neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>;
+  private _wallSides: Record<keyof typeof OBSTACLE_SIDES, WallObstacle>;
 
   public readonly isWall: true;
   public readonly intersectionType: keyof typeof INTERSECTION_TYPES;
@@ -40,7 +40,7 @@ export class WallObstacle extends MovableEntity {
       RIGHT: this.getWallBySide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
       BOTTOM: this.getWallBySide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
       LEFT: this.getWallBySide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
-    }
+    };
   }
 
   get wallSides() {
@@ -55,7 +55,7 @@ export class WallObstacle extends MovableEntity {
     return this._textureDark;
   }
 
-  override iterateMovement() {
+  iterateMovement() {
     const result = super.iterateMovement();
 
     this._wallSides = {
@@ -63,9 +63,9 @@ export class WallObstacle extends MovableEntity {
       RIGHT: this.getWallBySide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
       BOTTOM: this.getWallBySide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
       LEFT: this.getWallBySide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
-    }
+    };
 
-    return result
+    return result;
   }
 
   // get side of the wall

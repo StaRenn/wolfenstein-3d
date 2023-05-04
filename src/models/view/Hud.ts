@@ -82,24 +82,36 @@ export class Hud {
     });
   }
 
-  private getHealthFrameSet(health: number): HealthFrameSets[keyof HealthFrameSets] {
+  static getHealthFrameSet(health: number): HealthFrameSets[keyof HealthFrameSets] {
     if (health > 85) {
       return ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
-    } else if (health > 75) {
-      return ACTOR_PORTRAIT_FRAME_SETS.JUST_A_SCRATCH;
-    } else if (health > 50) {
-      return ACTOR_PORTRAIT_FRAME_SETS.MINOR_DAMAGE;
-    } else if (health > 35) {
-      return ACTOR_PORTRAIT_FRAME_SETS.MODERATE_DAMAGE;
-    } else if (health > 20) {
-      return ACTOR_PORTRAIT_FRAME_SETS.SEVERE_DAMAGE;
-    } else if (health > 5) {
-      return ACTOR_PORTRAIT_FRAME_SETS.SUFFERING;
-    } else if (health > 0) {
-      return ACTOR_PORTRAIT_FRAME_SETS.NEAR_DEATH;
-    } else {
-      return ACTOR_PORTRAIT_FRAME_SETS.DEAD;
     }
+
+    if (health > 75) {
+      return ACTOR_PORTRAIT_FRAME_SETS.JUST_A_SCRATCH;
+    }
+
+    if (health > 50) {
+      return ACTOR_PORTRAIT_FRAME_SETS.MINOR_DAMAGE;
+    }
+
+    if (health > 35) {
+      return ACTOR_PORTRAIT_FRAME_SETS.MODERATE_DAMAGE;
+    }
+
+    if (health > 20) {
+      return ACTOR_PORTRAIT_FRAME_SETS.SEVERE_DAMAGE;
+    }
+
+    if (health > 5) {
+      return ACTOR_PORTRAIT_FRAME_SETS.SUFFERING;
+    }
+
+    if (health > 0) {
+      return ACTOR_PORTRAIT_FRAME_SETS.NEAR_DEATH;
+    }
+
+    return ACTOR_PORTRAIT_FRAME_SETS.DEAD;
   }
 
   private renderPostEffect(data: PostEffectFrame['data']) {
@@ -196,7 +208,7 @@ export class Hud {
     currentWeapon: WolfParams['currentWeapon'];
     level: WolfParams['level'];
   }) {
-    const updatedHealthFrameSet = this.getHealthFrameSet(health);
+    const updatedHealthFrameSet = Hud.getHealthFrameSet(health);
 
     if (updatedHealthFrameSet !== this._currentFrameSet) {
       this._currentFrameSet = updatedHealthFrameSet;

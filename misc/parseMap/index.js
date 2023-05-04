@@ -4,6 +4,7 @@
 
 const fs = require('fs/promises');
 const path = require('path');
+// eslint-disable-next-line import/no-extraneous-dependencies
 const sharp = require('sharp');
 
 const TEXTURES_PATH = '../../src/assets/textures';
@@ -30,7 +31,7 @@ async function prepareTexturesMap(texturesPath) {
 
   const texturesImages = await fs.readdir(texturesPath);
 
-  for (let file of texturesImages) {
+  for (const file of texturesImages) {
     const buffer = await sharp(path.join(texturesPath, file))
       .extract({
         width: CELL_WIDTH,
@@ -59,8 +60,6 @@ function resolveSecrets(array, root) {
     const isHollow = typeof node === 'string' && (node.includes('HOLLOW') || node.includes('ENEMY'));
 
     if (BFS_ALLOWED_VALUES.includes(node) || isSecretWallStart || isHollow) {
-      const node = graph[coordinates[0]][coordinates[1]];
-
       if (typeof node === 'string' && node.includes('START')) {
         array[endCoordinates[0]][endCoordinates[1]] = node.replace('START', 'END');
       }
@@ -137,8 +136,8 @@ async function main() {
         const itemId = itemSpritesMap[segmentBase64];
 
         if (enemyId) {
-          map[rows - (row + 1)][column] = `ENEMY_${enemyId.toUpperCase()}`
-        }else if (textureId) {
+          map[rows - (row + 1)][column] = `ENEMY_${enemyId.toUpperCase()}`;
+        } else if (textureId) {
           const preparedTextureId = textureId % 2 === 1 ? textureId : textureId - 1;
 
           map[rows - (row + 1)][column] = Number(preparedTextureId);
@@ -146,7 +145,7 @@ async function main() {
           const preparedTextureId = secretId % 2 === 1 ? secretId : secretId - 1;
 
           map[rows - (row + 1)][column] = `${preparedTextureId}_ID${row}${column}_START`;
-        }else if (playerStartPositionId) {
+        } else if (playerStartPositionId) {
           playerStartPosition = [rows - (row + 1), column];
 
           map[rows - (row + 1)][column] = 'START_POS';

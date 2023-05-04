@@ -4,21 +4,39 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development npx webpack serve",
     "build": "cross-env NODE_ENV=production npx webpack",
-    "parseMap": "node misc/parseMap/index.js"
+    "parseMap": "node misc/parseMap/index.js",
+    "prepare": "husky install",
+    "lint-staged": "lint-staged"
   },
   "homepage": "https://github.com/StaRenn/wolfenstein-3d#readme",
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.0.0",
     "circular-dependency-plugin": "^5.2.2",
     "copy-webpack-plugin": "^11.0.0",
     "cross-env": "^7.0.3",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
     "html-webpack-plugin": "^5.5.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
     "prettier": "2.2.0",
     "sharp": "^0.30.7",
     "ts-loader": "^9.4.2",
+    "type-coverage": "^2.25.1",
     "typescript": "^4.7.4",
     "webpack": "^5.76.3",
     "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^4.13.1"
+  },
+  "lint-staged": {
+    "*.{js,ts}": "prettier --write",
+    "*.ts": "type-coverage"
+  },
+  "typeCoverage": {
+    "atLeast": 100
   }
 }

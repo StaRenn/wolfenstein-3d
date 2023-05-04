@@ -35,14 +35,15 @@ export type WeaponType = 'KNIFE' | 'PISTOL' | 'MACHINE_GUN';
 export type Weapon = {
   frameSet: Frame<HTMLImageElement>[];
   maxDistance: number;
-  damage: number;
+  minDamage: number;
+  maxDamage: number;
   frameDuration: number;
   ammoPerAttack: number;
   shootFrameIdx: number;
   icon: HTMLImageElement;
 };
 
-export type Weapons = { readonly [key in WeaponType]: Weapon };
+export type Weapons = Record<WeaponType, Weapon>;
 
 export type ScreenData = {
   height: number;
@@ -70,10 +71,10 @@ export type Intersection<T extends DoorObstacle | ItemObstacle | WallObstacle | 
 
 export type IndexedIntersection<
   T extends DoorObstacle | ItemObstacle | WallObstacle | SpriteObstacle
-> = Intersection<T> & { index: number, layer: number };
+> = Intersection<T> & { index: number; layer: number };
 
 export type Chunk = {
-  startTextureOffsetX: number,
+  startTextureOffsetX: number;
   startIndex: number;
   width: number;
   isInitial: boolean;

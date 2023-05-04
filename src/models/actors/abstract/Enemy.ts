@@ -1,3 +1,4 @@
+import { ItemObstacle } from 'src/models/obstacles/Item';
 import { SpriteObstacle } from 'src/models/obstacles/Sprite';
 
 import { Ray } from 'src/models/actors/Wolf/internal/Ray';
@@ -6,6 +7,8 @@ import { Actor, ActorParams } from 'src/models/actors/abstract/Actor';
 import { AnimationController } from 'src/models/utility/AnimationController';
 
 import { AMMO_ID, ENEMY_FOV, ENEMY_VIEW_DISTANCE, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/config';
+
+import { getImageWithSource } from 'src/utils/getImageWithSource';
 
 import {
   getAngleBetweenVertexes,
@@ -17,8 +20,6 @@ import {
 
 import type { EnemyDirections, EntityFrameSetByAction, Frame, ParsedMap, Triangle, Vertex } from 'src/types';
 import { isDirectedFrameSetByAction, isDoor, isNonDirectedFrameSetByAction, isWall } from 'src/types/typeGuards';
-import { ItemObstacle } from 'src/models/obstacles/Item';
-import { getImageWithSource } from 'src/utils/getImageWithSource';
 
 export type EnemyParams = {
   initialAction: Enemy['_currentState'];
@@ -199,7 +200,7 @@ export abstract class Enemy extends Actor {
       if (newSide !== this._currentSide) {
         this._currentSide = newSide;
 
-        const currentFrameIdx = this._animationController.currentFrameIdx;
+        const { currentFrameIdx } = this._animationController;
 
         this._animationController.updateFrameSet(this._frameSet[this._currentState][this._currentSide]);
         this._animationController.setActiveFrameIdx(currentFrameIdx);

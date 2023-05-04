@@ -5,7 +5,7 @@ import { fillPortraitFrameSet } from 'src/helpers/frameSets';
 import type { HealthFrameSets } from 'src/types';
 
 export const HUD_PANEL = {
-  TEXTURE: getImageWithSource(`src/assets/hud/panel.png`),
+  TEXTURE: getImageWithSource('src/assets/hud/panel.png'),
   WIDTH: 400,
   HEIGHT: 40,
   INFO_Y_OFFSET: 16,

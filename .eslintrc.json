@@ -1,0 +1,33 @@
+{
+  "extends": [
+    "airbnb-base",
+    "airbnb-typescript/base"
+  ],
+  "parserOptions": {
+    "project": ["./tsconfig.json"]
+  },
+  "rules": {
+    "no-underscore-dangle": "off",
+    "object-curly-newline": "off",
+    "sort-imports": "off",
+    "import/order": "off",
+    "@typescript-eslint/lines-between-class-members": "off",
+    "import/prefer-default-export": "off",
+    "no-param-reassign": "off",
+    "max-len": "off",
+    "no-plusplus": "off",
+    "no-continue": "off",
+    "@typescript-eslint/indent": "off",
+    "@typescript-eslint/comma-dangle": "off",
+    "operator-linebreak": "off",
+    "linebreak-style": "off",
+    "arrow-body-style": "off",
+    "no-restricted-syntax": "off",
+    "@typescript-eslint/object-curly-spacing": "off",
+    "operator-assignment": "off",
+    "implicit-arrow-linebreak": "off",
+    "no-await-in-loop": "off",
+    "wrap-iife": "off"
+  },
+  "ignorePatterns": ["src/constants/map.ts", "public/**/*.*"]
+}

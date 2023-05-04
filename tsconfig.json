@@ -8,7 +8,6 @@
       "src/*": ["./*"]
     },
     "noImplicitAny": true,
-    "noImplicitOverride": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,

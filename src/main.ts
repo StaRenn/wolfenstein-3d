@@ -34,9 +34,10 @@ async function main() {
   });
 
   const fpsOut = document.getElementById('fps')!;
+  const filterStrength = 20;
+
   let prevFrameDuration = 0;
   let frameDuration = 0;
-  let filterStrength = 20;
   let frameTime = 0;
 
   function handleResize() {
@@ -97,8 +98,8 @@ async function main() {
     requestAnimationFrame(frame);
   })(0);
 
-  setInterval(function () {
-    fpsOut.innerHTML = (1000 / frameTime).toFixed(1) + ' fps';
+  setInterval(() => {
+    fpsOut.innerHTML = `${(1000 / frameTime).toFixed(1)} fps`;
   }, 200);
 
   continueButton.onclick = resume;

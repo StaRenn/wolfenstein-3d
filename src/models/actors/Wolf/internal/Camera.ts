@@ -39,12 +39,12 @@ export class Camera {
     this._resolutionScale = scale;
   }
 
-  set fov(newFov: number) {
-    this._fov = newFov;
-  }
-
   get resolutionScale() {
     return this._resolutionScale;
+  }
+
+  set fov(newFov: number) {
+    this._fov = newFov;
   }
 
   get fov() {
@@ -82,23 +82,25 @@ export class Camera {
     const intersections: IndexedIntersection<Obstacle>[] = [];
 
     for (let i = 0; i < this._rays.length; i++) {
-      let currentIntersections: IndexedIntersection<Obstacle>[] = []
+      const currentIntersections: IndexedIntersection<Obstacle>[] = [];
 
       let nonGridCastResult = this._rays[i].cast(nonGridPlanes, this._angle);
       const gridCastResult = this._rays[i].castDDA(parsedMap, this._angle);
 
       const closestNonHollowGridCast = gridCastResult.reduce<Intersection<Obstacle> | null>((acc, intersection) => {
-        if(!acc && isWall(intersection.obstacle)) {
-          acc = intersection
-        } else if(acc && isWall(intersection.obstacle) && intersection.distance < acc.distance) {
-          acc = intersection
+        if (!acc && isWall(intersection.obstacle)) {
+          acc = intersection;
+        } else if (acc && isWall(intersection.obstacle) && intersection.distance < acc.distance) {
+          acc = intersection;
         }
 
-        return acc
+        return acc;
       }, null);
 
       if (closestNonHollowGridCast) {
-        nonGridCastResult = nonGridCastResult.filter((castResult) => castResult.distance < closestNonHollowGridCast.distance);
+        nonGridCastResult = nonGridCastResult.filter(
+          (castResult) => castResult.distance < closestNonHollowGridCast.distance
+        );
       }
 
       // calculate non grid intersections
@@ -106,20 +108,20 @@ export class Camera {
         const relativeChunkMultiplier = isSprite(obstacle) ? 4 : getRelativeChunkMultiplier(distance);
         const preparedDistance = Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier;
 
-        const intersectionsAmountWithSameDistance = currentIntersections.reduce((acc,intersection) => {
-          if(intersection.distance === preparedDistance) {
+        const intersectionsAmountWithSameDistance = currentIntersections.reduce((acc, intersection) => {
+          if (intersection.distance === preparedDistance) {
             acc += 1;
           }
 
-          return acc
-        }, 0)
+          return acc;
+        }, 0);
 
         currentIntersections.push({
           intersectionVertex,
           obstacle,
           distance: Math.round(distance * relativeChunkMultiplier) / relativeChunkMultiplier,
           index: i,
-          layer: intersectionsAmountWithSameDistance
+          layer: intersectionsAmountWithSameDistance,
         });
       });
 
@@ -166,25 +168,25 @@ export class Camera {
         }
 
         if (intersectedObstacle) {
-          const intersectionsAmountWithSameDistance = currentIntersections.reduce((acc,intersection) => {
-            if(intersection.distance === preparedDistance) {
+          const intersectionsAmountWithSameDistance = currentIntersections.reduce((acc, intersection) => {
+            if (intersection.distance === preparedDistance) {
               acc += 1;
             }
 
-            return acc
-          }, 0)
+            return acc;
+          }, 0);
 
           currentIntersections.push({
             obstacle: intersectedObstacle,
             distance: preparedDistance,
             index: i,
             intersectionVertex: preparedIntersection,
-            layer: intersectionsAmountWithSameDistance
+            layer: intersectionsAmountWithSameDistance,
           });
         }
       });
 
-      intersections.push(...currentIntersections)
+      intersections.push(...currentIntersections);
     }
 
     return intersections;

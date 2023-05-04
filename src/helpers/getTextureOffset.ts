@@ -8,8 +8,8 @@ import { isDoor, isItem, isSprite, isWall } from 'src/types/typeGuards';
 // then we get coefficient: n / planeLength = k
 // floor(k * TEXTURE_SIZE) = texture offset for given intersection
 export function getTextureOffset(intersection: IndexedIntersection<Obstacle>) {
-  const obstacle = intersection.obstacle;
-  const position = obstacle.position;
+  const { obstacle } = intersection;
+  const { position } = obstacle;
   const isVerticalIntersection =
     (isWall(obstacle) || isDoor(obstacle)) && obstacle.intersectionType === INTERSECTION_TYPES.VERTICAL;
 

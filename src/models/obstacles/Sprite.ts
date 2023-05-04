@@ -27,7 +27,7 @@ export class SpriteObstacle extends Entity {
       y: (coordinates.y2 + coordinates.y1) / 2,
     };
 
-    let spriteAngle = -angle;
+    const spriteAngle = -angle;
 
     this.position = {
       x1: middleVertex.x + (TILE_SIZE / 2) * Math.cos(spriteAngle),

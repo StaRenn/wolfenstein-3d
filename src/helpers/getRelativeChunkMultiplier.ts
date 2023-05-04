@@ -4,7 +4,7 @@ import { TILE_SIZE } from 'src/constants/config';
 // that we can render these rays in 1 iteration that saves a lot of resources
 // less = more performance, more artifacts
 export function getRelativeChunkMultiplier(distance: number) {
-  let relativeChunkMultiplier;
+  let relativeChunkMultiplier = 1;
 
   if (distance < TILE_SIZE / 2) {
     relativeChunkMultiplier = 24;

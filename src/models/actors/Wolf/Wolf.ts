@@ -61,7 +61,7 @@ export class Wolf extends Actor {
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
   }
 
-  override get angle() {
+  get angle() {
     return this.camera.angle;
   }
 
@@ -207,7 +207,7 @@ export class Wolf extends Actor {
           ? obstacle.endPositionMatrixCoordinates
           : obstacle.matrixCoordinates;
 
-      let preparedObstaclePosition = {
+      const preparedObstaclePosition = {
         x1: matrixCoordinates.x * TILE_SIZE,
         y1: matrixCoordinates.y * TILE_SIZE,
         x2: matrixCoordinates.x * TILE_SIZE + TILE_SIZE,
@@ -254,8 +254,9 @@ export class Wolf extends Actor {
       }
 
       if (doesCollide && isItem(obstacle)) {
-        const purpose = obstacle.purpose;
+        const { purpose } = obstacle;
 
+        // eslint-disable-next-line default-case
         switch (purpose.affects) {
           case 'ammo': {
             if (this._ammo === 100) {

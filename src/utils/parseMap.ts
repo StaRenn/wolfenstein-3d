@@ -29,7 +29,8 @@ export function parseMap(
   const enemies: Enemy[] = [];
 
   let startPosition: Vertex = { x: 0, y: 0 };
-  let secretObstaclesEndPositions: { [id: string]: Vector } = {};
+
+  const secretObstaclesEndPositions: { [id: string]: Vector } = {};
 
   for (let yAxis = 0; yAxis < map.length; yAxis++) {
     parsedMap.push([]);
@@ -53,7 +54,7 @@ export function parseMap(
 
   for (let yAxis = 0; yAxis < map.length; yAxis++) {
     for (let xAxis = 0; xAxis < map[yAxis].length; xAxis++) {
-      let value = map[yAxis][xAxis];
+      const value = map[yAxis][xAxis];
 
       if (!value) {
         parsedMap[yAxis].push(null);
@@ -93,7 +94,7 @@ export function parseMap(
         const isWall = !isEnemy && !isItem && !isSprite && !isDoor;
         const hasCollision = !obstacleParams.includes('HOLLOW');
 
-        let purpose = null;
+        let purpose: typeof ITEMS_PURPOSES[keyof typeof ITEMS_PURPOSES] | null = null;
 
         if (isItem) {
           purpose = ITEMS_PURPOSES[textureId];
@@ -143,7 +144,7 @@ export function parseMap(
               TOP: !!map[yAxis - 1]?.[xAxis] && DOOR_IDS.includes(map[yAxis - 1][xAxis] as number),
               RIGHT: !!map[yAxis]?.[xAxis + 1] && DOOR_IDS.includes(map[yAxis][xAxis + 1] as number),
               BOTTOM: !!map[yAxis + 1]?.[xAxis] && DOOR_IDS.includes(map[yAxis + 1][xAxis] as number),
-              LEFT: !!map[yAxis]?.[xAxis - 1] && DOOR_IDS.includes(map[yAxis][xAxis - 1] as number)
+              LEFT: !!map[yAxis]?.[xAxis - 1] && DOOR_IDS.includes(map[yAxis][xAxis - 1] as number),
             },
             initialPosition: position,
             position,

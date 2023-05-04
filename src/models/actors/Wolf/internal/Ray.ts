@@ -74,8 +74,8 @@ export class Ray {
     const stepLengthX = Math.abs(1 / directionVector.x);
     const stepLengthY = Math.abs(1 / directionVector.y);
 
-    let rayLengthX;
-    let rayLengthY;
+    let rayLengthX = 0;
+    let rayLengthY = 0;
 
     let stepX = 1;
     let stepY = 1;
@@ -154,13 +154,13 @@ export class Ray {
 
   // non-optimized casting algorithm, used for obstacles that DON'T use map grid
   cast(obstacles: Obstacle[], cameraAngle: number): Intersection<Obstacle>[] {
-    let intersections: Intersection<Obstacle>[] = [];
+    const intersections: Intersection<Obstacle>[] = [];
 
-    for (let obstacle of obstacles) {
+    for (const obstacle of obstacles) {
       const intersectionVertex = getIntersectionVertexWithPlane(this._position, obstacle.position);
 
       if (intersectionVertex) {
-        const distance = getDistanceBetweenVertexes({x: this._position.x1, y: this._position.y1}, intersectionVertex);
+        const distance = getDistanceBetweenVertexes({ x: this._position.x1, y: this._position.y1 }, intersectionVertex);
         const fixedDistance = getDistanceWithoutFishEyeEffect(distance, cameraAngle, this._angle);
 
         // if sprite too close to player, dont count it as intersection

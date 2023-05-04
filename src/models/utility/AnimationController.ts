@@ -92,7 +92,7 @@ export class AnimationController<FrameType extends Frame<unknown>> {
 
       this._currentFrameIdx += 1;
 
-      if(this.currentFrame.duration !== Infinity) {
+      if (this.currentFrame.duration !== Infinity) {
         this._timeout.set(this.currentFrame.duration);
       }
     }

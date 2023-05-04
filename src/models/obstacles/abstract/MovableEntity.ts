@@ -64,10 +64,12 @@ export abstract class MovableEntity extends Entity {
     return this._isInStartPosition;
   }
 
-  getPositionChange(startPosition: number, endPosition: number) {
+  static getPositionChange(startPosition: number, endPosition: number) {
     if (startPosition > endPosition) {
       return -OBSTACLES_MOVE_SPEED;
-    } else if (startPosition < endPosition) {
+    }
+
+    if (startPosition < endPosition) {
       return OBSTACLES_MOVE_SPEED;
     }
 
@@ -76,7 +78,7 @@ export abstract class MovableEntity extends Entity {
 
   iterateMovement() {
     if (!this.isMovable) {
-      return;
+      return true;
     }
 
     this._isMoving = true;
@@ -84,10 +86,10 @@ export abstract class MovableEntity extends Entity {
     const finalPosition = this._isInStartPosition ? this._endPosition : this._initialPosition;
 
     this._position = {
-      x1: this._position.x1 + this.getPositionChange(this._position.x1, finalPosition.x1) * TIME_SCALE,
-      y1: this._position.y1 + this.getPositionChange(this._position.y1, finalPosition.y1) * TIME_SCALE,
-      x2: this._position.x2 + this.getPositionChange(this._position.x2, finalPosition.x2) * TIME_SCALE,
-      y2: this._position.y2 + this.getPositionChange(this._position.y2, finalPosition.y2) * TIME_SCALE,
+      x1: this._position.x1 + MovableEntity.getPositionChange(this._position.x1, finalPosition.x1) * TIME_SCALE,
+      y1: this._position.y1 + MovableEntity.getPositionChange(this._position.y1, finalPosition.y1) * TIME_SCALE,
+      x2: this._position.x2 + MovableEntity.getPositionChange(this._position.x2, finalPosition.x2) * TIME_SCALE,
+      y2: this._position.y2 + MovableEntity.getPositionChange(this._position.y2, finalPosition.y2) * TIME_SCALE,
     };
 
     // if reached end position

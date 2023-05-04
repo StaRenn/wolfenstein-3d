@@ -9,7 +9,7 @@ import type { ItemPurpose, Weapons } from 'src/types';
 export const TILE_SIZE = 10;
 export const RAY_LENGTH = TILE_SIZE * 48;
 export const DOOR_IDS = [27, 28, 33, 34, 35, 36];
-export const AMMO_ID = 34
+export const AMMO_ID = 34;
 export const DOOR_SIDE_WALL_TEXTURE_ID = 30;
 export const DOOR_SIDE_WALL_TEXTURE_DARK_ID = 29;
 export const TEXTURE_SIZE = 64;
@@ -40,7 +40,8 @@ export const WEAPONS: Weapons = {
   KNIFE: {
     frameSet: fillWeaponFrameSet('KNIFE', 50),
     maxDistance: 10,
-    damage: 25,
+    minDamage: 50,
+    maxDamage: 50,
     frameDuration: 50,
     ammoPerAttack: 0,
     shootFrameIdx: 2,
@@ -49,16 +50,18 @@ export const WEAPONS: Weapons = {
   PISTOL: {
     frameSet: fillWeaponFrameSet('PISTOL', 65),
     maxDistance: TILE_SIZE * 20,
-    damage: 50,
+    minDamage: 25,
+    maxDamage: 130,
     frameDuration: 65,
     ammoPerAttack: 1,
     shootFrameIdx: 2,
     icon: getImageWithSource('src/assets/hud/pistol.png'),
   },
   MACHINE_GUN: {
-    frameSet: fillWeaponFrameSet('MACHINE_GUN', 25),
+    frameSet: fillWeaponFrameSet('MACHINE_GUN', 22.5),
     maxDistance: TILE_SIZE * 20,
-    damage: 30,
+    minDamage: 20,
+    maxDamage: 65,
     frameDuration: 22.5,
     ammoPerAttack: 1,
     shootFrameIdx: 2,
@@ -101,7 +104,7 @@ export const ITEMS_PURPOSES: { readonly [key: number]: ItemPurpose } = {
   },
   41: {
     affects: 'weapons',
-    value: 'MACHINE_GUN', //todo minigun
+    value: 'MACHINE_GUN', // todo minigun
   },
 } as const;
 
