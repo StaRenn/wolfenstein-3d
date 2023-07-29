@@ -1,22 +1,21 @@
-import { ItemObstacle } from 'src/models/obstacles/Item';
-import { SpriteObstacle } from 'src/models/obstacles/Sprite';
+import { Actor, ActorParams } from 'src/entities/actors/abstract/Actor';
+import { ItemObstacle } from 'src/entities/obstacles/Item';
+import { SpriteObstacle } from 'src/entities/obstacles/Sprite';
 
-import { Ray } from 'src/models/actors/Wolf/internal/Ray';
-import { Actor, ActorParams } from 'src/models/actors/abstract/Actor';
+import { Ray } from 'src/services/Ray';
 
-import { AnimationController } from 'src/models/utility/AnimationController';
+import { Animation } from 'src/controllers/Animation';
 
 import { AMMO_ID, ENEMY_FOV, ENEMY_VIEW_DISTANCE, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/config';
 
 import { getImageWithSource } from 'src/utils/getImageWithSource';
-
 import {
   getAngleBetweenVertexes,
   getDistanceBetweenVertexes,
   getIsVertexInTheTriangle,
   getRangeOfView,
   toRadians,
-} from 'src/helpers/maths';
+} from 'src/utils/maths';
 
 import type { EnemyDirections, EntityFrameSetByAction, Frame, ParsedMap, Triangle, Vertex } from 'src/types';
 import { isDirectedFrameSetByAction, isDoor, isNonDirectedFrameSetByAction, isWall } from 'src/types/typeGuards';
@@ -34,7 +33,7 @@ export abstract class Enemy extends Actor {
   protected _currentState: keyof EntityFrameSetByAction;
   protected _frameSet: EntityFrameSetByAction;
   protected _sprite: SpriteObstacle;
-  protected _animationController: AnimationController<Frame<HTMLImageElement>>;
+  protected _animationController: Animation<Frame<HTMLImageElement>>;
   protected _currentSide: EnemyDirections[number];
 
   public readonly isEnemy: true;
@@ -52,7 +51,7 @@ export abstract class Enemy extends Actor {
       ? this._frameSet[this._currentState]
       : this._frameSet[this._currentState][this._currentSide];
 
-    this._animationController = new AnimationController({
+    this._animationController = new Animation({
       frameSet,
       isLoopAnimation: true,
     });

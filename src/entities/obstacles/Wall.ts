@@ -8,14 +8,14 @@ import {
 
 import { getImageWithSource } from 'src/utils/getImageWithSource';
 
-import { MovableEntity, MovableEntityParams } from './abstract/MovableEntity';
+import { DynamicObstacle, DynamicObstacleParams } from './abstract/DynamicObstacle';
 
-export type WallParams = MovableEntityParams & {
+export type WallParams = DynamicObstacleParams & {
   textureDark: WallObstacle['textureDark'];
   neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>;
 };
 
-export class WallObstacle extends MovableEntity {
+export class WallObstacle extends DynamicObstacle {
   private _textureDark: HTMLImageElement;
   private _neighborIsDoorMap: Record<keyof typeof OBSTACLE_SIDES, boolean>;
   private _wallSides: Record<keyof typeof OBSTACLE_SIDES, WallObstacle>;
@@ -27,19 +27,17 @@ export class WallObstacle extends MovableEntity {
   constructor(params: WallParams) {
     super(params);
 
+    this.intersectionType = INTERSECTION_TYPES.HORIZONTAL;
+    this.shouldReverseTexture = false;
     this.isWall = true;
 
     this._textureDark = params.textureDark;
-
-    this.intersectionType = INTERSECTION_TYPES.HORIZONTAL;
-    this.shouldReverseTexture = false;
     this._neighborIsDoorMap = params.neighborIsDoorMap;
-
     this._wallSides = {
-      TOP: this.getWallBySide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),
-      RIGHT: this.getWallBySide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
-      BOTTOM: this.getWallBySide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
-      LEFT: this.getWallBySide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
+      TOP: this.getWallSide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),
+      RIGHT: this.getWallSide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
+      BOTTOM: this.getWallSide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
+      LEFT: this.getWallSide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
     };
   }
 
@@ -59,17 +57,16 @@ export class WallObstacle extends MovableEntity {
     const result = super.iterateMovement();
 
     this._wallSides = {
-      TOP: this.getWallBySide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),
-      RIGHT: this.getWallBySide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
-      BOTTOM: this.getWallBySide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
-      LEFT: this.getWallBySide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
+      TOP: this.getWallSide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),
+      RIGHT: this.getWallSide(OBSTACLE_SIDES.RIGHT, this._neighborIsDoorMap.RIGHT),
+      BOTTOM: this.getWallSide(OBSTACLE_SIDES.BOTTOM, this._neighborIsDoorMap.BOTTOM),
+      LEFT: this.getWallSide(OBSTACLE_SIDES.LEFT, this._neighborIsDoorMap.LEFT),
     };
 
     return result;
   }
 
-  // get side of the wall
-  private getWallBySide(side: keyof typeof OBSTACLE_SIDES, neighborIsDoor: boolean): WallObstacle {
+  getWallSide(side: keyof typeof OBSTACLE_SIDES, neighborIsDoor: boolean): WallObstacle {
     const isVertical = side === OBSTACLE_SIDES.TOP || side === OBSTACLE_SIDES.BOTTOM;
 
     const position = {

@@ -1,7 +1,7 @@
-import type { DoorObstacle } from 'src/models/obstacles/Door';
-import type { ItemObstacle } from 'src/models/obstacles/Item';
-import type { SpriteObstacle } from 'src/models/obstacles/Sprite';
-import type { WallObstacle } from 'src/models/obstacles/Wall';
+import type { DoorObstacle } from 'src/entities/obstacles/Door';
+import type { ItemObstacle } from 'src/entities/obstacles/Item';
+import type { SpriteObstacle } from 'src/entities/obstacles/Sprite';
+import type { WallObstacle } from 'src/entities/obstacles/Wall';
 
 export type RawMap = (string | number)[][];
 

@@ -1,8 +1,8 @@
-import { Actor, ActorParams } from 'src/models/actors/abstract/Actor';
+import { Actor, ActorParams } from 'src/entities/actors/abstract/Actor';
+
+import { Camera } from 'src/services/Camera';
 
 import { ACTOR_SPEED, DEFAULT_RESOLUTION_SCALE, TILE_SIZE, WEAPONS } from 'src/constants/config';
-
-import { Camera } from './internal/Camera';
 
 import type { Obstacle, ParsedMap, ScreenData, Vertex, WeaponType } from 'src/types';
 import { isDoor, isItem, isWall } from 'src/types/typeGuards';

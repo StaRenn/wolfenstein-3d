@@ -1,6 +1,5 @@
+import { fillPortraitFrameSet } from 'src/utils/frameSets';
 import { getImageWithSource } from 'src/utils/getImageWithSource';
-
-import { fillPortraitFrameSet } from 'src/helpers/frameSets';
 
 import type { HealthFrameSets } from 'src/types';
 

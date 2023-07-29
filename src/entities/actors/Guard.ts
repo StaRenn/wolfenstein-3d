@@ -1,6 +1,6 @@
-import { Enemy, EnemyParams } from 'src/models/actors/abstract/Enemy';
+import { Enemy, EnemyParams } from 'src/entities/actors/abstract/Enemy';
 
-import { getEnemyFrameSet } from 'src/helpers/frameSets';
+import { getEnemyFrameSet } from 'src/utils/frameSets';
 
 export type GuardParams = Omit<EnemyParams, 'frameSet' | 'health' | 'maxHealth' | 'currentWeapon'>;
 

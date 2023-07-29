@@ -1,11 +1,10 @@
-import type { DoorObstacle } from 'src/models/obstacles/Door';
-import type { ItemObstacle } from 'src/models/obstacles/Item';
-import type { SpriteObstacle } from 'src/models/obstacles/Sprite';
-import type { WallObstacle } from 'src/models/obstacles/Wall';
+import type { Enemy } from 'src/entities/actors/abstract/Enemy';
+import type { DoorObstacle } from 'src/entities/obstacles/Door';
+import type { ItemObstacle } from 'src/entities/obstacles/Item';
+import type { SpriteObstacle } from 'src/entities/obstacles/Sprite';
+import type { WallObstacle } from 'src/entities/obstacles/Wall';
 
-import type { Enemy } from 'src/models/actors/abstract/Enemy';
-
-import { DIRECTED_FRAME_SETS_BY_ACTION, NON_DIRECTED_FRAME_SETS_BY_ACTION } from 'src/helpers/frameSets';
+import { DIRECTED_FRAME_SETS_BY_ACTION, NON_DIRECTED_FRAME_SETS_BY_ACTION } from 'src/utils/frameSets';
 
 export const isSprite = (plane: unknown): plane is SpriteObstacle => {
   return !!plane && !!(plane as Partial<SpriteObstacle>).isSprite;
@@ -27,7 +26,7 @@ export const isEnemy = (plane: unknown): plane is Enemy => {
   return !!plane && !!(plane as Partial<Enemy>).isEnemy;
 };
 
-export const isMovableEntity = (plane: unknown): plane is DoorObstacle | WallObstacle => {
+export const isDynamicObstacle = (plane: unknown): plane is DoorObstacle | WallObstacle => {
   return isDoor(plane) || isWall(plane);
 };
 

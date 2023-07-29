@@ -5,17 +5,16 @@ import {
   getDistanceWithoutFishEyeEffect,
   getIntersectionVertexWithPlane,
   unitVector,
-} from 'src/helpers/maths';
+} from 'src/utils/maths';
 
 import type { Intersection, Obstacle, ParsedMap, Vector, Vertex } from 'src/types';
-import { isDoor, isMovableEntity, isSprite } from 'src/types/typeGuards';
+import { isDoor, isDynamicObstacle, isSprite } from 'src/types/typeGuards';
 
 type RayParams = {
   angle: Ray['_angle'];
   initialPosition: Vertex;
 };
 
-/** @internal for Camera.ts */
 export class Ray {
   private _angle: number;
   private _position: Vector;
@@ -119,7 +118,7 @@ export class Ray {
         if (parsedMap[currentMapPosition.y] && parsedMap[currentMapPosition.y][currentMapPosition.x]) {
           const intersectedObstacle = parsedMap[currentMapPosition.y][currentMapPosition.x]!;
 
-          if (isMovableEntity(intersectedObstacle) && intersectedObstacle.isMoving) {
+          if (isDynamicObstacle(intersectedObstacle) && intersectedObstacle.isMoving) {
             continue;
           }
 

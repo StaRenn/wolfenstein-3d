@@ -1,13 +1,11 @@
 {
   "importOrder": [
     "^.*/view.*",
-    "^.*/obstacles.*",
-    "^.*/actors.*",
-    "^.*/utility.*",
-    "^.*/models.*",
+    "^.*/entities.*",
+    "^.*/services.*",
+    "^.*/controllers.*",
     "^.*/constants.*",
     "^.*/utils.*",
-    "^.*/helpers.*",
     "^(?!.*types).*$",
     ".*"
   ],

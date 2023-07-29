@@ -1,14 +1,13 @@
-import { DoorObstacle } from 'src/models/obstacles/Door';
-import { ItemObstacle } from 'src/models/obstacles/Item';
-import { SpriteObstacle } from 'src/models/obstacles/Sprite';
-import { WallObstacle } from 'src/models/obstacles/Wall';
-
-import type { Enemy } from 'src/models/actors/abstract/Enemy';
-import { Guard } from 'src/models/actors/enemies/Guard';
+import { Guard } from 'src/entities/actors/Guard';
+import type { Enemy } from 'src/entities/actors/abstract/Enemy';
+import { DoorObstacle } from 'src/entities/obstacles/Door';
+import { ItemObstacle } from 'src/entities/obstacles/Item';
+import { SpriteObstacle } from 'src/entities/obstacles/Sprite';
+import { WallObstacle } from 'src/entities/obstacles/Wall';
 
 import { DOOR_IDS, ENEMY_FACING_DIRECTION_MAP, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/config';
 
-import { toRadians } from 'src/helpers/maths';
+import { toRadians } from 'src/utils/maths';
 
 import { getImageWithSource } from './getImageWithSource';
 

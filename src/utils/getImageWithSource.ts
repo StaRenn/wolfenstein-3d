@@ -1,14 +1,14 @@
-const cache: Record<string, HTMLImageElement> = {};
+const loaded: Record<string, HTMLImageElement> = {};
 
 export function getImageWithSource(path: string) {
-  if (cache[path]) {
-    return cache[path];
+  if (loaded[path]) {
+    return loaded[path];
   }
 
   const image = new Image();
   image.src = path;
 
-  cache[path] = image;
+  loaded[path] = image;
 
   return image;
 }

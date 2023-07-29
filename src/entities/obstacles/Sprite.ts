@@ -1,13 +1,13 @@
 import { TILE_SIZE } from 'src/constants/config';
 
-import { Entity, EntityParams } from './abstract/Entity';
+import { StaticObstacle, StaticObstacleParams } from './abstract/StaticObstacle';
 
 import type { Vector } from 'src/types';
 
-export class SpriteObstacle extends Entity {
+export class SpriteObstacle extends StaticObstacle {
   public readonly isSprite: true;
 
-  constructor(params: EntityParams) {
+  constructor(params: StaticObstacleParams) {
     super(params);
 
     this.isSprite = true;

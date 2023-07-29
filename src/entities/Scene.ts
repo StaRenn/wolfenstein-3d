@@ -1,13 +1,12 @@
-import { Hud } from './view/Hud';
-import { Minimap } from './view/Minimap';
+import { Hud } from 'src/view/Hud';
+import { Minimap } from 'src/view/Minimap';
 
-import type { DoorObstacle } from './obstacles/Door';
-import type { WallObstacle } from './obstacles/Wall';
+import { Wolf } from 'src/entities/actors/Wolf';
+import type { Enemy } from 'src/entities/actors/abstract/Enemy';
+import type { DoorObstacle } from 'src/entities/obstacles/Door';
+import type { WallObstacle } from 'src/entities/obstacles/Wall';
 
-import { Wolf } from './actors/Wolf/Wolf';
-import type { Enemy } from './actors/abstract/Enemy';
-
-import { Timeout } from './utility/Timeout';
+import { Timeout } from 'src/controllers/Timeout';
 
 import {
   DOOR_TIMEOUT,
@@ -18,10 +17,9 @@ import {
   WOLF_ATTACK_FOV,
 } from 'src/constants/config';
 
+import { getTextureOffset } from 'src/utils/getTextureOffset';
+import { clamp, getIsVertexInTheTriangle, getRangeOfView, hasEqualPosition } from 'src/utils/maths';
 import { parseMap } from 'src/utils/parseMap';
-
-import { getTextureOffset } from 'src/helpers/getTextureOffset';
-import { clamp, getIsVertexInTheTriangle, getRangeOfView, hasEqualPosition } from 'src/helpers/maths';
 
 import type { Chunk, Obstacle, RawMap, ScreenData } from 'src/types';
 import { isDoor, isEnemy, isItem, isSprite, isWall } from 'src/types/typeGuards';

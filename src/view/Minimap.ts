@@ -1,4 +1,4 @@
-import type { Enemy } from 'src/models/actors/abstract/Enemy';
+import type { Enemy } from 'src/entities/actors/abstract/Enemy';
 
 import { MAP_SCALE, TILE_SIZE } from 'src/constants/config';
 

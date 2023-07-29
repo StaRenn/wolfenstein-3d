@@ -1,7 +1,6 @@
+import { fillWeaponFrameSet } from 'src/utils/frameSets';
 import { getImageWithSource } from 'src/utils/getImageWithSource';
-
-import { fillWeaponFrameSet } from 'src/helpers/frameSets';
-import { toRadians } from 'src/helpers/maths';
+import { toRadians } from 'src/utils/maths';
 
 import type { ItemPurpose, Weapons } from 'src/types';
 

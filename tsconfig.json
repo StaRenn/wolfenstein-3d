@@ -20,5 +20,6 @@
     "importsNotUsedAsValues": "error",
     "moduleResolution": "node",
     "strictNullChecks": true
-  }
+  },
+  "include": ["src"]
 }

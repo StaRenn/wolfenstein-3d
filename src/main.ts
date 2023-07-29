@@ -1,4 +1,4 @@
-import { Scene } from './models/Scene';
+import { Scene } from './entities/Scene';
 
 import {
   DEFAULT_FOV,
@@ -9,7 +9,7 @@ import {
 } from './constants/config';
 import { map } from './constants/map';
 
-import { toRadians } from './helpers/maths';
+import { toRadians } from './utils/maths';
 
 export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 

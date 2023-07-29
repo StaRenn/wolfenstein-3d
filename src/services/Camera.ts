@@ -1,7 +1,7 @@
 import { DEFAULT_FOV, DEFAULT_RESOLUTION_SCALE } from 'src/constants/config';
 
-import { getRelativeChunkMultiplier } from 'src/helpers/getRelativeChunkMultiplier';
-import { getIntersectionVertexWithPlane, getVertexByPositionAndAngle, toRadians } from 'src/helpers/maths';
+import { getRelativeChunkMultiplier } from 'src/utils/getRelativeChunkMultiplier';
+import { getIntersectionVertexWithPlane, getVertexByPositionAndAngle, toRadians } from 'src/utils/maths';
 
 import { Ray } from './Ray';
 import { canvas } from 'src/main';

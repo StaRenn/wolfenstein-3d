@@ -1,6 +1,6 @@
-import type { WolfParams } from 'src/models/actors/Wolf/Wolf';
+import type { WolfParams } from 'src/entities/actors/Wolf';
 
-import { AnimationController } from 'src/models/utility/AnimationController';
+import { Animation } from 'src/controllers/Animation';
 
 import { HUD_WIDTH_COEFFICIENT, TEXTURE_SIZE, WEAPONS } from 'src/constants/config';
 import {
@@ -15,7 +15,7 @@ import {
   WEAPON_ICON_WIDTH,
 } from 'src/constants/hud';
 
-import { generatePostEffectFrameSet } from 'src/helpers/frameSets';
+import { generatePostEffectFrameSet } from 'src/utils/frameSets';
 
 import type { Frame, HealthFrameSets, PostEffectFrame, ScreenData } from 'src/types';
 
@@ -28,9 +28,9 @@ type HudParams = {
 export class Hud {
   private readonly _ctx: CanvasRenderingContext2D;
   private readonly _screenData: ScreenData;
-  private readonly _weaponAnimationController: AnimationController<Frame<HTMLImageElement>>;
-  private readonly _postEffectAnimationController: AnimationController<PostEffectFrame>;
-  private readonly _portraitAnimation: AnimationController<Frame<HTMLImageElement>>;
+  private readonly _weaponAnimation: Animation<Frame<HTMLImageElement>>;
+  private readonly _postEffectAnimation: Animation<PostEffectFrame>;
+  private readonly _portraitAnimation: Animation<Frame<HTMLImageElement>>;
 
   private _currentFrameSet: HealthFrameSets[keyof HealthFrameSets];
   private _scale: number;
@@ -60,21 +60,21 @@ export class Hud {
     this.renderWeapon = this.renderWeapon.bind(this);
     this.renderPostEffect = this.renderPostEffect.bind(this);
 
-    this._portraitAnimation = new AnimationController({
+    this._portraitAnimation = new Animation({
       renderFunction: this.renderPortrait,
       frameSet: this._currentFrameSet,
       initialFrameIdx: 0,
       isLoopAnimation: true,
     });
 
-    this._weaponAnimationController = new AnimationController({
+    this._weaponAnimation = new Animation({
       renderFunction: this.renderWeapon,
       initialFrameIdx: 0,
       isLoopAnimation: false,
       frameSet: WEAPONS[params.initialWeapon].frameSet,
     });
 
-    this._postEffectAnimationController = new AnimationController({
+    this._postEffectAnimation = new Animation({
       renderFunction: this.renderPostEffect,
       initialFrameIdx: 0,
       isLoopAnimation: false,
@@ -174,22 +174,22 @@ export class Hud {
   }
 
   onWeaponChange(newWeapon: keyof typeof WEAPONS) {
-    this._weaponAnimationController.updateFrameSet(WEAPONS[newWeapon].frameSet);
+    this._weaponAnimation.updateFrameSet(WEAPONS[newWeapon].frameSet);
   }
 
   onBoostPickup() {
-    this._postEffectAnimationController.updateFrameSet(generatePostEffectFrameSet([255, 255, 0]));
-    this._postEffectAnimationController.playAnimation();
+    this._postEffectAnimation.updateFrameSet(generatePostEffectFrameSet([255, 255, 0]));
+    this._postEffectAnimation.playAnimation();
   }
 
   onShoot() {
-    this._weaponAnimationController.setActiveFrameIdx(0);
-    this._weaponAnimationController.playAnimation();
+    this._weaponAnimation.setActiveFrameIdx(0);
+    this._weaponAnimation.playAnimation();
   }
 
   iterate() {
-    this._weaponAnimationController.iterate();
-    this._postEffectAnimationController.iterate();
+    this._weaponAnimation.iterate();
+    this._postEffectAnimation.iterate();
     this._portraitAnimation.iterate();
   }
 
@@ -253,8 +253,8 @@ export class Hud {
     this.renderText(health, HUD_PANEL.HEALTH_X_OFFSET * this._scale);
     this.renderText(ammo, HUD_PANEL.AMMO_X_OFFSET * this._scale);
 
-    this._weaponAnimationController.render();
-    this._postEffectAnimationController.render();
+    this._weaponAnimation.render();
+    this._postEffectAnimation.render();
     this._portraitAnimation.render();
   }
 }

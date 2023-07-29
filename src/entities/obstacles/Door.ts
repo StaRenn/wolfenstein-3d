@@ -1,16 +1,16 @@
-import type { Timeout } from 'src/models/utility/Timeout';
+import type { Timeout } from 'src/controllers/Timeout';
 
 import { INTERSECTION_TYPES } from 'src/constants/config';
 
-import { MovableEntity, MovableEntityParams } from './abstract/MovableEntity';
+import { DynamicObstacle, DynamicObstacleParams } from './abstract/DynamicObstacle';
 
-export type DoorParams = MovableEntityParams & {
+export type DoorParams = DynamicObstacleParams & {
   textureDark: DoorObstacle['_textureDark'];
   closeTimeout: DoorObstacle['closeTimeout'];
   isVertical: DoorObstacle['isVertical'];
 };
 
-export class DoorObstacle extends MovableEntity {
+export class DoorObstacle extends DynamicObstacle {
   public _textureDark: HTMLImageElement;
 
   public readonly isVertical: boolean;

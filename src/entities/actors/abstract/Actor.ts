@@ -1,4 +1,4 @@
-import { Timeout } from 'src/models/utility/Timeout';
+import { Timeout } from 'src/controllers/Timeout';
 
 import { TILE_SIZE, WEAPONS } from 'src/constants/config';
 

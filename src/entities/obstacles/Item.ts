@@ -1,9 +1,9 @@
 import { SpriteObstacle } from './Sprite';
-import type { EntityParams } from './abstract/Entity';
+import type { StaticObstacleParams } from './abstract/StaticObstacle';
 
 import type { ItemPurpose } from 'src/types';
 
-export type ItemParams = EntityParams & {
+export type ItemParams = StaticObstacleParams & {
   purpose: ItemObstacle['purpose'];
 };
 

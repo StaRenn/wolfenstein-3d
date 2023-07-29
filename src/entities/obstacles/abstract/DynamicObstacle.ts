@@ -1,19 +1,19 @@
 import { OBSTACLES_MOVE_SPEED, TILE_SIZE } from 'src/constants/config';
 
-import { Entity, EntityParams } from './Entity';
+import { StaticObstacle, StaticObstacleParams } from './StaticObstacle';
 
 import type { Vector, Vertex } from 'src/types';
 
-export type MovableEntityParams = EntityParams & {
-  initialPosition: MovableEntity['_initialPosition'];
-  endPosition: MovableEntity['_endPosition'];
-  isMoving: MovableEntity['_isMoving'];
-  isMovable: MovableEntity['isMovable'];
-  isInFinalPosition: MovableEntity['_isInFinalPosition'];
-  isInStartPosition: MovableEntity['_isInStartPosition'];
+export type DynamicObstacleParams = StaticObstacleParams & {
+  initialPosition: DynamicObstacle['_initialPosition'];
+  endPosition: DynamicObstacle['_endPosition'];
+  isMoving: DynamicObstacle['_isMoving'];
+  isMovable: DynamicObstacle['isMovable'];
+  isInFinalPosition: DynamicObstacle['_isInFinalPosition'];
+  isInStartPosition: DynamicObstacle['_isInStartPosition'];
 };
 
-export abstract class MovableEntity extends Entity {
+export abstract class DynamicObstacle extends StaticObstacle {
   protected _endPositionMatrixCoordinates: Vertex;
   protected _initialPosition: Vector;
   protected _endPosition: Vector;
@@ -23,7 +23,7 @@ export abstract class MovableEntity extends Entity {
 
   public readonly isMovable: boolean;
 
-  protected constructor(params: MovableEntityParams) {
+  protected constructor(params: DynamicObstacleParams) {
     super(params);
 
     this._initialPosition = params.initialPosition;
@@ -86,10 +86,10 @@ export abstract class MovableEntity extends Entity {
     const finalPosition = this._isInStartPosition ? this._endPosition : this._initialPosition;
 
     this._position = {
-      x1: this._position.x1 + MovableEntity.getPositionChange(this._position.x1, finalPosition.x1) * TIME_SCALE,
-      y1: this._position.y1 + MovableEntity.getPositionChange(this._position.y1, finalPosition.y1) * TIME_SCALE,
-      x2: this._position.x2 + MovableEntity.getPositionChange(this._position.x2, finalPosition.x2) * TIME_SCALE,
-      y2: this._position.y2 + MovableEntity.getPositionChange(this._position.y2, finalPosition.y2) * TIME_SCALE,
+      x1: this._position.x1 + DynamicObstacle.getPositionChange(this._position.x1, finalPosition.x1) * TIME_SCALE,
+      y1: this._position.y1 + DynamicObstacle.getPositionChange(this._position.y1, finalPosition.y1) * TIME_SCALE,
+      x2: this._position.x2 + DynamicObstacle.getPositionChange(this._position.x2, finalPosition.x2) * TIME_SCALE,
+      y2: this._position.y2 + DynamicObstacle.getPositionChange(this._position.y2, finalPosition.y2) * TIME_SCALE,
     };
 
     // if reached end position

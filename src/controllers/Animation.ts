@@ -2,17 +2,17 @@ import { Timeout } from './Timeout';
 
 import type { Frame } from 'src/types';
 
-type AnimationControllerParams<FrameType extends Frame<unknown>> = {
-  frameSet: AnimationController<FrameType>['_frameSet'];
-  initialFrameIdx?: AnimationController<FrameType>['_currentFrameIdx'];
-  isLoopAnimation?: AnimationController<FrameType>['_isLoopAnimation'];
-  renderFunction?: AnimationController<FrameType>['_derivedRenderFunction'];
-  onAnimationEnd?: AnimationController<FrameType>['_onAnimationEnd'];
-  onAnimationStart?: AnimationController<FrameType>['_onAnimationStart'];
-  onFrameChange?: AnimationController<FrameType>['_onFrameChange'];
+type AnimationParams<FrameType extends Frame<unknown>> = {
+  frameSet: Animation<FrameType>['_frameSet'];
+  initialFrameIdx?: Animation<FrameType>['_currentFrameIdx'];
+  isLoopAnimation?: Animation<FrameType>['_isLoopAnimation'];
+  renderFunction?: Animation<FrameType>['_derivedRenderFunction'];
+  onAnimationEnd?: Animation<FrameType>['_onAnimationEnd'];
+  onAnimationStart?: Animation<FrameType>['_onAnimationStart'];
+  onFrameChange?: Animation<FrameType>['_onFrameChange'];
 };
 
-export class AnimationController<FrameType extends Frame<unknown>> {
+export class Animation<FrameType extends Frame<unknown>> {
   private _frameSet: FrameType[];
   private _currentFrameIdx: number;
   private _isLoopAnimation: boolean;
@@ -30,7 +30,7 @@ export class AnimationController<FrameType extends Frame<unknown>> {
     onAnimationEnd = () => {},
     onAnimationStart = () => {},
     onFrameChange = () => {},
-  }: AnimationControllerParams<FrameType>) {
+  }: AnimationParams<FrameType>) {
     this._frameSet = frameSet;
     this._currentFrameIdx = initialFrameIdx;
     this._derivedRenderFunction = renderFunction;
@@ -49,15 +49,15 @@ export class AnimationController<FrameType extends Frame<unknown>> {
     }
   }
 
-  set onAnimationEnd(callback: AnimationController<FrameType>['_onAnimationEnd']) {
+  set onAnimationEnd(callback: Animation<FrameType>['_onAnimationEnd']) {
     this._onAnimationEnd = callback;
   }
 
-  set onAnimationStart(callback: AnimationController<FrameType>['_onAnimationStart']) {
+  set onAnimationStart(callback: Animation<FrameType>['_onAnimationStart']) {
     this._onAnimationStart = callback;
   }
 
-  set onFrameChange(callback: AnimationController<FrameType>['_onFrameChange']) {
+  set onFrameChange(callback: Animation<FrameType>['_onFrameChange']) {
     this._onFrameChange = callback;
   }
 
