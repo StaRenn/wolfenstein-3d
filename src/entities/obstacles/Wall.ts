@@ -53,8 +53,8 @@ export class WallObstacle extends DynamicObstacle {
     return this._textureDark;
   }
 
-  iterateMovement() {
-    const result = super.iterateMovement();
+  move() {
+    const result = super.move();
 
     this._wallSides = {
       TOP: this.getWallSide(OBSTACLE_SIDES.TOP, this._neighborIsDoorMap.TOP),

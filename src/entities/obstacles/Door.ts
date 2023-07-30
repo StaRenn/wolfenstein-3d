@@ -20,10 +20,6 @@ export class DoorObstacle extends DynamicObstacle {
 
   public closeTimeout: null | Timeout;
 
-  get textureDark() {
-    return this._textureDark;
-  }
-
   constructor(params: DoorParams) {
     super(params);
 
@@ -34,5 +30,9 @@ export class DoorObstacle extends DynamicObstacle {
     this.closeTimeout = params.closeTimeout;
     this.shouldReverseTexture = !params.isVertical;
     this.intersectionType = params.isVertical ? INTERSECTION_TYPES.VERTICAL : INTERSECTION_TYPES.HORIZONTAL;
+  }
+
+  get textureDark() {
+    return this._textureDark;
   }
 }

@@ -1,8 +1,10 @@
+import type { EventEmitter } from 'src/services/EventEmitter/EventEmitter';
+
 import { Timeout } from 'src/controllers/Timeout';
 
 import { TILE_SIZE, WEAPONS } from 'src/constants/config';
 
-import type { Vertex } from 'src/types';
+import type { ParsedMap, Vertex } from 'src/types';
 
 export type ActorParams = {
   position: Actor['_position'];
@@ -11,19 +13,23 @@ export type ActorParams = {
   currentWeapon: Actor['_currentWeapon'];
   angle: Actor['_angle'];
   rawValue: Actor['_rawValue'];
+  emitter: Actor['_emitter'];
+  parsedMap: Actor['_parsedMap'];
 };
 
 export abstract class Actor {
+  protected _emitter: EventEmitter;
   protected _health: number;
   protected _maxHealth: number;
   protected _horizontalSpeed: number;
   protected _verticalSpeed: number;
   protected _currentWeapon: keyof typeof WEAPONS;
-  protected _isShooting: boolean;
+  protected _isAttacking: boolean;
   protected _position: Vertex;
   protected _angle: number;
   protected _attackTimeout: Timeout;
   protected _rawValue: string | number;
+  protected _parsedMap: ParsedMap;
 
   protected constructor(params: ActorParams) {
     this._currentWeapon = params.currentWeapon;
@@ -32,9 +38,11 @@ export abstract class Actor {
     this._position = params.position;
     this._angle = params.angle;
     this._rawValue = params.rawValue;
+    this._parsedMap = params.parsedMap;
+    this._emitter = params.emitter;
 
-    this._attackTimeout = new Timeout();
-    this._isShooting = false;
+    this._attackTimeout = new Timeout(params.emitter);
+    this._isAttacking = false;
     this._horizontalSpeed = 0;
     this._verticalSpeed = 0;
   }

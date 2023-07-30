@@ -38,12 +38,12 @@ window.TIME_SCALE = 1;
 export const WEAPONS: Weapons = {
   KNIFE: {
     frameSet: fillWeaponFrameSet('KNIFE', 50),
-    maxDistance: 10,
+    maxDistance: TILE_SIZE * 2,
     minDamage: 50,
     maxDamage: 50,
     frameDuration: 50,
     ammoPerAttack: 0,
-    shootFrameIdx: 2,
+    attackFrameIdx: 2,
     icon: getImageWithSource('src/assets/hud/knife.png'),
   },
   PISTOL: {
@@ -53,7 +53,7 @@ export const WEAPONS: Weapons = {
     maxDamage: 130,
     frameDuration: 65,
     ammoPerAttack: 1,
-    shootFrameIdx: 2,
+    attackFrameIdx: 2,
     icon: getImageWithSource('src/assets/hud/pistol.png'),
   },
   MACHINE_GUN: {
@@ -63,7 +63,7 @@ export const WEAPONS: Weapons = {
     maxDamage: 65,
     frameDuration: 22.5,
     ammoPerAttack: 1,
-    shootFrameIdx: 2,
+    attackFrameIdx: 2,
     icon: getImageWithSource('src/assets/hud/machine_gun.png'),
   },
 };

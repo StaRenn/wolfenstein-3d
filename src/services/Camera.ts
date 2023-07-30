@@ -1,50 +1,56 @@
-import { DEFAULT_FOV, DEFAULT_RESOLUTION_SCALE } from 'src/constants/config';
-
 import { getRelativeChunkMultiplier } from 'src/utils/getRelativeChunkMultiplier';
 import { getIntersectionVertexWithPlane, getVertexByPositionAndAngle, toRadians } from 'src/utils/maths';
 
+import type { EventEmitter } from './EventEmitter/EventEmitter';
 import { Ray } from './Ray';
 import { canvas } from 'src/main';
 
-import type { IndexedIntersection, Intersection, Obstacle, ParsedMap, Vector, Vertex } from 'src/types';
+import type { IndexedIntersection, Intersection, Obstacle, ParsedMap, ScreenData, Vector, Vertex } from 'src/types';
 import { isItem, isSprite, isWall } from 'src/types/typeGuards';
 
 type CameraParams = {
+  emitter: Camera['_emitter'];
   position: Camera['_position'];
-  raysAmount: number;
+  screenData: Camera['_screenData'];
+  fov: Camera['_fov'];
+  resolutionScale: Camera['_resolutionScale'];
 };
 
-/** @internal for Wolf.ts and Enemy.ts */
 export class Camera {
+  private readonly _emitter: EventEmitter;
+
   private _rays: Ray[];
   private _position: Vertex;
   private _angle: number;
   private _resolutionScale: number;
   private _fov: number;
+  private _screenData: ScreenData;
 
   constructor(params: CameraParams) {
+    this._emitter = params.emitter;
     this._angle = toRadians(180);
-    this._resolutionScale = DEFAULT_RESOLUTION_SCALE;
-    this._fov = DEFAULT_FOV;
+    this._resolutionScale = params.resolutionScale;
+    this._fov = params.fov;
 
+    this._screenData = params.screenData;
     this._position = params.position;
     this._rays = [];
 
-    canvas.addEventListener('mousemove', this.rotate.bind(this));
-
-    this.changeRaysAmount(params.raysAmount);
+    this.changeRaysAmount();
+    this.registerEvents();
   }
 
-  set resolutionScale(scale: number) {
-    this._resolutionScale = scale;
+  private registerEvents() {
+    canvas.addEventListener('mousemove', this.rotate.bind(this));
+
+    this._emitter.on('resize', this.handleResize.bind(this));
+    this._emitter.on('resolutionScaleChange', this.handleResolutionScaleChange.bind(this));
+    this._emitter.on('fovChange', this.handleFovChange.bind(this));
+    this._emitter.on('wolfPositionChange', this.updatePosition.bind(this));
   }
 
   get resolutionScale() {
     return this._resolutionScale;
-  }
-
-  set fov(newFov: number) {
-    this._fov = newFov;
   }
 
   get fov() {
@@ -55,7 +61,21 @@ export class Camera {
     return this._angle;
   }
 
-  updatePosition(position: Camera['_position']) {
+  private handleResize(screenData: Camera['_screenData']) {
+    this._screenData = screenData;
+    this.changeRaysAmount();
+  }
+
+  private handleResolutionScaleChange(resolutionScale: number) {
+    this._resolutionScale = resolutionScale;
+    this.changeRaysAmount();
+  }
+
+  private handleFovChange(fov: number) {
+    this._fov = fov;
+  }
+
+  private updatePosition(position: Camera['_position']) {
     for (let i = 0; i < this._rays.length; i++) {
       this._rays[i].move(position);
     }
@@ -192,15 +212,16 @@ export class Camera {
     return intersections;
   }
 
-  changeRaysAmount(raysAmount: number) {
+  private changeRaysAmount() {
     this._rays = [];
 
-    // you are my hero https://stackoverflow.com/a/55247059/17420897
-    const trueRaysAmount = Math.floor(raysAmount * this._resolutionScale);
-    const screenHalfLength = Math.tan(this._fov / 2);
-    const segmentLength = screenHalfLength / (trueRaysAmount / 2);
+    const raysAmount = this._screenData.width * this._resolutionScale;
 
-    for (let i = 0; i < trueRaysAmount; i++) {
+    // you are my hero https://stackoverflow.com/a/55247059/17420897
+    const screenHalfLength = Math.tan(this._fov / 2);
+    const segmentLength = screenHalfLength / (raysAmount / 2);
+
+    for (let i = 0; i < raysAmount; i++) {
       let rayAngle = this._angle + Math.atan(segmentLength * i - screenHalfLength);
 
       if (rayAngle < 0) {

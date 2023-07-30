@@ -1,5 +1,7 @@
 import { Scene } from './entities/Scene';
 
+import { EventEmitter } from './services/EventEmitter/EventEmitter';
+
 import {
   DEFAULT_FOV,
   DEFAULT_FOV_DEGREES,
@@ -12,6 +14,8 @@ import { map } from './constants/map';
 import { toRadians } from './utils/maths';
 
 export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+
+const emitter = new EventEmitter();
 
 async function main() {
   const menu = document.getElementById('menu-container') as HTMLDivElement;
@@ -28,9 +32,18 @@ async function main() {
   fovRangeValue.innerText = String(DEFAULT_FOV_DEGREES);
   resolutionScaleRange.value = String(RESOLUTIONS_SCALE_VALUES.indexOf(DEFAULT_RESOLUTION_SCALE));
 
-  const scene = new Scene(canvas, map, {
+  const screenData = {
     height: window.innerHeight,
     width: window.innerWidth,
+  };
+
+  const scene = new Scene({
+    canvas,
+    map,
+    screenData,
+    emitter,
+    fov,
+    resolutionScale,
   });
 
   const fpsOut = document.getElementById('fps')!;
@@ -41,14 +54,17 @@ async function main() {
   let frameTime = 0;
 
   function handleResize() {
-    scene.resize(window.innerWidth, window.innerHeight);
+    emitter.emit('resize', {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
   }
 
   function handleResolutionScaleChange(event: Event) {
     if (event.target) {
       resolutionScale = RESOLUTIONS_SCALE_VALUES[Number((event.target as HTMLInputElement).value)];
 
-      scene.resolutionScale = resolutionScale;
+      emitter.emit('resolutionScaleChange', resolutionScale);
     }
   }
 
@@ -59,7 +75,7 @@ async function main() {
 
       fovRangeValue.innerText = (event.target as HTMLInputElement).value;
 
-      scene.fov = fov;
+      emitter.emit('fovChange', fov);
     }
   }
 
@@ -81,7 +97,7 @@ async function main() {
 
   (function frame(currentFrameDuration: number) {
     if (!isPaused) {
-      scene.iterate();
+      emitter.emit('frameUpdate', undefined);
     }
 
     scene.render();

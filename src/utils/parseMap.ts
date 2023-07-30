@@ -5,6 +5,8 @@ import { ItemObstacle } from 'src/entities/obstacles/Item';
 import { SpriteObstacle } from 'src/entities/obstacles/Sprite';
 import { WallObstacle } from 'src/entities/obstacles/Wall';
 
+import type { EventEmitter } from 'src/services/EventEmitter/EventEmitter';
+
 import { DOOR_IDS, ENEMY_FACING_DIRECTION_MAP, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/config';
 
 import { toRadians } from 'src/utils/maths';
@@ -14,6 +16,7 @@ import { getImageWithSource } from './getImageWithSource';
 import type { EntityFrameSetByAction, Obstacle, RawMap, Vector, Vertex } from 'src/types';
 
 export function parseMap(
+  emitter: EventEmitter,
   map: RawMap
 ): {
   map: (Obstacle | null)[][];
@@ -82,14 +85,14 @@ export function parseMap(
           continue;
         }
 
-        const nextToVoid = xAxis % 63 === 0 || yAxis % 63 === 0;
+        const isNextToVoid = xAxis % 63 === 0 || yAxis % 63 === 0;
 
         const isEnemy = obstacleParams.includes('ENEMY');
         const isItem = obstacleParams.includes('ITEM');
         const isSprite = obstacleParams.includes('SPRITE') || false;
         const isSecret = !isSprite && obstacleParams.includes('START');
         const isDoor = !isSprite && DOOR_IDS.includes(textureId);
-        const isMovable = !isSprite && (isDoor || isSecret) && !nextToVoid;
+        const isMovable = !isSprite && (isDoor || isSecret) && !isNextToVoid;
         const isWall = !isEnemy && !isItem && !isSprite && !isDoor;
         const hasCollision = !obstacleParams.includes('HOLLOW');
 
@@ -125,6 +128,9 @@ export function parseMap(
 
           if (enemyType === 'guard') {
             const enemy = new Guard({
+              type: enemyType,
+              parsedMap,
+              emitter,
               rawValue: value,
               initialAction: enemyAction,
               angle: toRadians(ENEMY_FACING_DIRECTION_MAP[enemyDirection]),

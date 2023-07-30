@@ -3,6 +3,7 @@ import { Timeout } from './Timeout';
 import type { Frame } from 'src/types';
 
 type AnimationParams<FrameType extends Frame<unknown>> = {
+  emitter: Timeout['_emitter'];
   frameSet: Animation<FrameType>['_frameSet'];
   initialFrameIdx?: Animation<FrameType>['_currentFrameIdx'];
   isLoopAnimation?: Animation<FrameType>['_isLoopAnimation'];
@@ -23,6 +24,7 @@ export class Animation<FrameType extends Frame<unknown>> {
   private _timeout: Timeout;
 
   constructor({
+    emitter,
     frameSet,
     initialFrameIdx = 0,
     isLoopAnimation = false,
@@ -40,9 +42,7 @@ export class Animation<FrameType extends Frame<unknown>> {
     this._onAnimationStart = onAnimationStart;
     this._onFrameChange = onFrameChange;
 
-    this.playAnimation = this.playAnimation.bind(this);
-
-    this._timeout = new Timeout(this.playAnimation);
+    this._timeout = new Timeout(emitter, this.playAnimation.bind(this));
 
     if (isLoopAnimation && this.currentFrame.duration !== Infinity) {
       this._timeout.set(this.currentFrame.duration);
@@ -121,10 +121,6 @@ export class Animation<FrameType extends Frame<unknown>> {
     if (this._isLoopAnimation && this.currentFrame.duration !== Infinity) {
       this._timeout.set(this.currentFrame.duration);
     }
-  }
-
-  iterate() {
-    this._timeout.iterate();
   }
 
   render() {

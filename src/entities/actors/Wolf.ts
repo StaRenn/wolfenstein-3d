@@ -2,63 +2,60 @@ import { Actor, ActorParams } from 'src/entities/actors/abstract/Actor';
 
 import { Camera } from 'src/services/Camera';
 
-import { ACTOR_SPEED, DEFAULT_RESOLUTION_SCALE, TILE_SIZE, WEAPONS } from 'src/constants/config';
+import { ACTOR_SPEED, TILE_SIZE, WEAPONS } from 'src/constants/config';
 
-import type { Obstacle, ParsedMap, ScreenData, Vertex, WeaponType } from 'src/types';
+import type { Obstacle, Vertex, WeaponType } from 'src/types';
 import { isDoor, isItem, isWall } from 'src/types/typeGuards';
 
 export type WolfParams = {
-  ctx: Wolf['_ctx'];
+  emitter: Wolf['_emitter'];
   ammo: Wolf['_ammo'];
   lives: Wolf['_lives'];
   level: Wolf['_level'];
   score: Wolf['_score'];
   weapons: Wolf['_weapons'];
-  onWeaponChange: Wolf['onWeaponChange'];
-  onBoostPickup: Wolf['onBoostPickup'];
-  onShoot: Wolf['onShoot'];
-  screenData: ScreenData;
+  screenData: Camera['_screenData'];
+  resolutionScale: Camera['_resolutionScale'];
+  fov: Camera['_fov'];
+  parsedMap: Wolf['_parsedMap'];
 } & ActorParams;
 
 export class Wolf extends Actor {
-  protected readonly _ctx: CanvasRenderingContext2D;
-
+  private _camera: Camera;
   private _ammo: number;
   private _lives: number;
   private _level: number;
   private _score: number;
   private _weapons: (keyof typeof WEAPONS)[];
 
-  private _camera: Camera;
-
-  public readonly onWeaponChange: (newWeapon: keyof typeof WEAPONS) => void;
-  public readonly onBoostPickup: () => void;
-  public readonly onShoot: () => void;
-
   constructor(params: WolfParams) {
     super(params);
-
-    this._ctx = params.ctx;
 
     this._ammo = params.ammo;
     this._score = params.score;
     this._lives = params.lives;
     this._level = params.level;
     this._weapons = params.weapons;
+    this._emitter = params.emitter;
 
     this._camera = new Camera({
-      raysAmount: params.screenData.width * DEFAULT_RESOLUTION_SCALE,
+      screenData: params.screenData,
+      resolutionScale: params.resolutionScale,
+      fov: params.fov,
       position: params.position,
+      emitter: params.emitter,
     });
 
-    this.onBoostPickup = params.onBoostPickup;
-    this.onWeaponChange = params.onWeaponChange;
-    this.onShoot = params.onShoot;
+    this.registerEvents();
+  }
 
+  private registerEvents() {
     window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
     window.addEventListener('mouseup', this.handleMouseEvent.bind(this));
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     window.addEventListener('keyup', this.handleKeyUp.bind(this));
+
+    this._emitter.on('frameUpdate', this.update.bind(this));
   }
 
   get angle() {
@@ -93,7 +90,7 @@ export class Wolf extends Actor {
     return this._camera;
   }
 
-  get canShoot() {
+  get canAttack() {
     return this._attackTimeout.isExpired && (this._ammo > 0 || WEAPONS[this._currentWeapon].ammoPerAttack === 0);
   }
 
@@ -107,6 +104,9 @@ export class Wolf extends Actor {
       this.changeWeapon('MACHINE_GUN');
     }
 
+    if (event.keyCode === 32 /* space */) {
+      this._emitter.emit('wolfInteract', undefined);
+    }
     // movement
     if (event.keyCode === 87 /* w */) {
       this._verticalSpeed = ACTOR_SPEED;
@@ -122,11 +122,11 @@ export class Wolf extends Actor {
   private handleMouseEvent(event: MouseEvent) {
     // lmb down
     if (event.buttons === 1) {
-      this._isShooting = true;
+      this._isAttacking = true;
     }
     // lmb up
     if (event.buttons === 0) {
-      this._isShooting = false;
+      this._isAttacking = false;
     }
   }
 
@@ -146,36 +146,36 @@ export class Wolf extends Actor {
     if (this._weapons.includes(weaponType)) {
       this._currentWeapon = weaponType;
 
-      this.onWeaponChange(this._currentWeapon);
+      this._emitter.emit('wolfWeaponChange', this._currentWeapon);
 
-      // weapon change timeout to prevent spamming 1-2-1-2-1-2 for fast shooting
+      // weapon change timeout to prevent spamming 1-2-1-2-1-2 for fast attack
       this._attackTimeout.set(100);
       this._attackTimeout.onTimeoutExpire = null;
     }
   }
 
-  private shoot() {
-    if (this.canShoot) {
+  private attack() {
+    if (this.canAttack) {
       const weapon = WEAPONS[this._currentWeapon];
 
-      this._attackTimeout.set(weapon.frameDuration * weapon.shootFrameIdx);
+      this._attackTimeout.set(weapon.frameDuration * weapon.attackFrameIdx);
 
       // sync with animation
       this._attackTimeout.onTimeoutExpire = () => {
         this._ammo -= WEAPONS[this._currentWeapon].ammoPerAttack;
 
-        // rest shoot logic
+        // rest attack logic
 
         // wait rest animation
-        this._attackTimeout.set(weapon.frameDuration * (weapon.frameSet.length - weapon.shootFrameIdx));
+        this._attackTimeout.set(weapon.frameDuration * (weapon.frameSet.length - weapon.attackFrameIdx));
         this._attackTimeout.onTimeoutExpire = null;
       };
 
-      this.onShoot();
+      this._emitter.emit('wolfAttack', undefined);
     }
   }
 
-  private move(gameMap: ParsedMap) {
+  private move() {
     if (this._horizontalSpeed === 0 && this._verticalSpeed === 0) {
       return;
     }
@@ -301,35 +301,35 @@ export class Wolf extends Actor {
           }
         }
 
-        this.onBoostPickup();
+        this._emitter.emit('wolfBoostPickup', undefined);
 
         // remove from map when item picked up
-        gameMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+        this._parsedMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
       }
     };
 
     const positionOnMap = this.currentMatrixPosition;
 
-    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
-    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
-    checkCollision((gameMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
-    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
-    checkCollision((gameMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
-    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
-    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
-    checkCollision((gameMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
+    checkCollision((this._parsedMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
+    checkCollision((this._parsedMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
+    checkCollision((this._parsedMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
+    checkCollision((this._parsedMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
+    checkCollision((this._parsedMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
+    checkCollision((this._parsedMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
+    checkCollision((this._parsedMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
+    checkCollision((this._parsedMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
 
     this._position = position;
-    this._camera.updatePosition(this._position);
+
+    this._emitter.emit('wolfPositionChange', this._position);
+    this._emitter.emit('wolfMatrixPositionChange', this.currentMatrixPosition);
   }
 
-  iterate(gameMap: ParsedMap) {
-    this.move(gameMap);
+  private update() {
+    this.move();
 
-    if (this._isShooting) {
-      this.shoot();
+    if (this._isAttacking) {
+      this.attack();
     }
-
-    this._attackTimeout.iterate();
   }
 }

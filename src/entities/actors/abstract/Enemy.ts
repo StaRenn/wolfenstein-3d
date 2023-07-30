@@ -1,14 +1,12 @@
 import { Actor, ActorParams } from 'src/entities/actors/abstract/Actor';
-import { ItemObstacle } from 'src/entities/obstacles/Item';
 import { SpriteObstacle } from 'src/entities/obstacles/Sprite';
 
 import { Ray } from 'src/services/Ray';
 
 import { Animation } from 'src/controllers/Animation';
 
-import { AMMO_ID, ENEMY_FOV, ENEMY_VIEW_DISTANCE, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/config';
+import { ENEMY_FOV, ENEMY_VIEW_DISTANCE, TILE_SIZE } from 'src/constants/config';
 
-import { getImageWithSource } from 'src/utils/getImageWithSource';
 import {
   getAngleBetweenVertexes,
   getDistanceBetweenVertexes,
@@ -17,12 +15,13 @@ import {
   toRadians,
 } from 'src/utils/maths';
 
-import type { EnemyDirections, EntityFrameSetByAction, Frame, ParsedMap, Triangle, Vertex } from 'src/types';
+import type { EnemyDirections, EnemyTypes, EntityFrameSetByAction, Frame, Triangle, Vertex } from 'src/types';
 import { isDirectedFrameSetByAction, isDoor, isNonDirectedFrameSetByAction, isWall } from 'src/types/typeGuards';
 
 export type EnemyParams = {
   initialAction: Enemy['_currentState'];
   frameSet: Enemy['_frameSet'];
+  type: Enemy['_type'];
 } & ActorParams;
 
 // enemy model has 8 sides
@@ -35,6 +34,7 @@ export abstract class Enemy extends Actor {
   protected _sprite: SpriteObstacle;
   protected _animationController: Animation<Frame<HTMLImageElement>>;
   protected _currentSide: EnemyDirections[number];
+  protected _type: EnemyTypes;
 
   public readonly isEnemy: true;
 
@@ -46,6 +46,7 @@ export abstract class Enemy extends Actor {
     this._currentState = params.initialAction;
     this._frameSet = params.frameSet;
     this._currentSide = 'FRONT';
+    this._type = params.type;
 
     const frameSet = isNonDirectedFrameSetByAction(this._currentState)
       ? this._frameSet[this._currentState]
@@ -54,6 +55,7 @@ export abstract class Enemy extends Actor {
     this._animationController = new Animation({
       frameSet,
       isLoopAnimation: true,
+      emitter: this._emitter,
     });
 
     if (this._currentState === 'DIE') {
@@ -71,13 +73,19 @@ export abstract class Enemy extends Actor {
       rawValue: this._rawValue,
       texture: this._animationController.currentFrame.data,
     });
+
+    this.registerEvents();
+  }
+
+  private registerEvents() {
+    this._emitter.on('wolfPositionChange', this.checkForWolfInView.bind(this));
   }
 
   get currentState() {
     return this._currentState;
   }
 
-  castToPosition(position: Vertex, parsedMap: ParsedMap) {
+  castToPosition(position: Vertex) {
     const distanceToWolf = getDistanceBetweenVertexes(this._position, position);
 
     let angleBetweenEnemyAndWolf = getAngleBetweenVertexes(this._position, position);
@@ -92,7 +100,7 @@ export abstract class Enemy extends Actor {
     });
 
     const castResult = ray
-      .castDDA(parsedMap, angleBetweenEnemyAndWolf)
+      .castDDA(this._parsedMap, angleBetweenEnemyAndWolf)
       .filter(
         (intersection) =>
           isWall(intersection.obstacle) || (isDoor(intersection.obstacle) && intersection.obstacle.isInStartPosition)
@@ -107,38 +115,21 @@ export abstract class Enemy extends Actor {
     };
   }
 
-  takeDamage(wolfPosition: Vertex, damage: number, parsedMap: ParsedMap) {
+  hit(damage: number) {
     this._health -= damage;
 
     if (this._health <= 0) {
       this.changeState('DIE');
+
+      this._emitter.emit('enemyDie', this);
       this._animationController.onAnimationEnd = () => {};
-      this.dropAmmo(parsedMap);
     } else {
       this.changeState('TAKING_DAMAGE');
 
-      const castResult = this.castToPosition(wolfPosition, parsedMap);
-
-      this._angle = castResult.angle;
       this._animationController.onAnimationEnd = () => {
         this.changeState('IDLE');
       };
     }
-  }
-
-  private dropAmmo(parsedMap: ParsedMap) {
-    parsedMap[this.currentMatrixPosition.y][this.currentMatrixPosition.x] = new ItemObstacle({
-      position: {
-        x1: this.currentMatrixPosition.x * TILE_SIZE,
-        y1: this.currentMatrixPosition.y * TILE_SIZE,
-        x2: this.currentMatrixPosition.x * TILE_SIZE + TILE_SIZE,
-        y2: this.currentMatrixPosition.y * TILE_SIZE + TILE_SIZE,
-      },
-      hasCollision: false,
-      texture: getImageWithSource(`src/assets/sprites/items/${AMMO_ID}.png`),
-      rawValue: '34_SPRITE_HOLLOW_ITEM',
-      purpose: ITEMS_PURPOSES[AMMO_ID],
-    });
   }
 
   private changeState(newState: Enemy['_currentState']) {
@@ -151,8 +142,12 @@ export abstract class Enemy extends Actor {
     }
   }
 
-  private checkForWolfInView(wolfPosition: Vertex, parsedMap: ParsedMap) {
-    const castResult = this.castToPosition(wolfPosition, parsedMap);
+  private checkForWolfInView(wolfPosition: Vertex) {
+    if (this._currentState === 'DIE') {
+      return;
+    }
+
+    const castResult = this.castToPosition(wolfPosition);
 
     const rangeOfView: Triangle = getRangeOfView(this._angle, ENEMY_FOV, this._position);
 
@@ -169,7 +164,7 @@ export abstract class Enemy extends Actor {
     }
   }
 
-  private updateSprite(wolfPosition: Vertex, wolfAngle: number) {
+  getPreparedSprite(wolfPosition: Vertex, wolfAngle: number) {
     if (isDirectedFrameSetByAction(this._currentState)) {
       let angleBetweenEnemyAndWolf = getAngleBetweenVertexes(this._position, wolfPosition) - this._angle;
       let newSide = this._currentSide;
@@ -214,20 +209,7 @@ export abstract class Enemy extends Actor {
       y2: this.currentMatrixPosition.y * TILE_SIZE + TILE_SIZE,
     };
     this._sprite.rotatePerpendicularlyToView(wolfAngle);
-  }
 
-  getPreparedSprite() {
     return this._sprite;
-  }
-
-  iterate(wolfPosition: Vertex, wolfAngle: number, parsedMap: ParsedMap) {
-    this.updateSprite(wolfPosition, wolfAngle);
-
-    if (this._currentState !== 'DIE') {
-      this.checkForWolfInView(wolfPosition, parsedMap);
-    }
-
-    this._attackTimeout.iterate();
-    this._animationController.iterate();
   }
 }

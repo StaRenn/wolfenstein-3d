@@ -76,7 +76,7 @@ export abstract class DynamicObstacle extends StaticObstacle {
     return 0;
   }
 
-  iterateMovement() {
+  move() {
     if (!this.isMovable) {
       return true;
     }

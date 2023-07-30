@@ -27,6 +27,7 @@ module.exports = {
     'implicit-arrow-linebreak': 'off',
     'no-await-in-loop': 'off',
     'wrap-iife': 'off',
+    'function-paren-newline': 'off',
   },
   ignorePatterns: ['src/constants/map.ts', 'public/**/*.*'],
 };

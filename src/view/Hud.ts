@@ -1,5 +1,7 @@
 import type { WolfParams } from 'src/entities/actors/Wolf';
 
+import type { EventEmitter } from 'src/services/EventEmitter/EventEmitter';
+
 import { Animation } from 'src/controllers/Animation';
 
 import { HUD_WIDTH_COEFFICIENT, TEXTURE_SIZE, WEAPONS } from 'src/constants/config';
@@ -21,6 +23,7 @@ import type { Frame, HealthFrameSets, PostEffectFrame, ScreenData } from 'src/ty
 
 type HudParams = {
   ctx: Hud['_ctx'];
+  emitter: Hud['_emitter'];
   screenData: Hud['_screenData'];
   initialWeapon: keyof typeof WEAPONS;
 };
@@ -31,6 +34,7 @@ export class Hud {
   private readonly _weaponAnimation: Animation<Frame<HTMLImageElement>>;
   private readonly _postEffectAnimation: Animation<PostEffectFrame>;
   private readonly _portraitAnimation: Animation<Frame<HTMLImageElement>>;
+  private readonly _emitter: EventEmitter;
 
   private _currentFrameSet: HealthFrameSets[keyof HealthFrameSets];
   private _scale: number;
@@ -43,6 +47,7 @@ export class Hud {
     this._ctx = params.ctx;
     this._screenData = params.screenData;
     this._currentFrameSet = ACTOR_PORTRAIT_FRAME_SETS.HEALTHY;
+    this._emitter = params.emitter;
 
     this._scale = (this._screenData.width * HUD_WIDTH_COEFFICIENT) / HUD_PANEL.WIDTH;
 
@@ -52,34 +57,31 @@ export class Hud {
     this._offsetX = this._screenData.width / 2 - this._width / 2;
     this._offsetY = this._screenData.height - this._height;
 
-    this.onWeaponChange = this.onWeaponChange.bind(this);
-    this.onBoostPickup = this.onBoostPickup.bind(this);
-    this.onShoot = this.onShoot.bind(this);
-
-    this.renderPortrait = this.renderPortrait.bind(this);
-    this.renderWeapon = this.renderWeapon.bind(this);
-    this.renderPostEffect = this.renderPostEffect.bind(this);
-
     this._portraitAnimation = new Animation({
-      renderFunction: this.renderPortrait,
+      renderFunction: this.renderPortrait.bind(this),
       frameSet: this._currentFrameSet,
       initialFrameIdx: 0,
       isLoopAnimation: true,
+      emitter: this._emitter,
     });
 
     this._weaponAnimation = new Animation({
-      renderFunction: this.renderWeapon,
+      renderFunction: this.renderWeapon.bind(this),
       initialFrameIdx: 0,
       isLoopAnimation: false,
       frameSet: WEAPONS[params.initialWeapon].frameSet,
+      emitter: this._emitter,
     });
 
     this._postEffectAnimation = new Animation({
-      renderFunction: this.renderPostEffect,
+      renderFunction: this.renderPostEffect.bind(this),
       initialFrameIdx: 0,
       isLoopAnimation: false,
       frameSet: generatePostEffectFrameSet([255, 255, 0]),
+      emitter: this._emitter,
     });
+
+    this.registerEvents();
   }
 
   static getHealthFrameSet(health: number): HealthFrameSets[keyof HealthFrameSets] {
@@ -112,6 +114,12 @@ export class Hud {
     }
 
     return ACTOR_PORTRAIT_FRAME_SETS.DEAD;
+  }
+
+  private registerEvents() {
+    this._emitter.on('wolfWeaponChange', this.onWeaponChange.bind(this));
+    this._emitter.on('wolfBoostPickup', this.onBoostPickup.bind(this));
+    this._emitter.on('wolfAttack', this.onAttack.bind(this));
   }
 
   private renderPostEffect(data: PostEffectFrame['data']) {
@@ -173,24 +181,18 @@ export class Hud {
     }
   }
 
-  onWeaponChange(newWeapon: keyof typeof WEAPONS) {
+  private onWeaponChange(newWeapon: keyof typeof WEAPONS) {
     this._weaponAnimation.updateFrameSet(WEAPONS[newWeapon].frameSet);
   }
 
-  onBoostPickup() {
+  private onBoostPickup() {
     this._postEffectAnimation.updateFrameSet(generatePostEffectFrameSet([255, 255, 0]));
     this._postEffectAnimation.playAnimation();
   }
 
-  onShoot() {
+  private onAttack() {
     this._weaponAnimation.setActiveFrameIdx(0);
     this._weaponAnimation.playAnimation();
-  }
-
-  iterate() {
-    this._weaponAnimation.iterate();
-    this._postEffectAnimation.iterate();
-    this._portraitAnimation.iterate();
   }
 
   render({

@@ -39,7 +39,7 @@ export type Weapon = {
   maxDamage: number;
   frameDuration: number;
   ammoPerAttack: number;
-  shootFrameIdx: number;
+  attackFrameIdx: number;
   icon: HTMLImageElement;
 };
 
@@ -85,6 +85,8 @@ export type Frame<T> = {
   data: T;
   duration: number;
 };
+
+export type EnemyTypes = 'guard';
 
 export type EnemyDirections = readonly [
   'FRONT',
