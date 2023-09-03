@@ -40,6 +40,7 @@ export type Weapon = {
   frameDuration: number;
   ammoPerAttack: number;
   attackFrameIdx: number;
+  noiseDistance: number;
   icon: HTMLImageElement;
 };
 
@@ -99,14 +100,11 @@ export type EnemyDirections = readonly [
   'FRONT_LEFT'
 ];
 
-export type EntityFrameSetByAction = {
-  IDLE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  WANDER: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  CHASE: Record<EnemyDirections[number], Frame<HTMLImageElement>[]>;
-  ATTACK: Frame<HTMLImageElement>[];
-  DIE: Frame<HTMLImageElement>[];
-  TAKING_DAMAGE: Frame<HTMLImageElement>[];
-};
+export type EnemyState = 'IDLE' | 'ALERT' | 'ATTACK' | 'CHASE' | 'SEARCH';
+export type EnemyAction = 'SHOOT' | 'TAKE_DAMAGE' | 'DIE';
+
+export type EnemyFrameSetByState = Record<EnemyState, Record<EnemyDirections[number], Frame<HTMLImageElement>[]>>;
+export type EnemyFrameSetByAction = Record<EnemyAction, Frame<HTMLImageElement>[]>;
 
 export type PostEffectFrame = Frame<{ color: string }>;
 

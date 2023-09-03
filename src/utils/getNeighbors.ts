@@ -10,13 +10,13 @@ export function getNeighbors(map: ParsedMap, matrixCoordinates: Vertex) {
     [OBSTACLE_SIDES.RIGHT]: null,
   };
 
-  Object.keys(neighbors).forEach((side, i) => {
+  Object.keys(neighbors).forEach((side) => {
     const offset = NEIGHBOR_OFFSET[side as keyof typeof OBSTACLE_SIDES];
 
-    const axisY = map[matrixCoordinates.y + (1 - (i % 2)) * offset];
+    const axisY = map[matrixCoordinates.y + offset.y];
 
     if (axisY) {
-      const axisXValue = axisY[matrixCoordinates.x + (i % 2) * offset];
+      const axisXValue = axisY[matrixCoordinates.x + offset.x];
 
       if (axisXValue) {
         neighbors[side as keyof typeof OBSTACLE_SIDES] = axisXValue;

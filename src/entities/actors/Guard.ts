@@ -1,8 +1,13 @@
 import { Enemy, EnemyParams } from 'src/entities/actors/abstract/Enemy';
 
-import { getEnemyFrameSet } from 'src/utils/frameSets';
+import { TILE_SIZE } from 'src/constants/config';
 
-export type GuardParams = Omit<EnemyParams, 'frameSet' | 'health' | 'maxHealth' | 'currentWeapon'>;
+import { getEnemyFrameSetByAction, getEnemyFrameSetByState } from 'src/utils/frameSets';
+
+export type GuardParams = Omit<
+  EnemyParams,
+  'stateFrameSet' | 'actionFrameSet' | 'health' | 'maxHealth' | 'currentWeapon' | 'speed' | 'viewDistance'
+>;
 
 export class Guard extends Enemy {
   constructor(params: GuardParams) {
@@ -11,7 +16,10 @@ export class Guard extends Enemy {
       currentWeapon: 'PISTOL',
       health: 100,
       maxHealth: 100,
-      frameSet: getEnemyFrameSet('guard'),
+      speed: 0.4,
+      viewDistance: TILE_SIZE * 20,
+      stateFrameSet: getEnemyFrameSetByState('guard'),
+      actionFrameSet: getEnemyFrameSetByAction('guard'),
     });
   }
 }

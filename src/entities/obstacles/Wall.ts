@@ -80,8 +80,8 @@ export class WallObstacle extends DynamicObstacle {
     let textureDark = this._textureDark;
 
     if (neighborIsDoor) {
-      texture = getImageWithSource(`src/assets/textures/${DOOR_SIDE_WALL_TEXTURE_ID}.png`);
-      textureDark = getImageWithSource(`src/assets/textures/${DOOR_SIDE_WALL_TEXTURE_DARK_ID}.png`);
+      texture = getImageWithSource(`src/static/assets/textures/${DOOR_SIDE_WALL_TEXTURE_ID}.png`);
+      textureDark = getImageWithSource(`src/static/assets/textures/${DOOR_SIDE_WALL_TEXTURE_DARK_ID}.png`);
     }
 
     return {

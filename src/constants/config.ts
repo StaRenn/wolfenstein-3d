@@ -2,7 +2,7 @@ import { fillWeaponFrameSet } from 'src/utils/frameSets';
 import { getImageWithSource } from 'src/utils/getImageWithSource';
 import { toRadians } from 'src/utils/maths';
 
-import type { ItemPurpose, Weapons } from 'src/types';
+import type { ItemPurpose, Vertex, Weapons } from 'src/types';
 
 // core, do not change
 export const TILE_SIZE = 10;
@@ -23,7 +23,6 @@ export const OBSTACLES_MOVE_SPEED = TILE_SIZE / (TILE_SIZE * 4);
 export const ACTOR_SPEED = 1;
 export const ENEMY_FOV = toRadians(120);
 export const WOLF_ATTACK_FOV = toRadians(15);
-export const ENEMY_VIEW_DISTANCE = TILE_SIZE * 16;
 
 // defaults
 // 1 / RESOLUTION_SCALE must return integer value, because we cant render 0.1 of pixel, 0.5 of pixel etc
@@ -44,7 +43,8 @@ export const WEAPONS: Weapons = {
     frameDuration: 50,
     ammoPerAttack: 0,
     attackFrameIdx: 2,
-    icon: getImageWithSource('src/assets/hud/knife.png'),
+    noiseDistance: 0,
+    icon: getImageWithSource('src/static/assets/hud/knife.png'),
   },
   PISTOL: {
     frameSet: fillWeaponFrameSet('PISTOL', 65),
@@ -54,7 +54,8 @@ export const WEAPONS: Weapons = {
     frameDuration: 65,
     ammoPerAttack: 1,
     attackFrameIdx: 2,
-    icon: getImageWithSource('src/assets/hud/pistol.png'),
+    noiseDistance: TILE_SIZE * 6,
+    icon: getImageWithSource('src/static/assets/hud/pistol.png'),
   },
   MACHINE_GUN: {
     frameSet: fillWeaponFrameSet('MACHINE_GUN', 22.5),
@@ -64,7 +65,8 @@ export const WEAPONS: Weapons = {
     frameDuration: 22.5,
     ammoPerAttack: 1,
     attackFrameIdx: 2,
-    icon: getImageWithSource('src/assets/hud/machine_gun.png'),
+    noiseDistance: TILE_SIZE * 10,
+    icon: getImageWithSource('src/static/assets/hud/machine_gun.png'),
   },
 };
 
@@ -119,11 +121,36 @@ export const OBSTACLE_SIDES = {
   RIGHT: 'RIGHT',
 } as const;
 
-export const NEIGHBOR_OFFSET = {
-  [OBSTACLE_SIDES.TOP]: -1,
-  [OBSTACLE_SIDES.BOTTOM]: 1,
-  [OBSTACLE_SIDES.LEFT]: -1,
-  [OBSTACLE_SIDES.RIGHT]: 1,
+export const OBSTACLE_CORNERS = {
+  TOP_LEFT: 'TOP_LEFT',
+  TOP_RIGHT: 'TOP_RIGHT',
+  BOTTOM_LEFT: 'BOTTOM_LEFT',
+  BOTTOM_RIGHT: 'BOTTOM_RIGHT',
+} as const;
+
+export const NEIGHBOR_OFFSET: Record<keyof typeof OBSTACLE_SIDES, Vertex> = {
+  [OBSTACLE_SIDES.TOP]: { x: 0, y: -1 },
+  [OBSTACLE_SIDES.BOTTOM]: { x: 0, y: 1 },
+  [OBSTACLE_SIDES.LEFT]: { x: -1, y: 0 },
+  [OBSTACLE_SIDES.RIGHT]: { x: 1, y: 0 },
+} as const;
+
+export const NEIGHBOR_OFFSET_WITH_CORNERS: Record<
+  keyof typeof OBSTACLE_CORNERS | keyof typeof NEIGHBOR_OFFSET,
+  Vertex
+> = {
+  ...NEIGHBOR_OFFSET,
+  [OBSTACLE_CORNERS.TOP_LEFT]: { x: -1, y: -1 },
+  [OBSTACLE_CORNERS.TOP_RIGHT]: { x: 1, y: -1 },
+  [OBSTACLE_CORNERS.BOTTOM_LEFT]: { x: -1, y: 1 },
+  [OBSTACLE_CORNERS.BOTTOM_RIGHT]: { x: 1, y: 1 },
+};
+
+export const NEIGHBORS_NEXT_TO_CORNERS = {
+  [OBSTACLE_CORNERS.TOP_LEFT]: [NEIGHBOR_OFFSET.BOTTOM, NEIGHBOR_OFFSET.RIGHT],
+  [OBSTACLE_CORNERS.TOP_RIGHT]: [NEIGHBOR_OFFSET.BOTTOM, NEIGHBOR_OFFSET.LEFT],
+  [OBSTACLE_CORNERS.BOTTOM_LEFT]: [NEIGHBOR_OFFSET.TOP, NEIGHBOR_OFFSET.RIGHT],
+  [OBSTACLE_CORNERS.BOTTOM_RIGHT]: [NEIGHBOR_OFFSET.TOP, NEIGHBOR_OFFSET.LEFT],
 } as const;
 
 export const ENEMY_FACING_DIRECTION_MAP = {

@@ -7,14 +7,14 @@ const path = require('path');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const sharp = require('sharp');
 
-const TEXTURES_PATH = '../../src/assets/textures';
+const TEXTURES_PATH = '../../src/static/assets/textures';
 const SECRETS_PATH = './secretWallsTextures';
 const ENEMIES_PATH = './enemies';
-const STATIC_SPRITES_PATH = '../../src/assets/sprites/static';
-const HOLLOW_SPRITES_PATH = '../../src/assets/sprites/hollow';
-const ITEM_SPRITES_PATH = '../../src/assets/sprites/items';
+const STATIC_SPRITES_PATH = '../../src/static/assets/sprites/static';
+const HOLLOW_SPRITES_PATH = '../../src/static/assets/sprites/hollow';
+const ITEM_SPRITES_PATH = '../../src/static/assets/sprites/items';
 const MAPS_PATH = '../maps';
-const OUTPUT_PATH = './output';
+const OUTPUT_PATH = '../../src/static/maps';
 const START_POS_PATH = './playerStartPosition';
 
 // these maps has broken sprites, without 2px from the bottom and 1 px from the top, so we need to crop our textures

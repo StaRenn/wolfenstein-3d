@@ -2,7 +2,8 @@ import { getImageWithSource } from 'src/utils/getImageWithSource';
 
 import type {
   EnemyDirections,
-  EntityFrameSetByAction,
+  EnemyFrameSetByAction,
+  EnemyFrameSetByState,
   Frame,
   HealthFrameSets,
   PostEffectFrame,
@@ -20,23 +21,14 @@ const ENEMY_DIRECTIONS: EnemyDirections = [
   'FRONT_LEFT',
 ] as const;
 
-export const NON_DIRECTED_FRAME_SETS_BY_ACTION: (keyof Pick<
-  EntityFrameSetByAction,
-  'ATTACK' | 'DIE' | 'TAKING_DAMAGE'
->)[] = ['ATTACK', 'DIE', 'TAKING_DAMAGE'];
-
-export const DIRECTED_FRAME_SETS_BY_ACTION: (keyof Pick<EntityFrameSetByAction, 'IDLE' | 'WANDER' | 'CHASE'>)[] = [
-  'IDLE',
-  'WANDER',
-  'CHASE',
-];
-
 export function fillWeaponFrameSet(weaponType: WeaponType, duration: number): Frame<HTMLImageElement>[] {
   const frameSet = [];
 
   for (let i = 0; i < 5; i++) {
     frameSet.push(
-      getImageWithSource(`src/assets/weapons/${weaponType.toLowerCase()}/${weaponType.toLowerCase()}_frame_${i}.png`)
+      getImageWithSource(
+        `src/static/assets/weapons/${weaponType.toLowerCase()}/${weaponType.toLowerCase()}_frame_${i}.png`
+      )
     );
   }
 
@@ -54,38 +46,61 @@ export function fillDirection<T>() {
   }, {} as Record<EnemyDirections[number], T[]>);
 }
 
-export function getEnemyFrameSet(type: 'guard'): EntityFrameSetByAction {
-  const frameSet: EntityFrameSetByAction = {
+export function getEnemyFrameSetByState(type: 'guard'): EnemyFrameSetByState {
+  const frameSet: EnemyFrameSetByState = {
     IDLE: fillDirection<Frame<HTMLImageElement>>(),
-    WANDER: fillDirection<Frame<HTMLImageElement>>(),
+    ALERT: fillDirection<Frame<HTMLImageElement>>(),
+    ATTACK: fillDirection<Frame<HTMLImageElement>>(),
     CHASE: fillDirection<Frame<HTMLImageElement>>(),
-    ATTACK: [] as Frame<HTMLImageElement>[],
-    DIE: [] as Frame<HTMLImageElement>[],
-    TAKING_DAMAGE: [] as Frame<HTMLImageElement>[],
+    SEARCH: fillDirection<Frame<HTMLImageElement>>(),
   };
-
-  frameSet.TAKING_DAMAGE.push({
-    data: getImageWithSource(`src/assets/enemies/${type}/taking_damage/0.png`),
-    duration: 150,
-  });
 
   for (const key of ENEMY_DIRECTIONS) {
     frameSet.IDLE[key].push({
-      data: getImageWithSource(`src/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
+      data: getImageWithSource(`src/static/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
       duration: Infinity,
     });
   }
 
+  for (const key of ENEMY_DIRECTIONS) {
+    frameSet.CHASE[key].push({
+      data: getImageWithSource(`src/static/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
+      duration: Infinity,
+    });
+  }
+
+  for (const key of ENEMY_DIRECTIONS) {
+    frameSet.ALERT[key].push({
+      data: getImageWithSource(`src/static/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
+      duration: Infinity,
+    });
+  }
+
+  return frameSet;
+}
+
+export function getEnemyFrameSetByAction(type: 'guard'): EnemyFrameSetByAction {
+  const frameSet: EnemyFrameSetByAction = {
+    SHOOT: [],
+    TAKE_DAMAGE: [],
+    DIE: [],
+  };
+
+  frameSet.TAKE_DAMAGE.push({
+    data: getImageWithSource(`src/static/assets/enemies/${type}/take_damage/0.png`),
+    duration: 150,
+  });
+
   for (let i = 0; i <= 2; i++) {
-    frameSet.ATTACK.push({
-      data: getImageWithSource(`src/assets/enemies/${type}/attack/${i}.png`),
+    frameSet.SHOOT.push({
+      data: getImageWithSource(`src/static/assets/enemies/${type}/shoot/${i}.png`),
       duration: 150,
     });
   }
 
   for (let i = 0; i <= 4; i++) {
     frameSet.DIE.push({
-      data: getImageWithSource(`src/assets/enemies/${type}/die/${i}.png`),
+      data: getImageWithSource(`src/static/assets/enemies/${type}/die/${i}.png`),
       duration: i === 4 ? Infinity : 100,
     });
   }
@@ -97,7 +112,7 @@ export function fillPortraitFrameSet(condition: keyof HealthFrameSets): Frame<HT
   const frameSet = [];
 
   for (let i = 0; i < 3; i++) {
-    frameSet.push(getImageWithSource(`src/assets/hud/portrait/${condition.toLowerCase()}/frame_${i}.png`));
+    frameSet.push(getImageWithSource(`src/static/assets/hud/portrait/${condition.toLowerCase()}/frame_${i}.png`));
   }
 
   return [

@@ -14,7 +14,11 @@ export function clamp(number: number, min: number, max: number) {
   return Math.max(min, Math.min(number, max));
 }
 
-export function hasEqualPosition(firstPosition: Vector, secondPosition: Vector) {
+export function hasEqualPositionVertex(firstPosition: Vertex, secondPosition: Vertex) {
+  return firstPosition.x === secondPosition.x && firstPosition.y === secondPosition.y;
+}
+
+export function hasEqualPositionVector(firstPosition: Vector, secondPosition: Vector) {
   return (
     firstPosition.x1 === secondPosition.x1 &&
     firstPosition.y1 === secondPosition.y1 &&

@@ -1,7 +1,8 @@
+const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const CircularDependencyPlugin = require('circular-dependency-plugin')
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 module.exports = {
   mode: process.env.NODE_ENV,
@@ -16,8 +17,8 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      src: path.resolve(__dirname, 'src')
-    }
+      src: path.resolve(__dirname, 'src'),
+    },
   },
   module: {
     rules: [
@@ -32,7 +33,7 @@ module.exports = {
       overlay: {
         warnings: false,
         errors: true,
-      }
+      },
     },
     static: {
       directory: path.join(__dirname, 'src'),
@@ -42,8 +43,17 @@ module.exports = {
     hot: true,
   },
   plugins: [
-    new HtmlWebpackPlugin({inject: true, template: "src/index.html", minify: true}),
-    new CopyWebpackPlugin({patterns: [{from: 'src/assets', to: 'src/assets'}]}),
+    new webpack.DefinePlugin({
+      __MAP__: JSON.stringify(process.env.MAP),
+    }),
+    new HtmlWebpackPlugin({
+      inject: true,
+      template: 'src/index.html',
+      minify: true,
+    }),
+    new CopyWebpackPlugin({
+      patterns: [{ from: 'src/static', to: 'src/static' }],
+    }),
     new CircularDependencyPlugin({
       // exclude detection of files based on a RegExp
       exclude: /node_modules/,
@@ -56,6 +66,6 @@ module.exports = {
       allowAsyncCycles: false,
       // set the current working directory for displaying module paths
       cwd: process.cwd(),
-    })
+    }),
   ],
 };

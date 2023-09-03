@@ -1,6 +1,7 @@
-import type { Enemy } from 'src/entities/actors/abstract/Enemy';
+import type { GameMap } from 'src/entities/GameMap';
+import type { EnemyAI } from 'src/entities/actors/abstract/EnemyAI';
 
-import type { ScreenData, Vertex, WeaponType } from 'src/types';
+import type { ScreenData, Vertex, Weapon, WeaponType } from 'src/types';
 
 export type Events = {
   // Game
@@ -8,14 +9,15 @@ export type Events = {
   resize: ScreenData;
   frameUpdate: undefined;
   resolutionScaleChange: number;
+  gameMapReady: GameMap;
   // Wolf
   wolfBoostPickup: undefined;
-  wolfAttack: undefined;
+  wolfAttack: Weapon;
   wolfWeaponChange: WeaponType;
   wolfInteract: undefined;
   wolfPositionChange: Vertex;
   wolfMatrixPositionChange: Vertex;
   // Enemy
-  enemyHit: Enemy;
-  enemyDie: Enemy;
+  enemyHit: EnemyAI;
+  enemyDie: EnemyAI;
 };

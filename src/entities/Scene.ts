@@ -14,7 +14,7 @@ import { clamp, getIsVertexInTheTriangle, getRangeOfView } from 'src/utils/maths
 import { GameMap } from './GameMap';
 
 import type { Chunk, Obstacle, RawMap, ScreenData } from 'src/types';
-import { isDoor, isSprite, isWall } from 'src/types/typeGuards';
+import { isDoor, isEnemy, isSprite, isWall } from 'src/types/typeGuards';
 
 export type SceneParams = {
   canvas: Scene['_canvas'];
@@ -69,7 +69,7 @@ export class Scene {
       rawValue: 'START_POS',
       resolutionScale: params.resolutionScale,
       fov: params.fov,
-      parsedMap: this._gameMap.map,
+      gameMap: this._gameMap,
     });
 
     this._minimap = new Minimap({
@@ -96,11 +96,68 @@ export class Scene {
     this._screenData.width = width;
   }
 
+  getNonGridObstaclesInView(): Obstacle[] {
+    const { nonGridObstacles } = this._gameMap;
+    const { position, angle } = this._wolf;
+    const { fov } = this._wolf.camera;
+
+    const rangeOfView = getRangeOfView(angle, fov, position);
+
+    // For optimization, we must reduce the number of vectors with which intersections are searched
+    // push only those planes that can be visible by player side
+    const obstacles = nonGridObstacles.reduce<Obstacle[]>((acc, obstacle) => {
+      if (isEnemy(obstacle)) {
+        acc.push(obstacle.getPreparedSprite(this._wolf.position, this._wolf.angle));
+
+        return acc;
+      }
+
+      if (!isWall(obstacle)) {
+        acc.push(obstacle);
+
+        return acc;
+      }
+
+      const obstaclePos = obstacle.position;
+
+      // get visible sides of the wall by player position
+      if (position.x <= obstaclePos.x1) {
+        acc.push(obstacle.wallSides.LEFT);
+      }
+      if (position.x >= obstaclePos.x2) {
+        acc.push(obstacle.wallSides.RIGHT);
+      }
+      if (position.y <= obstaclePos.y1) {
+        acc.push(obstacle.wallSides.TOP);
+      }
+      if (position.y >= obstaclePos.y2) {
+        acc.push(obstacle.wallSides.BOTTOM);
+      }
+
+      return acc;
+    }, []);
+
+    // get walls that are in the FOV range
+    return obstacles.filter((obstacle) => {
+      // If user comes straight to the plane, vertexes of the plane will not be in range of vision
+      // so we need to check if user looking at the plane rn
+      const isLookingAt = !!this._wolf.camera.getViewAngleIntersection(obstacle.position);
+
+      const { x1, y1, x2, y2 } = obstacle.position;
+
+      return (
+        isLookingAt ||
+        getIsVertexInTheTriangle({ x: x1, y: y1 }, rangeOfView) ||
+        getIsVertexInTheTriangle({ x: x2, y: y2 }, rangeOfView)
+      );
+    });
+  }
+
   handleWolfAttack() {
     const attackRange = getRangeOfView(this._wolf.angle, WOLF_ATTACK_FOV, this._wolf.position);
 
     const enemiesInAttackRange = this._gameMap.enemies.filter((enemy) => {
-      if (enemy.currentState === 'DIE') {
+      if (enemy.currentAction === 'DIE') {
         return false;
       }
 
@@ -180,10 +237,8 @@ export class Scene {
     this._ctx.fillStyle = '#383838';
     this._ctx.fillRect(0, 0, this._screenData.width, Math.ceil(this._screenData.height / 2));
 
-    const intersections = this._wolf.camera.getIntersections(
-      this._gameMap.map,
-      this._gameMap.getNonGridObstaclesInView(this._wolf)
-    );
+    const intersections = this._wolf.camera.getIntersections(this._gameMap.map, this.getNonGridObstaclesInView());
+
     // sort intersections by closest
     const sortedAndMergedIntersections = [...intersections].sort((a, b) => {
       if (b.distance === a.distance) {

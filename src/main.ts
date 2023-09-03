@@ -9,9 +9,10 @@ import {
   DEFAULT_RESOLUTION_SCALE,
   RESOLUTIONS_SCALE_VALUES,
 } from './constants/config';
-import { map } from './constants/map';
 
 import { toRadians } from './utils/maths';
+
+import type { RawMap } from './types';
 
 export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
@@ -36,6 +37,9 @@ async function main() {
     height: window.innerHeight,
     width: window.innerWidth,
   };
+
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  const map: RawMap = await require(`./static/maps/${__MAP__ || 'E1M3'}.json`);
 
   const scene = new Scene({
     canvas,

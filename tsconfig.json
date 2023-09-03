@@ -19,7 +19,8 @@
     "strict": true,
     "importsNotUsedAsValues": "error",
     "moduleResolution": "node",
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

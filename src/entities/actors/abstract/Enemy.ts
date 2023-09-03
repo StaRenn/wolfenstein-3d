@@ -1,65 +1,55 @@
-import { Actor, ActorParams } from 'src/entities/actors/abstract/Actor';
+import type { ActorParams } from 'src/entities/actors/abstract/Actor';
 import { SpriteObstacle } from 'src/entities/obstacles/Sprite';
-
-import { Ray } from 'src/services/Ray';
 
 import { Animation } from 'src/controllers/Animation';
 
-import { ENEMY_FOV, ENEMY_VIEW_DISTANCE, TILE_SIZE } from 'src/constants/config';
+import { TILE_SIZE } from 'src/constants/config';
 
-import {
-  getAngleBetweenVertexes,
-  getDistanceBetweenVertexes,
-  getIsVertexInTheTriangle,
-  getRangeOfView,
-  toRadians,
-} from 'src/utils/maths';
+import { getAngleBetweenVertexes, toRadians } from 'src/utils/maths';
 
-import type { EnemyDirections, EnemyTypes, EntityFrameSetByAction, Frame, Triangle, Vertex } from 'src/types';
-import { isDirectedFrameSetByAction, isDoor, isNonDirectedFrameSetByAction, isWall } from 'src/types/typeGuards';
+import { EnemyAI } from './EnemyAI';
+
+import type { EnemyDirections, EnemyFrameSetByAction, EnemyFrameSetByState, Frame, Vertex } from 'src/types';
 
 export type EnemyParams = {
-  initialAction: Enemy['_currentState'];
-  frameSet: Enemy['_frameSet'];
-  type: Enemy['_type'];
+  initialState: Enemy['_currentState'];
+  initialAction: Enemy['_currentAction'];
+  stateFrameSet: Enemy['_stateFrameSet'];
+  actionFrameSet: Enemy['_actionFrameSet'];
+  speed: Enemy['_speed'];
+  viewDistance: Enemy['_viewDistance'];
 } & ActorParams;
 
-// enemy model has 8 sides
-const SIDE = toRadians(360 / 8);
+const ENEMY_SIDES_AMOUNT = 8;
+const SIDE = toRadians(360 / ENEMY_SIDES_AMOUNT);
 const HALF_SIDE = SIDE / 2;
 
-export abstract class Enemy extends Actor {
-  protected _currentState: keyof EntityFrameSetByAction;
-  protected _frameSet: EntityFrameSetByAction;
+export abstract class Enemy extends EnemyAI {
+  protected _stateFrameSet: EnemyFrameSetByState;
+  protected _actionFrameSet: EnemyFrameSetByAction;
   protected _sprite: SpriteObstacle;
   protected _animationController: Animation<Frame<HTMLImageElement>>;
   protected _currentSide: EnemyDirections[number];
-  protected _type: EnemyTypes;
-
-  public readonly isEnemy: true;
 
   protected constructor(params: EnemyParams) {
     super(params);
 
-    this.isEnemy = true;
-
-    this._currentState = params.initialAction;
-    this._frameSet = params.frameSet;
+    this._stateFrameSet = params.stateFrameSet;
+    this._actionFrameSet = params.actionFrameSet;
     this._currentSide = 'FRONT';
-    this._type = params.type;
 
-    const frameSet = isNonDirectedFrameSetByAction(this._currentState)
-      ? this._frameSet[this._currentState]
-      : this._frameSet[this._currentState][this._currentSide];
+    const initialFrameSet = this._currentAction
+      ? this._actionFrameSet[this._currentAction]
+      : this._stateFrameSet[this._currentState][this._currentSide];
 
     this._animationController = new Animation({
-      frameSet,
+      frameSet: initialFrameSet,
       isLoopAnimation: true,
       emitter: this._emitter,
     });
 
-    if (this._currentState === 'DIE') {
-      this._animationController.setActiveFrameIdx(frameSet.length - 1);
+    if (params.initialAction === 'DIE') {
+      this._animationController.setActiveFrameIdx(initialFrameSet.length - 1);
     }
 
     this._sprite = new SpriteObstacle({
@@ -73,99 +63,40 @@ export abstract class Enemy extends Actor {
       rawValue: this._rawValue,
       texture: this._animationController.currentFrame.data,
     });
-
-    this.registerEvents();
-  }
-
-  private registerEvents() {
-    this._emitter.on('wolfPositionChange', this.checkForWolfInView.bind(this));
   }
 
   get currentState() {
     return this._currentState;
   }
 
-  castToPosition(position: Vertex) {
-    const distanceToWolf = getDistanceBetweenVertexes(this._position, position);
-
-    let angleBetweenEnemyAndWolf = getAngleBetweenVertexes(this._position, position);
-
-    if (angleBetweenEnemyAndWolf <= 0) {
-      angleBetweenEnemyAndWolf = Math.PI * 2 + angleBetweenEnemyAndWolf;
-    }
-
-    const ray = new Ray({
-      initialPosition: this._position,
-      angle: angleBetweenEnemyAndWolf,
-    });
-
-    const castResult = ray
-      .castDDA(this._parsedMap, angleBetweenEnemyAndWolf)
-      .filter(
-        (intersection) =>
-          isWall(intersection.obstacle) || (isDoor(intersection.obstacle) && intersection.obstacle.isInStartPosition)
-      );
-
-    const closest = castResult.sort(({ distance: distanceA }, { distance: distanceB }) => distanceA - distanceB)[0];
-
-    return {
-      isVisible: !closest || closest.distance > distanceToWolf,
-      distance: distanceToWolf,
-      angle: angleBetweenEnemyAndWolf,
-    };
+  get currentAction() {
+    return this._currentAction;
   }
 
-  hit(damage: number) {
-    this._health -= damage;
+  private updateActiveFrameSet() {
+    const frameSet = this._currentAction
+      ? this._actionFrameSet[this._currentAction]
+      : this._stateFrameSet[this._currentState][this._currentSide];
 
-    if (this._health <= 0) {
-      this.changeState('DIE');
+    this._animationController.updateFrameSet(frameSet);
+  }
 
-      this._emitter.emit('enemyDie', this);
-      this._animationController.onAnimationEnd = () => {};
-    } else {
-      this.changeState('TAKING_DAMAGE');
+  protected onCurrentStateChange() {
+    this.updateActiveFrameSet();
+  }
 
+  protected onCurrentActionChange() {
+    this.updateActiveFrameSet();
+
+    if (this._currentAction !== 'DIE') {
       this._animationController.onAnimationEnd = () => {
-        this.changeState('IDLE');
+        this.setCurrentAction(null);
       };
     }
   }
 
-  private changeState(newState: Enemy['_currentState']) {
-    this._currentState = newState;
-
-    if (isNonDirectedFrameSetByAction(newState)) {
-      this._animationController.updateFrameSet(this._frameSet[newState]);
-    } else {
-      this._animationController.updateFrameSet(this._frameSet[newState][this._currentSide]);
-    }
-  }
-
-  private checkForWolfInView(wolfPosition: Vertex) {
-    if (this._currentState === 'DIE') {
-      return;
-    }
-
-    const castResult = this.castToPosition(wolfPosition);
-
-    const rangeOfView: Triangle = getRangeOfView(this._angle, ENEMY_FOV, this._position);
-
-    if (!getIsVertexInTheTriangle(wolfPosition, rangeOfView)) {
-      return;
-    }
-
-    if (castResult.distance > ENEMY_VIEW_DISTANCE) {
-      return;
-    }
-
-    if (castResult.isVisible) {
-      this._angle = castResult.angle;
-    }
-  }
-
   getPreparedSprite(wolfPosition: Vertex, wolfAngle: number) {
-    if (isDirectedFrameSetByAction(this._currentState)) {
+    if (!this._currentAction) {
       let angleBetweenEnemyAndWolf = getAngleBetweenVertexes(this._position, wolfPosition) - this._angle;
       let newSide = this._currentSide;
 
@@ -196,17 +127,17 @@ export abstract class Enemy extends Actor {
 
         const { currentFrameIdx } = this._animationController;
 
-        this._animationController.updateFrameSet(this._frameSet[this._currentState][this._currentSide]);
+        this._animationController.updateFrameSet(this._stateFrameSet[this._currentState][this._currentSide]);
         this._animationController.setActiveFrameIdx(currentFrameIdx);
       }
     }
 
     this._sprite.texture = this._animationController.currentFrame.data;
     this._sprite.position = {
-      x1: this.currentMatrixPosition.x * TILE_SIZE,
-      y1: this.currentMatrixPosition.y * TILE_SIZE,
-      x2: this.currentMatrixPosition.x * TILE_SIZE + TILE_SIZE,
-      y2: this.currentMatrixPosition.y * TILE_SIZE + TILE_SIZE,
+      x1: this._position.x - TILE_SIZE / 2,
+      y1: this._position.y - TILE_SIZE / 2,
+      x2: this._position.x + TILE_SIZE / 2,
+      y2: this._position.y + TILE_SIZE / 2,
     };
     this._sprite.rotatePerpendicularlyToView(wolfAngle);
 

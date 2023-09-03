@@ -17,7 +17,7 @@ export type WolfParams = {
   screenData: Camera['_screenData'];
   resolutionScale: Camera['_resolutionScale'];
   fov: Camera['_fov'];
-  parsedMap: Wolf['_parsedMap'];
+  gameMap: Wolf['_gameMap'];
 } & ActorParams;
 
 export class Wolf extends Actor {
@@ -46,10 +46,13 @@ export class Wolf extends Actor {
       emitter: params.emitter,
     });
 
+    this._emitter.emit('wolfPositionChange', this._position);
+    this._emitter.emit('wolfMatrixPositionChange', this.currentMatrixPosition);
+
     this.registerEvents();
   }
 
-  private registerEvents() {
+  protected registerEvents() {
     window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
     window.addEventListener('mouseup', this.handleMouseEvent.bind(this));
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
@@ -171,12 +174,16 @@ export class Wolf extends Actor {
         this._attackTimeout.onTimeoutExpire = null;
       };
 
-      this._emitter.emit('wolfAttack', undefined);
+      this._emitter.emit('wolfAttack', WEAPONS[this._currentWeapon]);
     }
   }
 
   private move() {
     if (this._horizontalSpeed === 0 && this._verticalSpeed === 0) {
+      return;
+    }
+
+    if (!this._gameMap) {
       return;
     }
 
@@ -304,23 +311,22 @@ export class Wolf extends Actor {
         this._emitter.emit('wolfBoostPickup', undefined);
 
         // remove from map when item picked up
-        this._parsedMap[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+        this._gameMap!.map[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
       }
     };
 
     const positionOnMap = this.currentMatrixPosition;
 
-    checkCollision((this._parsedMap[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
-    checkCollision((this._parsedMap[positionOnMap.y - 1] || [])[positionOnMap.x]);
-    checkCollision((this._parsedMap[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
-    checkCollision((this._parsedMap[positionOnMap.y] || [])[positionOnMap.x - 1]);
-    checkCollision((this._parsedMap[positionOnMap.y] || [])[positionOnMap.x + 1]);
-    checkCollision((this._parsedMap[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
-    checkCollision((this._parsedMap[positionOnMap.y + 1] || [])[positionOnMap.x]);
-    checkCollision((this._parsedMap[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
+    checkCollision((this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
+    checkCollision((this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x]);
+    checkCollision((this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
+    checkCollision((this._gameMap.map[positionOnMap.y] || [])[positionOnMap.x - 1]);
+    checkCollision((this._gameMap.map[positionOnMap.y] || [])[positionOnMap.x + 1]);
+    checkCollision((this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
+    checkCollision((this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x]);
+    checkCollision((this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
 
     this._position = position;
-
     this._emitter.emit('wolfPositionChange', this._position);
     this._emitter.emit('wolfMatrixPositionChange', this.currentMatrixPosition);
   }

@@ -4,7 +4,7 @@ import { getImageWithSource } from 'src/utils/getImageWithSource';
 import type { HealthFrameSets } from 'src/types';
 
 export const HUD_PANEL = {
-  TEXTURE: getImageWithSource('src/assets/hud/panel.png'),
+  TEXTURE: getImageWithSource('src/static/assets/hud/panel.png'),
   WIDTH: 400,
   HEIGHT: 40,
   INFO_Y_OFFSET: 16,
@@ -19,7 +19,7 @@ export const HUD_PANEL = {
   PORTRAIT_Y_OFFSET: 5,
 } as const;
 
-export const FONT_IMAGE = getImageWithSource('src/assets/hud/font.png');
+export const FONT_IMAGE = getImageWithSource('src/static/assets/hud/font.png');
 
 export const FONT_SYMBOL_WIDTH = 8;
 export const FONT_SYMBOL_HEIGHT = 16;
@@ -40,7 +40,7 @@ export const ACTOR_PORTRAIT_FRAME_SETS: HealthFrameSets = {
   NEAR_DEATH: fillPortraitFrameSet('NEAR_DEATH'),
   DEAD: [
     {
-      data: getImageWithSource('src/assets/hud/portrait/dead/frame_0.png'),
+      data: getImageWithSource('src/static/assets/hud/portrait/dead/frame_0.png'),
       duration: 10000,
     },
   ],

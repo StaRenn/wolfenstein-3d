@@ -1,10 +1,12 @@
+import type { GameMap } from 'src/entities/GameMap';
+
 import type { EventEmitter } from 'src/services/EventEmitter/EventEmitter';
 
 import { Timeout } from 'src/controllers/Timeout';
 
 import { TILE_SIZE, WEAPONS } from 'src/constants/config';
 
-import type { ParsedMap, Vertex } from 'src/types';
+import type { Vertex } from 'src/types';
 
 export type ActorParams = {
   position: Actor['_position'];
@@ -14,7 +16,7 @@ export type ActorParams = {
   angle: Actor['_angle'];
   rawValue: Actor['_rawValue'];
   emitter: Actor['_emitter'];
-  parsedMap: Actor['_parsedMap'];
+  gameMap: Actor['_gameMap'];
 };
 
 export abstract class Actor {
@@ -29,7 +31,7 @@ export abstract class Actor {
   protected _angle: number;
   protected _attackTimeout: Timeout;
   protected _rawValue: string | number;
-  protected _parsedMap: ParsedMap;
+  protected _gameMap: GameMap | null;
 
   protected constructor(params: ActorParams) {
     this._currentWeapon = params.currentWeapon;
@@ -38,13 +40,21 @@ export abstract class Actor {
     this._position = params.position;
     this._angle = params.angle;
     this._rawValue = params.rawValue;
-    this._parsedMap = params.parsedMap;
+    this._gameMap = params.gameMap;
     this._emitter = params.emitter;
 
     this._attackTimeout = new Timeout(params.emitter);
     this._isAttacking = false;
     this._horizontalSpeed = 0;
     this._verticalSpeed = 0;
+
+    this.registerActorEvents();
+  }
+
+  private registerActorEvents() {
+    this._emitter.on('gameMapReady', (gameMap) => {
+      this._gameMap = gameMap;
+    });
   }
 
   get angle() {
