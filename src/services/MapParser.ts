@@ -202,7 +202,7 @@ export class MapParser {
               purpose: purpose!,
             });
 
-            parsedMap[yAxis].push(null);
+            parsedMap[yAxis].push(item);
             obstacles.push(item);
           } else if (isDoor) {
             const door = new DoorObstacle({
