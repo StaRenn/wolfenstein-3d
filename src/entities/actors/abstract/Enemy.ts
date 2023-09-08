@@ -9,7 +9,14 @@ import { getAngleBetweenVertexes, toRadians } from 'src/utils/maths';
 
 import { EnemyAI } from './EnemyAI';
 
-import type { EnemyDirections, EnemyFrameSetByAction, EnemyFrameSetByState, Frame, Vertex } from 'src/types';
+import type {
+  DirectedFrameSets,
+  EnemyDirectedFrameSet,
+  EnemyDirections,
+  EnemyFrameSetByAction,
+  Frame,
+  Vertex,
+} from 'src/types';
 
 export type EnemyParams = {
   initialState: Enemy['_currentState'];
@@ -25,7 +32,7 @@ const SIDE = toRadians(360 / ENEMY_SIDES_AMOUNT);
 const HALF_SIDE = SIDE / 2;
 
 export abstract class Enemy extends EnemyAI {
-  protected _stateFrameSet: EnemyFrameSetByState;
+  protected _stateFrameSet: EnemyDirectedFrameSet;
   protected _actionFrameSet: EnemyFrameSetByAction;
   protected _sprite: SpriteObstacle;
   protected _animationController: Animation<Frame<HTMLImageElement>>;
@@ -38,9 +45,12 @@ export abstract class Enemy extends EnemyAI {
     this._actionFrameSet = params.actionFrameSet;
     this._currentSide = 'FRONT';
 
+    const directedFrameSet: DirectedFrameSets =
+      this._horizontalSpeed !== 0 || this._verticalSpeed !== 0 ? 'RUN' : 'IDLE';
+
     const initialFrameSet = this._currentAction
       ? this._actionFrameSet[this._currentAction]
-      : this._stateFrameSet[this._currentState][this._currentSide];
+      : this._stateFrameSet[directedFrameSet][this._currentSide];
 
     this._animationController = new Animation({
       frameSet: initialFrameSet,
@@ -74,11 +84,18 @@ export abstract class Enemy extends EnemyAI {
   }
 
   private updateActiveFrameSet() {
+    const directedFrameSet: DirectedFrameSets =
+      this._horizontalSpeed !== 0 || this._verticalSpeed !== 0 ? 'RUN' : 'IDLE';
+
     const frameSet = this._currentAction
       ? this._actionFrameSet[this._currentAction]
-      : this._stateFrameSet[this._currentState][this._currentSide];
+      : this._stateFrameSet[directedFrameSet][this._currentSide];
 
     this._animationController.updateFrameSet(frameSet);
+  }
+
+  protected onCurrentFrameSetNameChange(): void {
+    this.updateActiveFrameSet();
   }
 
   protected onCurrentStateChange() {
@@ -125,9 +142,18 @@ export abstract class Enemy extends EnemyAI {
       if (newSide !== this._currentSide) {
         this._currentSide = newSide;
 
-        const { currentFrameIdx } = this._animationController;
+        let { currentFrameIdx } = this._animationController;
 
-        this._animationController.updateFrameSet(this._stateFrameSet[this._currentState][this._currentSide]);
+        const directedFrameSet: DirectedFrameSets =
+          this._horizontalSpeed !== 0 || this._verticalSpeed !== 0 ? 'RUN' : 'IDLE';
+
+        const frameSet = this._stateFrameSet[directedFrameSet][this._currentSide];
+
+        if (currentFrameIdx >= frameSet.length) {
+          currentFrameIdx = 0;
+        }
+
+        this._animationController.updateFrameSet(frameSet);
         this._animationController.setActiveFrameIdx(currentFrameIdx);
       }
     }

@@ -15,7 +15,7 @@ import {
   unitVector,
 } from 'src/utils/maths';
 
-import type { EnemyAction, EnemyState, Triangle, Vertex, Weapon } from 'src/types';
+import type { DirectedFrameSets, EnemyAction, EnemyState, Triangle, Vertex, Weapon } from 'src/types';
 import { isDoor, isWall } from 'src/types/typeGuards';
 
 export type EnemyParams = {
@@ -31,6 +31,7 @@ export abstract class EnemyAI extends Actor {
 
   protected _pathfinder: null | Pathfinder;
 
+  protected _currentFrameSetName: DirectedFrameSets;
   protected _currentState: EnemyState;
   protected _currentAction: EnemyAction | null;
 
@@ -55,6 +56,7 @@ export abstract class EnemyAI extends Actor {
     this._wolfPosition = { x: 0, y: 0 };
     this._wolfMatrixPosition = { x: 0, y: 0 };
 
+    this._currentFrameSetName = 'IDLE';
     this._currentState = params.initialState;
     this._currentAction = null;
 
@@ -164,6 +166,8 @@ export abstract class EnemyAI extends Actor {
   }
 
   // eslint-disable-next-line class-methods-use-this
+  protected onCurrentFrameSetNameChange() {} // implement in parent
+  // eslint-disable-next-line class-methods-use-this
   protected onCurrentActionChange() {} // implement in parent
   // eslint-disable-next-line class-methods-use-this
   protected onCurrentStateChange() {} // implement in parent
@@ -176,6 +180,16 @@ export abstract class EnemyAI extends Actor {
     this._currentAction = newAction;
 
     this.onCurrentActionChange();
+  }
+
+  protected setCurrentFrameSetName(newFrameSetName: DirectedFrameSets) {
+    if (newFrameSetName === this._currentFrameSetName) {
+      return;
+    }
+
+    this._currentFrameSetName = newFrameSetName;
+
+    this.onCurrentFrameSetNameChange();
   }
 
   protected setCurrentState(newState: EnemyAI['_currentState']) {
@@ -225,6 +239,7 @@ export abstract class EnemyAI extends Actor {
       return null;
     }
 
+    const distanceToWolf = getDistanceBetweenVertexes(this.currentMatrixPosition, this._wolfMatrixPosition) * TILE_SIZE;
     const nextNavigationNode = this._pathfinder.findPath(this.currentMatrixPosition, target, true);
     const originalObstacle = nextNavigationNode?.originalObstacle;
     const hasCollision = !!originalObstacle?.hasCollision;
@@ -248,9 +263,15 @@ export abstract class EnemyAI extends Actor {
     }
 
     // stop if has obstacle with collision in path (usually waiting for door to open)
-    if (!nextNavigationNode || hasCollision) {
+    if (!nextNavigationNode || hasCollision || distanceToWolf <= TILE_SIZE) {
       this._verticalSpeed = 0;
       this._horizontalSpeed = 0;
+    }
+
+    if (this._horizontalSpeed !== 0 || this._verticalSpeed !== 0) {
+      this.setCurrentFrameSetName('RUN');
+    } else {
+      this.setCurrentFrameSetName('IDLE');
     }
 
     this._position.x -= this._horizontalSpeed;
@@ -259,27 +280,21 @@ export abstract class EnemyAI extends Actor {
     return nextNavigationNode;
   }
 
-  private update() {
+  protected update() {
     // eslint-disable-next-line default-case
     switch (this._currentState) {
       case 'CHASE': {
+        const distanceToWolf =
+          getDistanceBetweenVertexes(this.currentMatrixPosition, this._wolfMatrixPosition) * TILE_SIZE;
+
         // if wolf is too far away, change status to alert and check last wolf position in view
-        if (
-          getDistanceBetweenVertexes(this.currentMatrixPosition, this._wolfMatrixPosition) * TILE_SIZE >
-          this._viewDistance
-        ) {
+        if (distanceToWolf > this._viewDistance) {
           this._targetMatrixPosition = { ...this._wolfMatrixPosition };
 
           this.setCurrentState('ALERT');
         }
 
-        // dont get too close to player
-        if (
-          Math.abs(this._wolfMatrixPosition.x - this.currentMatrixPosition.x) > 1 ||
-          Math.abs(this._wolfMatrixPosition.y - this.currentMatrixPosition.y) > 1
-        ) {
-          this.move(this._wolfMatrixPosition);
-        }
+        this.move(this._wolfMatrixPosition);
 
         break;
       }

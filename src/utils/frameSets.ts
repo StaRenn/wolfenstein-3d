@@ -1,9 +1,9 @@
 import { getImageWithSource } from 'src/utils/getImageWithSource';
 
 import type {
+  EnemyDirectedFrameSet,
   EnemyDirections,
   EnemyFrameSetByAction,
-  EnemyFrameSetByState,
   Frame,
   HealthFrameSets,
   PostEffectFrame,
@@ -46,13 +46,10 @@ export function fillDirection<T>() {
   }, {} as Record<EnemyDirections[number], T[]>);
 }
 
-export function getEnemyFrameSetByState(type: 'guard'): EnemyFrameSetByState {
-  const frameSet: EnemyFrameSetByState = {
+export function getEnemyFrameSetByState(type: 'guard'): EnemyDirectedFrameSet {
+  const frameSet: EnemyDirectedFrameSet = {
     IDLE: fillDirection<Frame<HTMLImageElement>>(),
-    ALERT: fillDirection<Frame<HTMLImageElement>>(),
-    ATTACK: fillDirection<Frame<HTMLImageElement>>(),
-    CHASE: fillDirection<Frame<HTMLImageElement>>(),
-    SEARCH: fillDirection<Frame<HTMLImageElement>>(),
+    RUN: fillDirection<Frame<HTMLImageElement>>(),
   };
 
   for (const key of ENEMY_DIRECTIONS) {
@@ -63,17 +60,12 @@ export function getEnemyFrameSetByState(type: 'guard'): EnemyFrameSetByState {
   }
 
   for (const key of ENEMY_DIRECTIONS) {
-    frameSet.CHASE[key].push({
-      data: getImageWithSource(`src/static/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
-      duration: Infinity,
-    });
-  }
-
-  for (const key of ENEMY_DIRECTIONS) {
-    frameSet.ALERT[key].push({
-      data: getImageWithSource(`src/static/assets/enemies/${type}/idle/${key.toLowerCase()}_0.png`),
-      duration: Infinity,
-    });
+    for (let i = 0; i < 4; i++) {
+      frameSet.RUN[key].push({
+        data: getImageWithSource(`src/static/assets/enemies/${type}/run/${key.toLowerCase()}_${i}.png`),
+        duration: 200,
+      });
+    }
   }
 
   return frameSet;

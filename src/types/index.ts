@@ -102,8 +102,12 @@ export type EnemyDirections = readonly [
 
 export type EnemyState = 'IDLE' | 'ALERT' | 'ATTACK' | 'CHASE' | 'SEARCH';
 export type EnemyAction = 'SHOOT' | 'TAKE_DAMAGE' | 'DIE';
+export type DirectedFrameSets = 'IDLE' | 'RUN';
 
-export type EnemyFrameSetByState = Record<EnemyState, Record<EnemyDirections[number], Frame<HTMLImageElement>[]>>;
+export type EnemyDirectedFrameSet = Record<
+  DirectedFrameSets,
+  Record<EnemyDirections[number], Frame<HTMLImageElement>[]>
+>;
 export type EnemyFrameSetByAction = Record<EnemyAction, Frame<HTMLImageElement>[]>;
 
 export type PostEffectFrame = Frame<{ color: string }>;
