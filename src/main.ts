@@ -84,8 +84,6 @@ async function main() {
   }
 
   function handleKeyDown(event: KeyboardEvent) {
-    event.preventDefault();
-
     if (event.key === 'Escape') {
       isPaused = true;
 

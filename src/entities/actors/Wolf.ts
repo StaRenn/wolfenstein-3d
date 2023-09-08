@@ -98,8 +98,6 @@ export class Wolf extends Actor {
   }
 
   private handleKeyDown(event: KeyboardEvent) {
-    event.preventDefault();
-
     // weapons
     if (event.key === '1') {
       this.changeWeapon('KNIFE');
@@ -110,6 +108,8 @@ export class Wolf extends Actor {
     }
 
     if (event.keyCode === 32 /* space */) {
+      event.preventDefault();
+
       this._emitter.emit('wolfInteract', undefined);
     }
     // movement
@@ -136,8 +136,6 @@ export class Wolf extends Actor {
   }
 
   private handleKeyUp(event: KeyboardEvent) {
-    event.preventDefault();
-
     if (event.keyCode === 87 /* w */ && this._verticalSpeed > 0) {
       this._verticalSpeed = 0;
     } else if (event.keyCode === 83 /* s */ && this._verticalSpeed < 0) {
