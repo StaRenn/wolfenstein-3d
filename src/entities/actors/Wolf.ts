@@ -49,16 +49,33 @@ export class Wolf extends Actor {
     this._emitter.emit('wolfPositionChange', this._position);
     this._emitter.emit('wolfMatrixPositionChange', this.currentMatrixPosition);
 
+    this.handleWolfHit = this.handleWolfHit.bind(this);
+    this.handleMouseEvent = this.handleMouseEvent.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleKeyUp = this.handleKeyUp.bind(this);
+    this.update = this.update.bind(this);
+
     this.registerEvents();
   }
 
   protected registerEvents() {
-    window.addEventListener('mousedown', this.handleMouseEvent.bind(this));
-    window.addEventListener('mouseup', this.handleMouseEvent.bind(this));
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
-    window.addEventListener('keyup', this.handleKeyUp.bind(this));
+    window.addEventListener('mousedown', this.handleMouseEvent);
+    window.addEventListener('mouseup', this.handleMouseEvent);
+    window.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('keyup', this.handleKeyUp);
 
-    this._emitter.on('frameUpdate', this.update.bind(this));
+    this._emitter.on('frameUpdate', this.update);
+    this._emitter.on('wolfHit', this.handleWolfHit);
+  }
+
+  protected unregisterEvents() {
+    window.removeEventListener('mousedown', this.handleMouseEvent);
+    window.removeEventListener('mouseup', this.handleMouseEvent);
+    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keyup', this.handleKeyUp);
+
+    this._emitter.off('frameUpdate', this.update);
+    this._emitter.off('wolfHit', this.handleWolfHit);
   }
 
   get angle() {
@@ -95,6 +112,18 @@ export class Wolf extends Actor {
 
   get canAttack() {
     return this._attackTimeout.isExpired && (this._ammo > 0 || WEAPONS[this._currentWeapon].ammoPerAttack === 0);
+  }
+
+  private handleWolfHit(damage: number) {
+    this._health -= damage;
+
+    if (this._health <= 0) {
+      this._health = 0;
+
+      this._emitter.emit('wolfDie', undefined);
+
+      this.unregisterEvents();
+    }
   }
 
   private handleKeyDown(event: KeyboardEvent) {

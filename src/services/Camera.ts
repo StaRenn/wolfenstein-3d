@@ -36,17 +36,15 @@ export class Camera {
     this._position = params.position;
     this._rays = [];
 
+    this.rotate = this.rotate.bind(this);
+    this.handleResize = this.handleResize.bind(this);
+    this.handleResolutionScaleChange = this.handleResolutionScaleChange.bind(this);
+    this.handleFovChange = this.handleFovChange.bind(this);
+    this.handleWolfDie = this.handleWolfDie.bind(this);
+    this.updatePosition = this.updatePosition.bind(this);
+
     this.changeRaysAmount();
     this.registerEvents();
-  }
-
-  private registerEvents() {
-    canvas.addEventListener('mousemove', this.rotate.bind(this));
-
-    this._emitter.on('resize', this.handleResize.bind(this));
-    this._emitter.on('resolutionScaleChange', this.handleResolutionScaleChange.bind(this));
-    this._emitter.on('fovChange', this.handleFovChange.bind(this));
-    this._emitter.on('wolfPositionChange', this.updatePosition.bind(this));
   }
 
   get resolutionScale() {
@@ -59,6 +57,30 @@ export class Camera {
 
   get angle() {
     return this._angle;
+  }
+
+  private registerEvents() {
+    canvas.addEventListener('mousemove', this.rotate);
+
+    this._emitter.on('resize', this.handleResize);
+    this._emitter.on('resolutionScaleChange', this.handleResolutionScaleChange);
+    this._emitter.on('fovChange', this.handleFovChange);
+    this._emitter.on('wolfPositionChange', this.updatePosition);
+    this._emitter.on('wolfDie', this.handleWolfDie);
+  }
+
+  private unregisterEvents() {
+    canvas.removeEventListener('mousemove', this.rotate);
+
+    this._emitter.off('resize', this.handleResize);
+    this._emitter.off('resolutionScaleChange', this.handleResolutionScaleChange);
+    this._emitter.off('fovChange', this.handleFovChange);
+    this._emitter.off('wolfPositionChange', this.updatePosition);
+    this._emitter.off('wolfDie', this.handleWolfDie);
+  }
+
+  private handleWolfDie() {
+    this.unregisterEvents();
   }
 
   private handleResize(screenData: Camera['_screenData']) {

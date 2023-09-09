@@ -120,6 +120,7 @@ export class Hud {
     this._emitter.on('wolfWeaponChange', this.onWeaponChange.bind(this));
     this._emitter.on('wolfBoostPickup', this.onBoostPickup.bind(this));
     this._emitter.on('wolfAttack', this.onAttack.bind(this));
+    this._emitter.on('wolfHit', this.onWolfHit.bind(this));
   }
 
   private renderPostEffect(data: PostEffectFrame['data']) {
@@ -190,6 +191,11 @@ export class Hud {
     this._postEffectAnimation.playAnimation();
   }
 
+  private onWolfHit() {
+    this._postEffectAnimation.updateFrameSet(generatePostEffectFrameSet([255, 0, 0]));
+    this._postEffectAnimation.playAnimation();
+  }
+
   private onAttack() {
     this._weaponAnimation.setActiveFrameIdx(0);
     this._weaponAnimation.playAnimation();
@@ -225,6 +231,8 @@ export class Hud {
     this._offsetX = this._screenData.width / 2 - this._width / 2;
     this._offsetY = this._screenData.height - this._height;
 
+    this._postEffectAnimation.render();
+
     this._ctx.drawImage(
       HUD_PANEL.TEXTURE,
       0,
@@ -256,7 +264,6 @@ export class Hud {
     this.renderText(ammo, HUD_PANEL.AMMO_X_OFFSET * this._scale);
 
     this._weaponAnimation.render();
-    this._postEffectAnimation.render();
     this._portraitAnimation.render();
   }
 }

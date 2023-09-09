@@ -100,7 +100,7 @@ export type EnemyDirections = readonly [
   'FRONT_LEFT'
 ];
 
-export type EnemyState = 'IDLE' | 'ALERT' | 'ATTACK' | 'CHASE' | 'SEARCH';
+export type EnemyState = 'IDLE' | 'ATTACK' | 'CHASE' | 'SEARCH';
 export type EnemyAction = 'SHOOT' | 'TAKE_DAMAGE' | 'DIE';
 export type DirectedFrameSets = 'IDLE' | 'RUN';
 

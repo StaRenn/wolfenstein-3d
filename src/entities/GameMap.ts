@@ -9,7 +9,6 @@ import { AMMO_ID, DOOR_TIMEOUT, ITEMS_PURPOSES, TILE_SIZE } from 'src/constants/
 import { getImageWithSource } from 'src/utils/getImageWithSource';
 
 import type { Enemy } from './actors/abstract/Enemy';
-import type { EnemyAI } from './actors/abstract/EnemyAI';
 import type { DoorObstacle } from './obstacles/Door';
 import { ItemObstacle } from './obstacles/Item';
 import type { WallObstacle } from './obstacles/Wall';
@@ -87,11 +86,12 @@ export class GameMap {
     this._wolfMatrixPosition = position;
   }
 
-  private spawnAmmoOnDeadEnemy(enemy: EnemyAI) {
+  private spawnAmmoOnDeadEnemy(enemy: Enemy) {
     const currentEntity = this._map[enemy.currentMatrixPosition.y][enemy.currentMatrixPosition.x];
+
     if (currentEntity && isItem(currentEntity) && currentEntity.purpose.affects === 'ammo') {
       currentEntity.purpose.value += ITEMS_PURPOSES[AMMO_ID].value as number;
-    } else {
+    } else if (!currentEntity) {
       this._map[enemy.currentMatrixPosition.y][enemy.currentMatrixPosition.x] = new ItemObstacle({
         position: {
           x1: enemy.currentMatrixPosition.x * TILE_SIZE,

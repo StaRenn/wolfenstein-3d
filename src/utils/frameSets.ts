@@ -86,7 +86,7 @@ export function getEnemyFrameSetByAction(type: 'guard'): EnemyFrameSetByAction {
   for (let i = 0; i <= 2; i++) {
     frameSet.SHOOT.push({
       data: getImageWithSource(`src/static/assets/enemies/${type}/shoot/${i}.png`),
-      duration: 150,
+      duration: 200,
     });
   }
 

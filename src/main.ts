@@ -14,9 +14,9 @@ import { toRadians } from './utils/maths';
 
 import type { RawMap } from './types';
 
-export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-
 const emitter = new EventEmitter();
+
+export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
 async function main() {
   const menu = document.getElementById('menu-container') as HTMLDivElement;
@@ -41,14 +41,24 @@ async function main() {
   // eslint-disable-next-line global-require, import/no-dynamic-require
   const map: RawMap = await require(`./static/maps/${__MAP__ || 'E1M3'}.json`);
 
-  const scene = new Scene({
-    canvas,
-    map,
-    screenData,
-    emitter,
-    fov,
-    resolutionScale,
-  });
+  let scene: Scene;
+
+  const initScene = () => {
+    emitter.reset();
+
+    emitter.on('wolfDie', () => initScene());
+
+    scene = new Scene({
+      canvas,
+      map,
+      screenData,
+      emitter,
+      fov,
+      resolutionScale,
+    });
+  };
+
+  initScene();
 
   const fpsOut = document.getElementById('fps')!;
   const filterStrength = 20;
@@ -104,7 +114,7 @@ async function main() {
       emitter.emit('frameUpdate', undefined);
     }
 
-    scene.render();
+    scene!.render();
 
     prevFrameDuration = frameDuration;
     frameDuration = currentFrameDuration;

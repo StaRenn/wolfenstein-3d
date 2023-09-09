@@ -55,10 +55,10 @@ export class Scene {
 
     this._wolf = new Wolf({
       angle: 0,
-      ammo: 50,
+      ammo: 20,
       emitter: this._emitter,
       currentWeapon: 'PISTOL',
-      health: 50,
+      health: 100,
       level: 0,
       lives: 3,
       maxHealth: 100,

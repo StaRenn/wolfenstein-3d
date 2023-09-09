@@ -42,4 +42,8 @@ export class EventEmitter {
 
     this.events[event]!.forEach((callback: CallBack<Events[T]>) => callback(data));
   }
+
+  reset() {
+    this.events = {};
+  }
 }

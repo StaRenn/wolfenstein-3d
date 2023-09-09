@@ -1,5 +1,5 @@
 import type { GameMap } from 'src/entities/GameMap';
-import type { EnemyAI } from 'src/entities/actors/abstract/EnemyAI';
+import type { Enemy } from 'src/entities/actors/abstract/Enemy';
 
 import type { ScreenData, Vertex, Weapon, WeaponType } from 'src/types';
 
@@ -13,11 +13,13 @@ export type Events = {
   // Wolf
   wolfBoostPickup: undefined;
   wolfAttack: Weapon;
+  wolfHit: number;
+  wolfDie: undefined;
   wolfWeaponChange: WeaponType;
   wolfInteract: undefined;
   wolfPositionChange: Vertex;
   wolfMatrixPositionChange: Vertex;
   // Enemy
-  enemyHit: EnemyAI;
-  enemyDie: EnemyAI;
+  enemyHit: Enemy;
+  enemyDie: Enemy;
 };
