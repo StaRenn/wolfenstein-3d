@@ -246,17 +246,23 @@ export abstract class Enemy extends Actor {
   }
 
   checkNoise(weapon: Weapon) {
+    if(this._currentState !== 'IDLE') {
+      return;
+    }
+
     const distance = getDistanceBetweenVertexes(this.currentMatrixPosition, this._wolfMatrixPosition) * TILE_SIZE;
 
-    if (distance < weapon.noiseDistance) {
-      // find if origin of sound can be reached, counting doors as walls if they are not opened
-      const hasClearPath = this._pathfinder?.findPath(this.currentMatrixPosition, this._wolfMatrixPosition, false);
+    if(distance > weapon.noiseDistance) {
+      return;
+    }
 
-      if (hasClearPath) {
-        this._targetMatrixPosition = this._wolfMatrixPosition;
+    // find if origin of sound can be reached, counting doors as walls if they are not opened
+    const hasClearPath = this._pathfinder?.findPath(this.currentMatrixPosition, this._wolfMatrixPosition, false);
 
-        this.setCurrentState('SEARCH');
-      }
+    if (hasClearPath) {
+      this._targetMatrixPosition = this._wolfMatrixPosition;
+
+      this.setCurrentState('SEARCH');
     }
   }
 

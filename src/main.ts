@@ -14,8 +14,6 @@ import { toRadians } from './utils/maths';
 
 import type { RawMap } from './types';
 
-const emitter = new EventEmitter();
-
 export const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
 async function main() {
@@ -28,6 +26,8 @@ async function main() {
   let isPaused = false;
   let resolutionScale = DEFAULT_RESOLUTION_SCALE;
   let fov = DEFAULT_FOV;
+
+  let emitter = new EventEmitter();
 
   fovRange.value = String(DEFAULT_FOV_DEGREES);
   fovRangeValue.innerText = String(DEFAULT_FOV_DEGREES);
@@ -44,7 +44,7 @@ async function main() {
   let scene: Scene;
 
   const initScene = () => {
-    emitter.reset();
+    emitter = new EventEmitter();
 
     emitter.on('wolfDie', () => initScene());
 
