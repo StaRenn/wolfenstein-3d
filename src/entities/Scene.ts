@@ -54,7 +54,6 @@ export class Scene {
     });
 
     this._wolf = new Wolf({
-      angle: 0,
       ammo: 20,
       emitter: this._emitter,
       currentWeapon: 'PISTOL',

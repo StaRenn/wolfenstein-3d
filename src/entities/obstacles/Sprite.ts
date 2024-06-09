@@ -1,8 +1,6 @@
-import { TILE_SIZE } from 'src/constants/config';
+import { HALF_TILE_SIZE } from 'src/constants/config';
 
 import { StaticObstacle, StaticObstacleParams } from './abstract/StaticObstacle';
-
-import type { Vector } from 'src/types';
 
 export class SpriteObstacle extends StaticObstacle {
   public readonly isSprite: true;
@@ -15,25 +13,20 @@ export class SpriteObstacle extends StaticObstacle {
 
   // sprite should be always perpendicular to player view angle
   rotatePerpendicularlyToView(angle: number): SpriteObstacle {
-    const coordinates: Vector = {
-      x1: this._position.x1,
-      y1: this._position.y1,
-      x2: this._position.x2,
-      y2: this._position.y2,
-    };
-
     const middleVertex = {
-      x: (coordinates.x2 + coordinates.x1) / 2,
-      y: (coordinates.y2 + coordinates.y1) / 2,
+      x: (this._position.x2 + this._position.x1) / 2,
+      y: (this._position.y2 + this._position.y1) / 2,
     };
 
     const spriteAngle = -angle;
+    const cos = Math.cos(spriteAngle);
+    const sin = Math.sin(spriteAngle);
 
     this.position = {
-      x1: middleVertex.x + (TILE_SIZE / 2) * Math.cos(spriteAngle),
-      y1: middleVertex.y + (TILE_SIZE / 2) * Math.sin(spriteAngle),
-      x2: middleVertex.x - (TILE_SIZE / 2) * Math.cos(spriteAngle),
-      y2: middleVertex.y - (TILE_SIZE / 2) * Math.sin(spriteAngle),
+      x1: middleVertex.x + HALF_TILE_SIZE * cos,
+      y1: middleVertex.y + HALF_TILE_SIZE * sin,
+      x2: middleVertex.x - HALF_TILE_SIZE * cos,
+      y2: middleVertex.y - HALF_TILE_SIZE * sin,
     };
 
     return this;

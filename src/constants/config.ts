@@ -6,6 +6,8 @@ import type { ItemPurpose, Vertex, Weapons } from 'src/types';
 
 // core, do not change
 export const TILE_SIZE = 10;
+export const DEVICE_PIXEL_RATIO = window.devicePixelRatio;
+export const HALF_TILE_SIZE = TILE_SIZE / 2;
 export const RAY_LENGTH = TILE_SIZE * 48;
 export const DOOR_IDS = [27, 28, 33, 34, 35, 36];
 export const AMMO_ID = 34;

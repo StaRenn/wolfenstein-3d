@@ -7,6 +7,7 @@ import { canvas } from 'src/main';
 
 import type { IndexedIntersection, Intersection, Obstacle, ParsedMap, ScreenData, Vector, Vertex } from 'src/types';
 import { isItem, isSprite, isWall } from 'src/types/typeGuards';
+import { DEVICE_PIXEL_RATIO } from 'src/constants/config';
 
 type CameraParams = {
   emitter: Camera['_emitter'];
@@ -29,7 +30,7 @@ export class Camera {
   constructor(params: CameraParams) {
     this._emitter = params.emitter;
     this._angle = toRadians(180);
-    this._resolutionScale = params.resolutionScale;
+    this._resolutionScale = params.resolutionScale * DEVICE_PIXEL_RATIO;
     this._fov = params.fov;
 
     this._screenData = params.screenData;

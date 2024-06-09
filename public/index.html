@@ -1,58 +1,15 @@
-<html><head><meta charset="UTF-8"/><title>Wolfenstein 3D</title><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"/><style>* {
-        padding: 0;
-        margin: 0;
-      }
-      body {
-        overflow: hidden;
-        background: #717171;
-        width: 100%;
-        height: 100vh;
-      }
-      #menu-container {
-        width: 100vw;
-        height: 100vh;
-        position: absolute;
-        z-index: 10;
-        justify-content: center;
-        align-items: center;
-        font-family: 'Roboto', sans-serif;
-      }
-      #continue-button {
-        padding: 8px;
-        border-radius: 8px;
-        margin-top: 20px;
-        font-size: 20px;
-        cursor: pointer;
-        border: none;
-        transition: background-color 0.1s;
-      }
-      #continue-button:hover {
-        background-color: #d3d3d3;
-      }
-      .menu {
-        width: 200px;
-        height: auto;
-        padding: 16px;
-        background: rgba(0, 0, 0, 0.75);
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 24px;
-      }
-      .title {
-        font-size: 24px;
-        margin-bottom: 12px;
-      }
-      .sub-title {
-        font-size: 16px;
-        margin-bottom: 8px;
-      }</style><script defer="defer" src="bundle.js"></script></head><body><div id="fps" style="position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 32px;
-        color: white;
-        pointer-events: none;
-        user-select: none;"></div><div id="menu-container" style="display: none"><div class="menu"><div class="title">Menu</div><div class="sub-title">Resolution Scale</div><input id="resolution-scale" type="range" min="0" max="1" value="1" step="1"/><div><span class="sub-title">FOV</span> <span class="sub-title" id="fovValue">75</span></div><input id="fov" type="range" min="45" max="90" value="75" step="1"/> <button id="continue-button">Continue</button></div></div><canvas id="canvas" width="100px" height="100px"></canvas></body></html>
+<!doctype html><meta charset=UTF-8><title>Wolfenstein 3D</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=preconnect href=https://fonts.googleapis.com><link rel=preconnect href=https://fonts.gstatic.com crossorigin><link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel=stylesheet><style>*{padding:0;margin:0}body{overflow:hidden;background:#717171;width:100%;height:100vh}#menu-container{width:100vw;height:100vh;position:absolute;z-index:10;justify-content:center;align-items:center;font-family:"Roboto",sans-serif}#continue-button{padding:8px;border-radius:8px;margin-top:20px;font-size:20px;cursor:pointer;border:none;transition:background-color.1s}#continue-button:hover{background-color:#d3d3d3}.menu{width:200px;height:auto;padding:16px;background:rgba(0,0,0,.75);border-radius:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-size:24px}.title{font-size:24px;margin-bottom:12px}.sub-title{font-size:16px;margin-bottom:8px}</style><script src=bundle.js defer></script><div id=fps style=position:absolute;top:10px;right:10px;font-size:32px;color:white;pointer-events:none;user-select:none></div>
+    <div id=menu-container style=display:none>
+      <div class=menu>
+        <div class=title>Menu</div>
+        <div class=sub-title>Resolution Scale</div>
+        <input id=resolution-scale type=range min=0 max=1 value=1 step=1>
+        <div>
+          <span class=sub-title>FOV</span>
+          <span class=sub-title id=fovValue>75</span>
+        </div>
+        <input id=fov type=range min=45 max=90 value=75 step=1>
+        <button id=continue-button>Continue</button>
+      </div>
+    </div>
+    <canvas id=canvas width=100px height=100px></canvas>

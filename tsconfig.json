@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "lib": ["es5", "es6", "dom"],
+    "lib": ["ESNext", "DOM"],
     "rootDir": "./src",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "src/*": ["./*"]
+      "src/*": ["./src/*"]
     },
     "noImplicitAny": true,
     "noUnusedLocals": true,
@@ -17,10 +17,9 @@
     "sourceMap": true,
     "target": "es5",
     "strict": true,
-    "importsNotUsedAsValues": "error",
     "moduleResolution": "node",
     "strictNullChecks": true,
     "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["src", "misc", "rspack.config.js", ".eslintrc.js"]
 }

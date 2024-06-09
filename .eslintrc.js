@@ -1,7 +1,7 @@
 module.exports = {
   extends: ['airbnb-base', 'airbnb-typescript/base'],
   parserOptions: {
-    project: 'tsconfig.json',
+    project: './tsconfig.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module',
   },
@@ -11,6 +11,7 @@ module.exports = {
     'sort-imports': 'off',
     'import/order': 'off',
     '@typescript-eslint/lines-between-class-members': 'off',
+    'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     'import/prefer-default-export': 'off',
     'no-param-reassign': 'off',
     'max-len': 'off',
@@ -29,5 +30,5 @@ module.exports = {
     'wrap-iife': 'off',
     'function-paren-newline': 'off',
   },
-  ignorePatterns: ['src/constants/map.ts', 'public/**/*.*'],
+  ignorePatterns: ['public/**/*.*'],
 };

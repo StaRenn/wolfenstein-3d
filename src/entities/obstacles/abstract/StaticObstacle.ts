@@ -23,8 +23,8 @@ export abstract class StaticObstacle {
     this._texture = params.texture;
 
     this._matrixCoordinates = {
-      x: Math.floor(this._position.x1 / TILE_SIZE),
-      y: Math.floor(this._position.y1 / TILE_SIZE),
+      x: Math.floor(Math.min(this._position.x1, this._position.x2) / TILE_SIZE),
+      y: Math.floor(Math.min(this._position.y1, this._position.y2) / TILE_SIZE),
     };
 
     this.hasCollision = params.hasCollision;
@@ -35,8 +35,8 @@ export abstract class StaticObstacle {
     this._position = newPosition;
 
     this._matrixCoordinates = {
-      x: Math.floor(this._position.x1 / TILE_SIZE),
-      y: Math.floor(this._position.y1 / TILE_SIZE),
+      x: Math.floor(Math.min(this._position.x1, this._position.x2) / TILE_SIZE),
+      y: Math.floor(Math.min(this._position.y1, this._position.y2) / TILE_SIZE),
     };
   }
 

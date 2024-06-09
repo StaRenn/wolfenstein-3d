@@ -39,6 +39,7 @@ export type EnemyParams = {
   initialAction: Enemy['_currentAction'];
   speed: Enemy['_speed'];
   viewDistance: Enemy['_viewDistance'];
+  angle: Enemy['_angle'];
   attackDistance: Enemy['_attackDistance'];
   attackDelayTime: Enemy['_attackDelayTime'];
   attackFrameIdx: Enemy['_attackFrameIdx'];
@@ -76,6 +77,8 @@ export abstract class Enemy extends Actor {
   protected _currentFrameSetName: DirectedFrameSets;
   protected _currentState: EnemyState;
   protected _currentAction: EnemyAction | null;
+
+  protected _angle: number;
 
   protected _targetMatrixPosition: Vertex | null;
   protected _wolfMatrixPosition: Vertex;
@@ -121,6 +124,7 @@ export abstract class Enemy extends Actor {
       texture: this._animationController.currentFrame.data,
     });
 
+    this._angle = params.angle;
     this._initialAngle = params.angle;
     this._initialMatrixPosition = this.currentMatrixPosition;
 
@@ -147,6 +151,10 @@ export abstract class Enemy extends Actor {
     this._pathfinder = null;
 
     this.registerEvents();
+  }
+
+  get angle() {
+    return this._angle;
   }
 
   get currentState() {
@@ -246,13 +254,13 @@ export abstract class Enemy extends Actor {
   }
 
   checkNoise(weapon: Weapon) {
-    if(this._currentState !== 'IDLE') {
+    if (this._currentState !== 'IDLE') {
       return;
     }
 
     const distance = getDistanceBetweenVertexes(this.currentMatrixPosition, this._wolfMatrixPosition) * TILE_SIZE;
 
-    if(distance > weapon.noiseDistance) {
+    if (distance > weapon.noiseDistance) {
       return;
     }
 

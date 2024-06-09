@@ -38,8 +38,8 @@ async function main() {
     width: window.innerWidth,
   };
 
-  // eslint-disable-next-line global-require, import/no-dynamic-require
-  const map: RawMap = await require(`./static/maps/${__MAP__ || 'E1M3'}.json`);
+  // eslint-disable-next-line global-require
+  const map: RawMap = await import(`./static/maps/${__MAP__ || 'E1M3'}.json`);
 
   let scene: Scene;
 

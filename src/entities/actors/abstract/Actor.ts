@@ -13,7 +13,6 @@ export type ActorParams = {
   health: Actor['_health'];
   maxHealth: Actor['_maxHealth'];
   currentWeapon: Actor['_currentWeapon'];
-  angle: Actor['_angle'];
   rawValue: Actor['_rawValue'];
   emitter: Actor['_emitter'];
   gameMap: Actor['_gameMap'];
@@ -28,7 +27,6 @@ export abstract class Actor {
   protected _currentWeapon: keyof typeof WEAPONS;
   protected _isAttacking: boolean;
   protected _position: Vertex;
-  protected _angle: number;
   protected _attackTimeout: Timeout;
   protected _rawValue: string | number;
   protected _gameMap: GameMap | null;
@@ -38,7 +36,6 @@ export abstract class Actor {
     this._health = params.health;
     this._maxHealth = params.maxHealth;
     this._position = params.position;
-    this._angle = params.angle;
     this._rawValue = params.rawValue;
     this._gameMap = params.gameMap;
     this._emitter = params.emitter;
@@ -55,10 +52,6 @@ export abstract class Actor {
     this._emitter.on('gameMapReady', (gameMap) => {
       this._gameMap = gameMap;
     });
-  }
-
-  get angle() {
-    return this._angle;
   }
 
   get position() {

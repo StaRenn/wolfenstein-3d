@@ -209,6 +209,119 @@ export class Wolf extends Actor {
     }
   }
 
+  private handleCollisionIfOccurs(updatedPosition: Vertex, obstacle: Obstacle | null) {
+    if (!obstacle || (!obstacle.hasCollision && !isItem(obstacle))) {
+      return;
+    }
+
+    let doesCollide = false;
+
+    const matrixCoordinates =
+      isWall(obstacle) && obstacle.isInFinalPosition
+        ? obstacle.endPositionMatrixCoordinates
+        : obstacle.matrixCoordinates;
+
+    const preparedObstaclePosition = {
+      x1: matrixCoordinates.x * TILE_SIZE,
+      y1: matrixCoordinates.y * TILE_SIZE,
+      x2: matrixCoordinates.x * TILE_SIZE + TILE_SIZE,
+      y2: matrixCoordinates.y * TILE_SIZE + TILE_SIZE,
+    };
+
+    if (isDoor(obstacle)) {
+      if (obstacle.intersectionType === 'VERTICAL') {
+        preparedObstaclePosition.x1 -= TILE_SIZE / 2;
+        preparedObstaclePosition.x2 += TILE_SIZE / 2;
+      }
+      if (obstacle.intersectionType === 'HORIZONTAL') {
+        preparedObstaclePosition.y1 -= TILE_SIZE / 2;
+        preparedObstaclePosition.y2 += TILE_SIZE / 2;
+      }
+    }
+
+    // make obstacle hitbox bigger, to avoid player oncoming to texture TOO close
+    const expandedObstacleVector = {
+      x1: preparedObstaclePosition.x1 - TILE_SIZE * 0.3,
+      y1: preparedObstaclePosition.y1 - TILE_SIZE * 0.3,
+      x2: preparedObstaclePosition.x2 + TILE_SIZE * 0.3,
+      y2: preparedObstaclePosition.y2 + TILE_SIZE * 0.3,
+    };
+
+    // if player new position is inside of hitbox
+    if (
+      updatedPosition.x >= expandedObstacleVector.x1 &&
+      updatedPosition.x <= expandedObstacleVector.x2 &&
+      updatedPosition.y >= expandedObstacleVector.y1 &&
+      updatedPosition.y <= expandedObstacleVector.y2
+    ) {
+      // push player outside of hitbox
+      if (obstacle.hasCollision) {
+        if (this._position.x >= expandedObstacleVector.x1 && this._position.x <= expandedObstacleVector.x2) {
+          updatedPosition.y = this._position.y;
+        }
+        if (this._position.y >= expandedObstacleVector.y1 && this._position.y <= expandedObstacleVector.y2) {
+          updatedPosition.x = this._position.x;
+        }
+      }
+
+      doesCollide = true;
+    }
+
+    if (doesCollide && isItem(obstacle)) {
+      const { purpose } = obstacle;
+
+      // eslint-disable-next-line default-case
+      switch (purpose.affects) {
+        case 'ammo': {
+          if (this._ammo === 100) {
+            return;
+          }
+
+          this._ammo += purpose.value;
+
+          if (this._ammo > 100) {
+            this._ammo = 100;
+          }
+
+          break;
+        }
+        case 'health': {
+          if (this._health === this._maxHealth) {
+            return;
+          }
+
+          this._health += purpose.value;
+
+          if (this._health > this._maxHealth) {
+            this._health = this._maxHealth;
+          }
+
+          break;
+        }
+        case 'lives': {
+          this._lives += purpose.value;
+
+          break;
+        }
+        case 'score': {
+          this._score += purpose.value;
+
+          break;
+        }
+        case 'weapons': {
+          this._weapons.push(purpose.value);
+
+          break;
+        }
+      }
+
+      this._emitter.emit('wolfBoostPickup', undefined);
+
+      // remove from map when item picked up
+      this._gameMap!.map[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
+    }
+  }
+
   private move() {
     if (this._horizontalSpeed === 0 && this._verticalSpeed === 0) {
       return;
@@ -233,129 +346,16 @@ export class Wolf extends Actor {
     position.x += xSum >= 0 ? Math.min(xSum, ACTOR_SPEED * TIME_SCALE) : Math.max(xSum, -ACTOR_SPEED * TIME_SCALE);
     position.y += ySum >= 0 ? Math.min(ySum, ACTOR_SPEED * TIME_SCALE) : Math.max(ySum, -ACTOR_SPEED * TIME_SCALE);
 
-    const checkCollision = (obstacle: Obstacle | null) => {
-      if (!obstacle || (!obstacle.hasCollision && !isItem(obstacle))) {
-        return;
-      }
-
-      let doesCollide = false;
-
-      const matrixCoordinates =
-        isWall(obstacle) && obstacle.isInFinalPosition
-          ? obstacle.endPositionMatrixCoordinates
-          : obstacle.matrixCoordinates;
-
-      const preparedObstaclePosition = {
-        x1: matrixCoordinates.x * TILE_SIZE,
-        y1: matrixCoordinates.y * TILE_SIZE,
-        x2: matrixCoordinates.x * TILE_SIZE + TILE_SIZE,
-        y2: matrixCoordinates.y * TILE_SIZE + TILE_SIZE,
-      };
-
-      if (isDoor(obstacle)) {
-        if (obstacle.intersectionType === 'VERTICAL') {
-          preparedObstaclePosition.x1 -= TILE_SIZE / 2;
-          preparedObstaclePosition.x2 += TILE_SIZE / 2;
-        }
-        if (obstacle.intersectionType === 'HORIZONTAL') {
-          preparedObstaclePosition.y1 -= TILE_SIZE / 2;
-          preparedObstaclePosition.y2 += TILE_SIZE / 2;
-        }
-      }
-
-      // make obstacle hitbox bigger, to avoid player oncoming to texture TOO close
-      const expandedObstacleVector = {
-        x1: preparedObstaclePosition.x1 - TILE_SIZE * 0.3,
-        y1: preparedObstaclePosition.y1 - TILE_SIZE * 0.3,
-        x2: preparedObstaclePosition.x2 + TILE_SIZE * 0.3,
-        y2: preparedObstaclePosition.y2 + TILE_SIZE * 0.3,
-      };
-
-      // if player new position is inside of hitbox
-      if (
-        position.x >= expandedObstacleVector.x1 &&
-        position.x <= expandedObstacleVector.x2 &&
-        position.y >= expandedObstacleVector.y1 &&
-        position.y <= expandedObstacleVector.y2
-      ) {
-        // push player outside of hitbox
-        if (obstacle.hasCollision) {
-          if (this._position.x >= expandedObstacleVector.x1 && this._position.x <= expandedObstacleVector.x2) {
-            position.y = this._position.y;
-          }
-          if (this._position.y >= expandedObstacleVector.y1 && this._position.y <= expandedObstacleVector.y2) {
-            position.x = this._position.x;
-          }
-        }
-
-        doesCollide = true;
-      }
-
-      if (doesCollide && isItem(obstacle)) {
-        const { purpose } = obstacle;
-
-        // eslint-disable-next-line default-case
-        switch (purpose.affects) {
-          case 'ammo': {
-            if (this._ammo === 100) {
-              return;
-            }
-
-            this._ammo += purpose.value;
-
-            if (this._ammo > 100) {
-              this._ammo = 100;
-            }
-
-            break;
-          }
-          case 'health': {
-            if (this._health === this._maxHealth) {
-              return;
-            }
-
-            this._health += purpose.value;
-
-            if (this._health > this._maxHealth) {
-              this._health = this._maxHealth;
-            }
-
-            break;
-          }
-          case 'lives': {
-            this._lives += purpose.value;
-
-            break;
-          }
-          case 'score': {
-            this._score += purpose.value;
-
-            break;
-          }
-          case 'weapons': {
-            this._weapons.push(purpose.value);
-
-            break;
-          }
-        }
-
-        this._emitter.emit('wolfBoostPickup', undefined);
-
-        // remove from map when item picked up
-        this._gameMap!.map[obstacle.matrixCoordinates.y][obstacle.matrixCoordinates.x] = null;
-      }
-    };
-
     const positionOnMap = this.currentMatrixPosition;
 
-    checkCollision((this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
-    checkCollision((this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x]);
-    checkCollision((this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
-    checkCollision((this._gameMap.map[positionOnMap.y] || [])[positionOnMap.x - 1]);
-    checkCollision((this._gameMap.map[positionOnMap.y] || [])[positionOnMap.x + 1]);
-    checkCollision((this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
-    checkCollision((this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x]);
-    checkCollision((this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x - 1]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y - 1] || [])[positionOnMap.x + 1]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y] || [])[positionOnMap.x - 1]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y] || [])[positionOnMap.x + 1]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x - 1]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x]);
+    this.handleCollisionIfOccurs(position, (this._gameMap.map[positionOnMap.y + 1] || [])[positionOnMap.x + 1]);
 
     this._position = position;
     this._emitter.emit('wolfPositionChange', this._position);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwolfenstein_3d=self.webpackChunkwolfenstein_3d||[]).push([["567"],{405:function(e){e.exports=JSON.parse('[[1,"START_POS"],["11_SPRITE",0]]')}}]);
